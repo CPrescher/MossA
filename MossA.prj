@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration target="target.mlapps" target-name="Package App" name="MossA" location="C:\Users\Clemen Prescher\Documents\MATLAB\MossA" file="C:\Users\Clemen Prescher\Documents\MATLAB\MossA\MossA.prj" build-checksum="3292526677">
+    <param.appname>MossA</param.appname>
+    <param.authnamewatermark>Clemens Prescher</param.authnamewatermark>
+    <param.email />
+    <param.company />
+    <param.icon />
+    <param.summary>Mössbauer DataAnalysis Tool.</param.summary>
+    <param.description />
+    <param.screenshot>${PROJECT_ROOT}\app_pic.jpg</param.screenshot>
+    <param.version>1.01</param.version>
+    <param.products.name>
+      <item>MATLAB</item>
+      <item>Statistics Toolbox</item>
+      <item>Optimization Toolbox</item>
+      <item>Curve Fitting Toolbox</item>
+    </param.products.name>
+    <param.products.id>
+      <item>1</item>
+      <item>19</item>
+      <item>6</item>
+      <item>60</item>
+    </param.products.id>
+    <param.products.version>
+      <item>8.0</item>
+      <item>8.1</item>
+      <item>6.2.1</item>
+      <item>3.3</item>
+    </param.products.version>
+    <param.platforms />
+    <param.output>${PROJECT_ROOT}\MossA.mlappinstall</param.output>
+    <param.guid>253939db-6e55-458a-bba9-b0feb7ba96a5</param.guid>
+    <unset>
+      <param.email />
+      <param.company />
+      <param.icon />
+      <param.platforms />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\MossA.m</file>
+    </fileset.main>
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\calcJacobian.m</file>
+      <file>${PROJECT_ROOT}\calib.fig</file>
+      <file>${PROJECT_ROOT}\calib.m</file>
+      <file>${PROJECT_ROOT}\ccsd_site.m</file>
+      <file>${PROJECT_ROOT}\cfit.m</file>
+      <file>${PROJECT_ROOT}\cft_fit.m</file>
+      <file>${PROJECT_ROOT}\coptions.m</file>
+      <file>${PROJECT_ROOT}\copy_graphs.m</file>
+      <file>${PROJECT_ROOT}\cqsd_site.m</file>
+      <file>${PROJECT_ROOT}\csite.m</file>
+      <file>${PROJECT_ROOT}\cxVBF.m</file>
+      <file>${PROJECT_ROOT}\dlmcell.m</file>
+      <file>${PROJECT_ROOT}\doublet.m</file>
+      <file>${PROJECT_ROOT}\doublet_g.m</file>
+      <file>${PROJECT_ROOT}\doublet_ls.m</file>
+      <file>${PROJECT_ROOT}\doublet_p.m</file>
+      <file>${PROJECT_ROOT}\fold.m</file>
+      <file>${PROJECT_ROOT}\folding.fig</file>
+      <file>${PROJECT_ROOT}\folding.m</file>
+      <file>${PROJECT_ROOT}\gauss_curve.m</file>
+      <file>${PROJECT_ROOT}\getfp.m</file>
+      <file>${PROJECT_ROOT}\lorentz_curve.m</file>
+      <file>${PROJECT_ROOT}\lorentz_squared.m</file>
+      <file>${PROJECT_ROOT}\pseudov_curve.m</file>
+      <file>${PROJECT_ROOT}\sextet.m</file>
+      <file>${PROJECT_ROOT}\sextet_g.m</file>
+      <file>${PROJECT_ROOT}\sextet_ls.m</file>
+      <file>${PROJECT_ROOT}\sextet_p.m</file>
+      <file>${PROJECT_ROOT}\voigt_curve.m</file>
+    </fileset.depfun>
+    <fileset.resources />
+    <fileset.package />
+    <build-deliverables>
+      <file name="MossA.mlappinstall" location="C:\Users\Clemen Prescher\Documents\MATLAB\MossA" optional="false">C:\Users\Clemen Prescher\Documents\MATLAB\MossA\MossA.mlappinstall</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2012b</root>
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>6.1</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
+
