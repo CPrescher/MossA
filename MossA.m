@@ -610,8 +610,23 @@ addpath(pwd);
 
 
 %load calibration data, if it was determined before:
-if 2==exist('calibration.txt')
-    calibration=dlmread('calibration.txt');
+if ismac
+    if exist('~/.MossA/calibration.txt')
+        calibration_filename = '~/.MossA/calibration.txt';
+    else
+        calibration_filename = '';
+    end
+else
+    %windows or unix, saves the calibration in the same folder as the
+    %program
+    if exist('calibration.txt')
+        calibration_filename = 'calibration.txt';
+    else
+        calibration_filename = '';
+    end
+end
+if ~strcmp(calibration_filename,'')
+    calibration=dlmread(calibration_filename);
     set(maxv_txt,'String', calibration(1));
     set(stdcs_txt,'String', calibration(2));
     setappdata(0,'maxv', calibration(1));

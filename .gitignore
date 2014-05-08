@@ -2,3 +2,6 @@
 *.png
 *.jpg
 *.fig
+*.app
+*.log
+*.txt

@@ -22,7 +22,7 @@ classdef cxVBF < handle
     
     methods
         function obj=cxVBF(panH)
-            panel_width = getappdata(0, 'panel_width')
+            panel_width = getappdata(0, 'panel_width');
             obj.panH=panH;
             obj.convert_cb=uicontrol(panH, 'style','checkbox', 'String',...
                 'convert','Value',0,'Position', [15 420 90 17], 'callback',...

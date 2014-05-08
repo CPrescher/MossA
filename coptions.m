@@ -12,7 +12,7 @@ classdef coptions < handle
     methods
         function obj=coptions(panH)
             obj.panH=panH;
-            panel_width = getappdata(0, 'panel_width')
+            panel_width = getappdata(0, 'panel_width');
             uicontrol(panH, 'Style', 'text', 'String', 'Solver:',...
                 'Position', [15 410 40 17],'horizontalalignment', 'right');
             obj.solverChooser=uicontrol(panH, 'style', 'popupmenu',...

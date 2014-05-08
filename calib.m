@@ -230,7 +230,15 @@ function save_btn_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 out(1)=getappdata(0,'stdvel');
 out(2)=getappdata(0,'stdcs');
-fid=fopen('calibration.txt','w+');
-dlmwrite('calibration.txt',out);
+if ismac
+    if ~exist('~/.MossA', 'file')
+        mkdir('~/.MossA')
+    end
+    fid=fopen('~/.MossA/calibration.txt','w+');
+    dlmwrite('~/.MossA/calibration.txt',out);
+else
+    fid=fopen('calibration.txt','w+');
+    dlmwrite('calibration.txt',out);
+end
 fclose(fid);
 close;
