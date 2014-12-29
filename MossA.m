@@ -72,7 +72,7 @@ delete_btn=uicontrol(lpanh,'style', 'pushbutton', 'string', '-',...
     'Position', [0.75*panel_width 425 40 25], 'callback', @delete_btn_click);
 
 
-%********************definine site_param panel**************************
+%********************bbdefinine site_param panel**************************
 site_pan=uipanel('Parent',lpanh,'units', 'pixel','Position',...
     [05 240 panel_width-10 180],'Title', 'Site params');
 
@@ -473,8 +473,9 @@ tab5_content=coptions(tab5);
 %**************************************************************************
 %***********************Initialize Variables*******************************
 %**************************************************************************
-data.x=linspace(-5,5,256);
-data.y=1e5-doublet(0.2,0.4,500,0.7,0.5,data.x)-doublet(1.1,0.4,800,2.1,0.5,data.x);
+data.x=linspace(-10,10,512);
+%data.y=1e5-doublet(0.2,0.4,500,0.7,0.5,data.x)-doublet(1.1,0.4,800,2.1,0.5,data.x);
+data.y=1e5-sextet(0 ,0.4,800,0,1.5, 33, 3, data.x);
 noise=0.2*randn(1,length(data.y))*sqrt(max(data.y)-min(data.y));
 data.y=data.y+noise;
 
@@ -844,7 +845,7 @@ movegui(fh,'onscreen');
         update_txt();
     end
 
-%function um intensities zu ändern wenn man in den FT_modus wechselt
+%function um intensities zu ï¿½ndern wenn man in den FT_modus wechselt
     function y=ft_calib_func(x,xdata)
         if getappdata(0, 'ft_lor2')
            y1=lorentz_squared(0,0.097,1,xdata); 
@@ -872,7 +873,7 @@ movegui(fh,'onscreen');
             %if FT is selected
             ival=1;
             %wir definieren eine Lorentzcurve mit der range vom spektrum
-            %und fitten dann das FT_integral dazu um eine ungefähre
+            %und fitten dann das FT_integral dazu um eine ungefï¿½hre
             %approximation zu haben
             xdata=-5:0.01:5;
             ydata=I0-lorentz_curve(0,0.194,(I0-min(data.y))*pi*0.097,xdata);
@@ -1041,15 +1042,25 @@ movegui(fh,'onscreen');
                     n=1;
                     %read every line until end of file into array
                     while ~feof(fid)
-                        n=n+1;
-                        data_s{n}=fgetl(fid);
+                        line_str = fgetl(fid);
+                        if line_str(1) ~= '<'
+                            n=n+1;
+                            data_s{n}=line_str;
+                        end
                     end
-                    %cut the last string of the normal Mössbauer files
+                   
+                     %cut the last string of the normal Mï¿½ssbauer files
                     n=1;
-                    while data_s{end}(n)~='<'
-                       n=n+1; 
+                    try
+                        while data_s{end}(n)~='<'
+                           n=n+1; 
+                        end
+                        data_s{end}=data_s{end}(1:n-1);
+                    catch exception
+                        exception
                     end
-                    data_s{end}=data_s{end}(1:n-1);
+                    
+                    
                     %convert into a double array
                     data=[];
                     data=ones(512,1);
@@ -1212,7 +1223,7 @@ movegui(fh,'onscreen');
                     n=n+1;
                     data_s{n}=fgetl(fid);
                 end
-                %cut the last string of the normal Mössbauer files
+                %cut the last string of the normal Mï¿½ssbauer files
                 n=1;
                 while data_s{end}(n)~='<'
                    n=n+1; 
