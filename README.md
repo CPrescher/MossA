@@ -1,4 +1,4 @@
 MossA
 =====
 
-Moessbauer Fitting Program
+Moessbauer Fitting Program written in Matlab.
