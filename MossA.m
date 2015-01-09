@@ -605,7 +605,7 @@ createHandles();
 
 %if we wish to stop the fitting
 setappdata(0, 'stop_fitting',0);
-set(hTabGroup,'selectedindex',1);
+%set(hTabGroup,'selectedindex',1);
 
 addpath(pwd);
 
@@ -1039,6 +1039,7 @@ movegui(fh,'onscreen');
                 fid=fopen([path,file]);
                 data_s{1}=fgetl(fid); %reading first line
                 if data_s{1}(1)=='<'
+                    file
                     n=1;
                     %read every line until end of file into array
                     while ~feof(fid)
@@ -1122,7 +1123,8 @@ movegui(fh,'onscreen');
                 if getappdata(0,'sinusoidal')
                    misc.x=-cos((0:data_length-1)/(data_length-1)*pi)*maxv-stdcs; 
                 else
-                   misc.x(1:data_length)=-maxv+2.*maxv/(data_length-1).*(0:(data_length-1))-stdcs;
+                   maxv
+                   misc.x=-maxv+2.*maxv/(data_length-1).*(0:(data_length-1))-stdcs;
                 end
             else
                 data=load([path,file]);
