@@ -59,7 +59,7 @@ classdef cxVBF < handle
             %*************************************************************
             
             obj.site_pan=uipanel('Parent',panH,'units','pixel','Position',...
-                [05 275 panel_width-15 75],'title', 'Params','Userdata','panel');
+                [05 275 panel_width-15 80],'title', 'Params','Userdata','panel');
             
             uicontrol(obj.site_pan, 'Style', 'text', 'String', 'FWHM:',...
                 'Position', [30 05 35 15],'horizontalalignment', 'right');
