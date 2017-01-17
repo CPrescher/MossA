@@ -1,4 +1,4 @@
-classdef cfit
+classdef cta_fit
     %cfit capsulates all the fitting of MossA, for a better readability
     %etc. and maintenance
     %   Detailed explanation goes here
@@ -37,7 +37,7 @@ classdef cfit
     
     methods
         %constructor
-        function obj=cfit(output_txt,output_graph, sites, polynom_type)
+        function obj=cta_fit(output_txt, output_graph, sites, polynom_type)
            obj.sites=sites;
            obj.output_txt=output_txt;
            obj.output_graph=output_graph;

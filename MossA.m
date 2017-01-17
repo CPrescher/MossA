@@ -1,5 +1,5 @@
 function MossA(varargin)
-version='1.01b';
+version='1.01c';
 
 %  Initialization tasks
 width=1024;
@@ -626,9 +626,6 @@ createHandles();
 setappdata(0, 'stop_fitting',0);
 %set(hTabGroup,'selectedindex',1);
 
-addpath(pwd);
-
-
 %load calibration data, if it was determined before:
 if ismac
     if exist('~/.MossA/calibration.txt')
@@ -972,7 +969,7 @@ movegui(fh,'onscreen');
                     set(ft_factor_txt,'String', getappdata(0,'ft_factor'));
                 end
             else
-                fitting=cfit(status_txt,dataAxes, site, get(polynom_type,'Value'));
+                fitting=cta_fit(status_txt,dataAxes, site, get(polynom_type,'Value'));
                 [site, table,residual, y]=fitting.process();
             end
 
