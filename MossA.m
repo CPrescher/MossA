@@ -1556,16 +1556,16 @@ movegui(fh,'onscreen');
         if length(work_path)==0
             work_path=pwd;
         end
-        old_folder=cd(work_path);
+        
         [file,path,FilterIndex] = uiputfile({'*.pdf'; '*.eps'},...
-            'Report a plot and the fitted parameters');
+            'Report a plot and the fitted parameters', strcat(work_path, 'report.pdf'));
         if path
             out_fig=figure('Visible','off', 'units','centimeters', ...
-                'Position', [0 0 21 18],'PaperPosition', [0 0 21 29.7]);
+                'Position', [0 0 21 24],'PaperPosition', [0 0 21 29]);
             out_text=axes('parent',out_fig,'units','centimeters','position',[3 0 15 10],...
                 'Xlim', [0 12],'YLim', [0 20]);
             axis off;
-            out_graph=axes('parent', out_fig,'units','centimeters', 'outerposition', [2 10.0 17.0 14.0]);
+            out_graph=axes('parent', out_fig,'units','centimeters', 'outerposition', [2 10.0 17.0 13.0]);
             
             set(out_graph,'Title',text('String',get(fh,'name'),'Color','k','interpreter','none'))
             [colors, order]=create_output_graph(out_graph);
@@ -1622,11 +1622,11 @@ movegui(fh,'onscreen');
             end
             if ~get(cal_cb,'value')
                 if ~get(sin_cb,'value')
-                   text(1,line,sprintf('Max Vel: %2.3f \t\t Std. CS: %2.3f \t \t linear velocity scale',...
+                   text(1,line,sprintf('Max Vel: %2.3f      Std. CS: %2.3f      linear velocity scale',...
                        str2double(get(maxv_txt,'String')), str2double(get(stdcs_txt,'String'))),...
                            'fontsize', 8);
                 else
-                   text(1,line,sprintf('Max Vel: %2.3f \t\t Std. CS: %2.3f \t\t sinusoidal velocity scale',...
+                   text(1,line,sprintf('Max Vel: %2.3f      Std. CS: %2.3f      sinusoidal velocity scale',...
                        str2double(get(maxv_txt,'String')), str2double(get(stdcs_txt,'String'))),...
                            'fontsize', 8);
                 end
