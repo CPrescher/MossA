@@ -1,5 +1,5 @@
 function MossA(varargin)
-version='1.01d';
+version='1.01e';
 
 %  Initialization tasks
 width=1024;
