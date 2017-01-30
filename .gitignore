@@ -5,3 +5,5 @@
 *.app
 *.log
 *.txt
+*.exe
+*.zip
