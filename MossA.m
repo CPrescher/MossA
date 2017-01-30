@@ -1,5 +1,5 @@
 function MossA(varargin)
-version='1.01e';
+version='1.01f';
 
 %  Initialization tasks
 width=1024;
@@ -1638,7 +1638,6 @@ movegui(fh,'onscreen');
                 print(out_fig,'-depsc2',[path, file]) 
             end
             delete(out_fig);
-            %open(file);
         end
     end
 
@@ -1648,8 +1647,10 @@ movegui(fh,'onscreen');
         if length(work_path)==0
             work_path=pwd;
         end
-        old_folder=cd(work_path);
-        [file, path]=uiputfile('*.txt');
+        
+        [file,path] = uiputfile({'*.txt'},...
+            'Save Data as Text', strcat(work_path));
+        
          file=[path,file];
        
         if ~strcmp(file,'')
@@ -1690,7 +1691,6 @@ movegui(fh,'onscreen');
             dlmwrite(file,table,'delimiter',' ','precision','%3.5f',...
                 'newline', 'unix');
             fclose(fid);
-            cd(old_folder);   
         end        
     end
 
@@ -1700,11 +1700,11 @@ movegui(fh,'onscreen');
         if length(work_path)==0
             work_path=pwd;
         end
-        old_folder=cd(work_path);
+  
         [file,path,FilterIndex] = uiputfile({'*.ma';'*.txt'},...
-            'Save fitted Site parameter');
-        if path
-            
+            'Save fitted Site parameter', strcat(work_path));
+        
+        if path   
             setappdata(0,'work_path', path);
             sites=getappdata(0,'site_data');
             %constraints
@@ -1747,18 +1747,18 @@ movegui(fh,'onscreen');
                 end   
                 dlmcell([path,file],output,';'); 
             end           
-        end   
-        cd(old_folder);        
+        end        
     end
 
     function load_sites_btn_click(~, ~)       
         work_path=getappdata(0,'work_path');
-        if length(work_path)==0
+        
+        if isempty(work_path)
             work_path=pwd;
         end
-        old_folder=cd(work_path);
         
-        [file,path] = uigetfile({'*.ma'},'Load Sites File');
+        [file,path] = uigetfile({'*.ma'},'Load Sites File',...
+                                strcat(work_path));
         
         if path     
             
@@ -1903,8 +1903,7 @@ movegui(fh,'onscreen');
                 end                    
             end      
             update_txt();
-        end
-        cd(old_folder);    
+        end  
     end
 
     function fwhm_s_txt_cb(hObject,~)
