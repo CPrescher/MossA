@@ -1,5 +1,5 @@
 function MossA(varargin)
-version='1.01f';
+version='1.01g';
 
 %  Initialization tasks
 width=1024;
@@ -1633,7 +1633,7 @@ movegui(fh,'onscreen');
             end
 
             if FilterIndex==1
-                print(out_fig,'-dpdf',[path, file])   
+                print(out_fig,'-dpdf',[path, file], '-fillpage')   
             else            	
                 print(out_fig,'-depsc2',[path, file]) 
             end
