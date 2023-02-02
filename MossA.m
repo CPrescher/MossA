@@ -2410,10 +2410,13 @@ movegui(fh,'onscreen');
 
     function resize_pan(pan, new_height, old_height)
         pan_child=allchild(pan);
-        for n=1:length(pan_child);
-           pos=get(pan_child(n),'position');
-           pos(2)=new_height-(old_height-pos(2));
-           set(pan_child(n),'position',pos);
+        for n=1:length(pan_child)
+            if ~isa(pan_child(n),'matlab.graphics.shape.internal.AnnotationPane')
+                class(pan_child(n))
+               pos=get(pan_child(n),'position');
+               pos(2)=new_height-(old_height-pos(2));
+               set(pan_child(n),'position',pos);
+            end
         end   
     end
 
@@ -2462,7 +2465,7 @@ movegui(fh,'onscreen');
                 %is for every type of function different) (see wikipedia:))
                 if strcmp(site(site_num).func_type, 'Lorentzian')
                     site(site_num).intensity=(I0-y(2))*(pi*site(site_num).hwhm);
-                elseif strcmp(site(site_num).func_type, 'Gaussian');
+                elseif strcmp(site(site_num).func_type, 'Gaussian')
                     site(site_num).intensity=(I0-y(2))*(sqrt(pi)*site(site_num).hwhm/0.8326);
                 elseif strcmp(site(site_num).func_type, 'PseudoVoigt')
                     site(site_num).intensity=(I0-y(2))*...
@@ -2521,8 +2524,8 @@ movegui(fh,'onscreen');
                      (1-site(site_num).n)*site(site_num).height*(sqrt(pi)*site(site_num).hwhm/0.8326);   
                elseif strcmp(site(site_num).func_type, 'LorSquared')
                    site(site_num).intensity=pi/2*site(site_num).hwhm*site(site_num).height;
-               elseif strcmp(site(site_num).func_type, 'LorSquared')
-                   site(site_num).intensity=site(site_num).height*(2*pi*site(site_num).hwhm+pi*site(site_num).hwhm);
+%                elseif strcmp(site(site_num).func_type, 'LorSquared')
+%                    site(site_num).intensity=site(site_num).height*(2*pi*site(site_num).hwhm+pi*site(site_num).hwhm);
                end
                ft_fit=getappdata(0,'ft_fit');
                if ft_fit

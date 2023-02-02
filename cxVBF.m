@@ -37,18 +37,17 @@ classdef cxVBF < handle
             obj.site_c_pan=uipanel('Parent',panH,'units','pixel','Position',...
                 [05 355 panel_width-15 60],'Userdata','panel');
             obj.site_num_txt=uicontrol(obj.site_c_pan, 'Style', 'edit','Horizontalalignment','right',...
-                'backgroundcolor', [1 1 1], 'string','1', 'Position', [10 35 20 19],...
-                'enable','inactive');
+                'backgroundcolor', [1 1 1], 'string','1', 'Position', [10 35 20 19]);
             
-            site_num_down_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '<',...
-                'Position', [32 36 15 15], 'callback', @obj.site_num_down_btn_click, 'enable', 'off');
-            site_num_up_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '>',...
-                'Position', [47 36 15 15], 'callback', @obj.site_num_up_btn_click,'enable', 'off');
+            obj.site_num_down_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '<',...
+                'Position', [32 36 15 15], 'callback', @obj.site_num_down_btn_click);
+            obj.site_num_up_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '>',...
+                'Position', [47 36 15 15], 'callback', @obj.site_num_up_btn_click);
             
-            add_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '+',...
-                'Position', [70 30 panel_width*0.3 25], 'callback', @obj.add_btn_click, 'enable', 'off');
-            del_btn=uicontrol(obj.site_c_pan,'style', 'pushbutton', 'string', '-',...
-                'Position', [panel_width*0.7-20 30 panel_width*0.3 25], 'callback', @obj.del_btn_click, 'enable', 'off');
+            obj.add_btn=uicontrol(obj.site_c_pan, 'style', 'Pushbutton', 'String', '+',...
+                'Position', [70 30 panel_width*0.3 25], 'callback', @obj.add_btn_click);
+            obj.del_btn=uicontrol(obj.site_c_pan,'style', 'pushbutton', 'string', '-',...
+                'Position', [panel_width*0.7-20 30 panel_width*0.3 25], 'callback', @obj.del_btn_click);
             obj.site_type =uicontrol(obj.site_c_pan, 'style', 'popupmenu',...
                 'String', {'Central Shift', 'Quadrupol'},...
                 'Position', [05 08 150 19], 'backgroundcolor', [1 1 1],...
@@ -66,27 +65,26 @@ classdef cxVBF < handle
             obj.fwhm_txt=uicontrol(obj.site_pan,'style','edit', 'string','',...
                 'backgroundcolor', [1 1 1], 'horizontalalignment', 'right',...
                 'Position', [80 05 panel_width-130 19], 'callback', @obj.value_cb,... 
-                'enable', 'off','UserData', 'fwhm');
+                'UserData', 'fwhm');
             obj.fwhm_cb=uicontrol(obj.site_pan,'style', 'checkbox', 'String','',...
                 'Value', 1, 'Position',[panel_width-40 05 15 15],'callback',...
-                @obj.cb_click, 'enable', 'off','UserData', 'fit(2)');
+                @obj.cb_click, 'UserData', 'fit(2)');
 
             obj.param_lbl=uicontrol(obj.site_pan, 'Style', 'text', 'String', 'QS:',...
                 'Position', [30 25 35 15],'horizontalalignment', 'right');
             obj.param_txt=uicontrol(obj.site_pan,'style','edit', 'string','',...
                 'backgroundcolor', [1 1 1], 'horizontalalignment', 'right',...
                 'Position', [80 25 panel_width-130 19], 'callback', @obj.value_cb,...
-                'enable', 'off','UserData', 'cs');
+                'UserData', 'cs');
             obj.param_cb=uicontrol(obj.site_pan,'style', 'checkbox', 'String','',...
                 'Value', 1, 'Position',[panel_width-40 25 15 15],...
-                'callback', @obj.cb_click, 'enable', 'off','UserData', 'fit(1)');
+                'callback', @obj.cb_click, 'UserData', 'fit(1)');
             
             uicontrol(obj.site_pan, 'Style', 'text', 'String', 'P_i:',...
                 'Position', [30 45 35 15],'horizontalalignment', 'right');
             obj.pi_txt=uicontrol(obj.site_pan,'style','edit', 'string','',...
                 'backgroundcolor', [1 1 1], 'horizontalalignment', 'right',...
-                'Position', [80 45 panel_width-130 19], 'callback', @obj.value_p_i_cb,...
-                'enable', 'off');
+                'Position', [80 45 panel_width-130 19], 'callback', @obj.value_p_i_cb);
 %             obj.pi_cb=uicontrol(obj.site_pan,'style', 'checkbox', 'String','',...
 %                 'Value', 1, 'Position',[160 65 15 15],...
 %                 'callback', @cb_click, 'enable', 'off','UserData', 'fit(3)');
@@ -94,15 +92,14 @@ classdef cxVBF < handle
             obj.delta_pan=uipanel('Parent',panH,'units','pixel','Position',...
                 [05 245 panel_width-15 30],'Userdata','panel');
             uicontrol(obj.delta_pan, 'Style', 'text', 'String', 'delta 1:',...
-                'Position', [30 05 35 15],'horizontalalignment', 'right',...
-                'enable', 'off');
+                'Position', [30 05 35 15],'horizontalalignment', 'right');
             obj.delta1_txt=uicontrol(obj.delta_pan,'style','edit', 'string','',...
                 'backgroundcolor', [1 1 1], 'horizontalalignment', 'right',...
                 'Position', [80 05 panel_width-130 19], 'callback', @obj.value_cb,...
-                'UserData', 'delta1', 'enable', 'off');
+                'UserData', 'delta1');
             obj.delta1_cb=uicontrol(obj.delta_pan,'style', 'checkbox', 'String','',...
-                 'Value', 1, 'Position',[panel_width-40 07 15 15],'enable', 'off',...
-                 'callback', @obj.delta1_cb_click,'enable', 'off');
+                 'Value', 1, 'Position',[panel_width-40 07 15 15],...
+                 'callback', @obj.delta1_cb_click);
             
             %*************************************************************
             %***********************everything else***********************
@@ -121,16 +118,18 @@ classdef cxVBF < handle
             
             obj.save_graph_btn=uicontrol(obj.save_pan, 'style', 'Pushbutton',...
                 'String', 'Save Graph', 'Position', [05 35 panel_width*0.4 25],...
-                'callback', @obj.save_graph_btn_click, 'enable', 'off');
+                'callback', @obj.save_graph_btn_click);
             obj.save_data_btn=uicontrol(obj.save_pan, 'style', 'Pushbutton',...
                 'String', 'Save Data', 'Position', [panel_width*0.5 35 panel_width*0.4 25],...
-                'callback', @obj.save_data_btn_click, 'enable', 'off');
+                'callback', @obj.save_data_btn_click);
             obj.save_sites_btn=uicontrol(obj.save_pan, 'style', 'Pushbutton',...
                 'String', 'Save Sites', 'Position', [05 5 panel_width*0.4 25],...
-                'callback', @obj.save_sites_btn_click, 'enable', 'off');
+                'callback', @obj.save_sites_btn_click);
              obj.pdd_plot_btn=uicontrol(obj.save_pan, 'style', 'Pushbutton',...
                 'String', 'PDD plot', 'Position', [panel_width*0.5 5 panel_width*0.4 25],...
-                'callback', @obj.pdd_plot_btn_click, 'enable', 'off');
+                'callback', @obj.pdd_plot_btn_click);
+
+             obj.xVBF_off();
            
         end
         
@@ -334,6 +333,8 @@ classdef cxVBF < handle
          end
         
         function xVBF_on(obj)
+
+            %first disable the qs controls on the left side
             h1=findobj('UserData', 'fit(4)');
             h2=findobj('UserData', 'qs');
             h3=findobj('UserData', 'fit(3)');
@@ -341,14 +342,8 @@ classdef cxVBF < handle
             h5=findobj('UserData', 'fwhm');
             h6=findobj('UserData', 'fit(5)');
             h7=findobj('UserData', 'cs');
-            h8=findobj('UserData', 'fit(1)');
+            h8=findobj('UserData', 'fit(1)');           
             
-            xVBF_h1=findobj('parent',obj.site_c_pan);
-            xVBF_h2=findobj('parent',obj.site_pan);  
-            xVBF_h3=findobj('parent',obj.save_pan);  
-            xVBF_h4=findobj('parent',obj.delta_pan);
-            
-            %first disable the qs controls on the left side
             set(h1,'enable', 'off'); 
             set(h2,'enable', 'off');
             set(h3,'enable', 'off');
@@ -360,17 +355,23 @@ classdef cxVBF < handle
             set(h8,'enable', 'off');
             
             %enable all the qsd interface controls
-            set(xVBF_h1,'enable','on');
-            set(xVBF_h2,'enable','on');
-            set(xVBF_h3,'enable', 'on');
-            
-            set(xVBF_h4,'enable','on');
-            
-            set(obj.save_graph_btn,'enable','on');
-            set(obj.convert_cb,'value',1);
+            qsd_objects = [obj.site_c_pan, obj.site_pan, obj.save_pan, ...
+                obj.delta_pan, obj.site_num_txt, obj.site_num_down_btn, ...
+                obj.site_num_up_btn, obj.add_btn, obj.del_btn, ...
+                obj.site_type, ...
+                obj.pi_txt, obj.param_lbl, obj.param_txt, obj.fwhm_txt, ...
+                obj.delta1_txt, obj.pi_cb, obj.param_cb, obj.fwhm_cb, ...
+                obj.delta1_cb, obj.delta_pan,...
+                obj.save_graph_btn, obj.save_data_btn, ...
+                obj.save_sites_btn, obj.pdd_plot_btn];
+
+            for qsd_object = qsd_objects 
+                set(qsd_object, 'enable','on');
+            end
         end
         
         function xVBF_off(obj)
+            %enable the qs controls on the left side
             h1=findobj('UserData', 'fit(4)');
             h2=findobj('UserData', 'qs');
             h3=findobj('UserData', 'fit(3)');
@@ -379,13 +380,7 @@ classdef cxVBF < handle
             h6=findobj('UserData', 'fit(5)');
             h7=findobj('UserData', 'cs');
             h8=findobj('UserData', 'fit(1)');
-            
-            xVBF_h1=findobj('parent',obj.site_c_pan);
-            xVBF_h2=findobj('parent',obj.site_pan);
-            xVBF_h3=findobj('parent',obj.save_pan); 
-            xVBF_h4=findobj('parent',obj.delta_pan);
-                     
-            %enable the qs controls on the left side
+
             set(h1,'enable', 'on'); 
             set(h2,'enable', 'on'); 
             set(h3,'enable', 'on');
@@ -394,14 +389,23 @@ classdef cxVBF < handle
             set(h6,'enable', 'on');
             set(h7,'enable', 'on');
             set(h8,'enable', 'on');
+
             %disable all the qsd interface controls
-            set(xVBF_h1,'enable','off');
-            set(xVBF_h2,'enable','off');
-            set(xVBF_h3,'enable','off');
-            set(xVBF_h4,'enable','off');
-            
-            set(obj.save_graph_btn,'enable','off');  
-            set(obj.convert_cb,'value',0);
+            qsd_objects = [obj.site_c_pan, obj.site_pan, obj.save_pan, ...
+                obj.delta_pan, obj.site_num_txt, obj.site_num_down_btn, ...
+                obj.site_num_up_btn, obj.add_btn, obj.del_btn, ...
+                obj.site_type, ...
+                obj.pi_txt, obj.param_lbl, obj.param_txt, obj.fwhm_txt, ...
+                obj.delta1_txt, obj.pi_cb, obj.param_cb, obj.fwhm_cb, ...
+                obj.delta1_cb, obj.delta_pan,...
+                obj.save_graph_btn, obj.save_data_btn, ...
+                obj.save_sites_btn, obj.pdd_plot_btn];
+
+            for qsd_object = qsd_objects 
+                set(qsd_object, 'enable', 'off');
+            end
+            set(obj.site_c_pan, 'enable', 'off');
+            set(obj.delta_pan, 'enable', 'off');
         end
         
         
@@ -785,7 +789,7 @@ classdef cxVBF < handle
             dist_type=get(obj.site_type,'value');
             if dist_type==1
                 copy_graphs(obj.csd_axes,test);
-            elseif dist_type==2;
+            elseif dist_type==2
                 copy_graphs(obj.qsd_axes,test);
             end
             set(test,'YTick',zeros(1,0));

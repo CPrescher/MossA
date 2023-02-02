@@ -3,6 +3,9 @@ function [pfp, output] = getfp(data)
 num=24;
 
 
+disp(data)
+disp(data(1:10))
+
 for n=1:num
     res=[];
     res=zeros(512,1);
@@ -18,7 +21,7 @@ for n=1:num
            if x2>length(data)
                x2=x2-length(data);
            end
-           res(0+k)=data(x2)-data(x1); 
+           res(0+k)=data(x2)-data(x1);
         end
         %res(1)=0;
     else
@@ -44,6 +47,7 @@ output.y=100-output.y./maximum.*100;
 [~,n]=max(output.y);
 fp=output.x(n);
 %estimation of folding point by gaussian fit
+
 
 model=@(x,xdata)(x(1)+gauss_curve(x(2),x(3),x(4),xdata));
 
