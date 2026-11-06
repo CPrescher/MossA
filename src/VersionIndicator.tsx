@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { buildInfo, latestDeployment, type BuildInfo } from './version';
+import { changelog } from './changelog';
 
 type Status = 'checking' | 'current' | 'update' | 'unavailable';
 
 export function VersionIndicator({ build = buildInfo, reload = () => window.location.reload() }: { build?: BuildInfo; reload?: () => void }) {
   const deployed = build.channel === 'github-pages' && !!build.commit && !build.dirty;
   const [status, setStatus] = useState<Status>('checking');
+  const [open, setOpen] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
   const alive = useRef(false);
   const pending = useRef<AbortController | null>(null);
   const check = useCallback(async () => {
@@ -42,12 +45,24 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
   }, [check, deployed]);
 
   const label = `v${build.version} · ${build.commit?.slice(0, 7) ?? 'unknown'}${build.dirty ? ' (modified)' : ''}`;
-  const message = !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available — reload to update' : status === 'unavailable' ? 'Could not check for updates — click to retry' : 'Checking latest deployment…';
-  const title = `${label}\n${build.builtAt ? `Built ${build.builtAt}\n` : ''}${message}${deployed && status === 'current' ? ' — click to check again' : ''}`;
+  const message = !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available' : status === 'unavailable' ? 'Could not check for updates' : 'Checking latest deployment…';
+  const title = `${label}\n${build.builtAt ? `Built ${build.builtAt}\n` : ''}${message} — click for changelog`;
   return <div className={`version-indicator ${deployed ? status : 'local'}`}>
-    {deployed ? <button className="version-button" title={title} aria-label={`${label}. ${message}`} onClick={() => status === 'update' ? reload() : void check()}>
-      <span className="version-dot" aria-hidden="true"/>{label}{status === 'update' && <strong>Update available ↻</strong>}
-    </button> : <span className="version-local" title={title}>{label} · local</span>}
-    <span className="version-announcement" role="status">{deployed && status === 'update' ? 'A newer MossA 2 version is available. Use the version button to reload when ready.' : ''}</span>
+    <button className="version-button" title={title} aria-label={`${label}. ${message}. Open changelog`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { dialog.current?.showModal(); setOpen(true); void check(); }}>
+      <span className="version-dot" aria-hidden="true"/>{label}{!deployed && ' · local'}{deployed && status === 'update' && <strong>Update available ↻</strong>}
+    </button>
+    <dialog className="changelog-dialog" ref={dialog} aria-labelledby="changelog-heading" onClose={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
+      <div className="changelog-heading"><h2 id="changelog-heading">What’s new in MossA 2</h2><form method="dialog"><button aria-label="Close changelog">×</button></form></div>
+      <p className="changelog-build" title={build.builtAt ? `Built ${build.builtAt}` : undefined}>Running {label}{!deployed && ' · local'}</p>
+      <div className="changelog-entries">{changelog.map(entry => <section key={entry.version}>
+        <h3>v{entry.version}<time dateTime={entry.date}>{entry.date}</time></h3>
+        <ul>{entry.changes.map(change => <li key={change}>{change}</li>)}</ul>
+      </section>)}</div>
+      <div className="changelog-footer"><span role="status">{message}</span>{deployed && <div className="changelog-actions">
+        <button disabled={status === 'checking'} onClick={() => void check()}>Check for updates</button>
+        {status === 'update' && <button className="changelog-reload" onClick={reload}>Reload to update</button>}
+      </div>}<a href="https://github.com/CPrescher/MossA/commits/mossa2/" target="_blank" rel="noreferrer">Full history on GitHub ↗</a></div>
+    </dialog>
+    <span className="version-announcement" role="status">{deployed && status === 'update' ? 'A newer MossA 2 version is available. Open the changelog to reload when ready.' : ''}</span>
   </div>;
 }
