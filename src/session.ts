@@ -1,7 +1,7 @@
 import { validCalibrationReference, type CalibrationReference } from './calibration';
 import type { FitResult, Parameter, Project } from './types';
 export const SESSION_KEY = 'mossa.session.v1';
-export type Calibration = { max: number; shift: number; sinusoidal: boolean; folding: boolean; center: number; reference?: CalibrationReference };
+export type Calibration = { max: number; shift: number; sinusoidal: boolean; folding: boolean; center: number; autoFold?: boolean; reference?: CalibrationReference };
 export type Snapshot = { project: Project; raw: number[] | null; cal: Calibration; filename: string; selected: number; fit?: FitSummary | null; fitElapsed?: number | null };
 export type Layout = { resultsHeight: number; sitesHeight: number; tab: string; optionsOpen: boolean };
 export type FitSummary = Omit<FitResult, 'project' | 'evaluation'>;

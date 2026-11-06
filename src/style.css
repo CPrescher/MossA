@@ -104,6 +104,7 @@ input.number.invalid:focus-visible:enabled,input.number.invalid:hover:enabled{bo
 .calibration-preview svg{flex:1;min-height:0;width:100%}
 .calibration-progress{min-height:18px;font-size:10px;margin-top:8px;color:#4f7c73}
 .calibration-error{font-size:10px;line-height:1.5;color:#ad5546;margin-top:6px}
+.calibration-warnings{font-size:10px;line-height:1.5;color:#957446;margin-top:8px}.calibration-warnings summary{cursor:pointer}.calibration-warnings p{margin-top:5px}
 .calibration-values{font-size:11px;border-top:1px solid #dce4e8;padding-top:8px;margin:8px 0 0}
 .calibration-values>div{display:flex;justify-content:space-between;gap:8px;margin-top:5px}
 .calibration-values dd{margin:0;color:#3b645f;font-variant-numeric:tabular-nums}

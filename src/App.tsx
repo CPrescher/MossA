@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from './engine';
+import { estimateFoldCenter } from './folding';
 import { VelocityCalibrationDialog } from './VelocityCalibration';
 import { applyVelocityCalibration, validCalibrationReference } from './calibration';
 import { AppFooter } from './AppFooter';
@@ -45,6 +46,7 @@ export default function App() {
   const setOptionsOpen = (update: (value: boolean) => boolean) => setLayout(l => ({ ...l, optionsOpen: update(l.optionsOpen) }));
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [busyTask, setBusyTask] = useState<'fit' | 'fold' | 'load'>('fit');
   const [error, setError] = useState('');
   const [log, setLog] = useState([restored.session ? 'Restored local project.' : 'Ready.']);
   const result = busy ? null : history.present.fit ?? null;
@@ -87,7 +89,7 @@ export default function App() {
   useEffect(() => { if (!picking) return; const cancel = (e: KeyboardEvent) => { if (e.key === 'Escape') cancelPick(); }; window.addEventListener('keydown', cancel); return () => window.removeEventListener('keydown', cancel); }, [!!picking]);
   async function fit() {
     if (!worker.current || !ready || busy || error || picking) return;
-    const token = ++fitToken.current; setBusy(true); setProgress(null); setError(''); append('Fitting with trust-region reflective…');
+    const token = ++fitToken.current; setBusyTask('fit'); setBusy(true); setProgress(null); setError(''); append('Fitting with trust-region reflective…');
     try {
       const response = await worker.current.request('fit', project, update => { if (token !== fitToken.current) return; setProgress(update); setEvaluation(update.evaluation); });
       if (token !== fitToken.current) return;
@@ -98,22 +100,31 @@ export default function App() {
     } catch (e) { if (token === fitToken.current) { setError(String(e)); setEvaluation(null); append('Fit failed; starting parameters retained.'); } }
     finally { if (token === fitToken.current) { setBusy(false); setProgress(null); } }
   }
-  function stop() { fitToken.current++; worker.current?.stop(); setProgress(null); setEvaluation(null); setBusy(false); setReady(false); setEngineVersion(v => v + 1); append('Fit canceled; starting parameters retained.'); }
+  function stop() { fitToken.current++; worker.current?.stop(); setProgress(null); setEvaluation(null); setBusy(false); setReady(false); setEngineVersion(v => v + 1); append('Calculation canceled; previous project retained.'); }
   async function loadSpectrum(file?: File) {
-    if (!file) return;
+    if (!file || busy || !ready) return;
+    const id = ++fitToken.current; setBusyTask('load'); setBusy(true);
     try {
       if (file.size > 8e6) throw new Error('Spectrum file is too large (maximum 8 MB).');
       const parsed = parseSpectrum(await file.text());
       let spectrum: Project['spectrum'];
       let nextRaw: number[] | null = null, nextCal = cal;
       if (parsed.raw) {
-        const calibration = { ...cal, folding: cal.folding && parsed.raw.length >= 16 && parsed.raw.length % 2 === 0, center: parsed.raw.length / 2 + .5 }; spectrum = calibrateCounts(parsed.raw, calibration.max, calibration.shift, calibration.sinusoidal, calibration.folding ? calibration.center : null);
+        const calibration = { ...cal, folding: cal.folding && parsed.raw.length >= 16, center: parsed.raw.length / 2 + .5 };
+        if (calibration.folding && calibration.autoFold !== false) {
+          setBusyTask('fold');
+          try { const found = await estimateFoldCenter(parsed.raw, async p => (await worker.current!.request('fit', p)).result as FitResult); if (id !== fitToken.current) return; calibration.center = found.center; }
+          catch (e) { if (id !== fitToken.current) return; append(`Automatic fold center unavailable; using ${calibration.center}. Set it manually if needed.`); }
+        }
+        spectrum = calibrateCounts(parsed.raw, calibration.max, calibration.shift, calibration.sinusoidal, calibration.folding ? calibration.center : null);
         nextRaw = parsed.raw; nextCal = calibration; setTab('Gen');
       } else { spectrum = parsed.spectrum!; }
       const next = { ...project, spectrum, background: [parameter(Math.max(...spectrum.y))] };
       const checked = await worker.current!.request('evaluate', next);
+      if (id !== fitToken.current) return;
       edit(next, { raw: nextRaw, cal: nextCal, filename: file.name }); setEvaluation(checked.result as Evaluation); append(`Loaded ${spectrum.x.length} points from ${file.name}.`);
-    } catch (e) { setError(String(e)); }
+    } catch (e) { if (id === fitToken.current) setError(String(e)); }
+    finally { if (id === fitToken.current) setBusy(false); }
   }
   async function loadProject(file?: File) {
     if (!file) return;
@@ -191,6 +202,16 @@ export default function App() {
   function applyCalibration() {
     try { if (!raw) return; const spectrum = calibrateCounts(raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null); edit(p => ({ ...p, spectrum, background: [parameter(Math.max(...spectrum.y))] })); append('Applied channel folding and velocity calibration.'); } catch (e) { setError(String(e)); }
   }
+  async function findSampleFoldCenter() {
+    if (!raw || !ready || busy) return;
+    const id = ++fitToken.current; setBusyTask('fold'); setBusy(true); setError('');
+    try {
+      const found = await estimateFoldCenter(raw, async p => (await worker.current!.request('fit', p)).result as FitResult);
+      if (id !== fitToken.current) return;
+      setCal(c => ({ ...c, center: found.center })); append(`Fold center ${found.center}; use Apply calibration to refold.`);
+    } catch (e) { if (id === fitToken.current) setError(String(e)); }
+    finally { if (id === fitToken.current) setBusy(false); }
+  }
   const paramId = (k: string) => `site:${selected}:${k}`;
   const linkOptions = project.sites.flatMap((s, i) => keys(s).map(k => ({ id: `site:${i}:${k}`, label: `${i + 1} · ${s.name} · ${labels[k]}` }))).filter(o => o.id !== paramId(targetKey));
   const canCalculate = ready && !busy && !picking;
@@ -206,8 +227,8 @@ export default function App() {
           <section className="left-section"><div className="section-heading"><SiteNameEditor key={selected} name={current.name} onCommit={renameSite}/><span title="Checked parameters vary during fitting">Fit</span></div><div className="param-rows">{keys(current).map(k => <div className="param-row" key={k}><label title={k === 'intensity' ? (project.mode === 'thin' ? 'Area parameter in original MossA convention' : 'Absorber optical-depth area parameter') : k === 'mix' ? 'Pseudo-Voigt Lorentzian mixing fraction (0–1), not the site intensity percentage' : k === 'a12' && current.kind === 'Doublet' ? 'Fraction assigned to the first line (0–1)' : labels[k]}>{labels[k]}<small>{['cs','fwhm','qs'].includes(k) ? 'mm/s' : k === 'bhf' ? 'T' : ''}</small></label><Numeric label={`${labels[k]} value`} value={current.params[k].link ? evaluation?.parameters?.[paramId(k)] ?? current.params[k].value : current.params[k].value} onChange={v => updateParam(k, { value: v! })} disabled={!!current.params[k].link}/>{current.params[k].link ? <span className="linked" title={`Linked to ${current.params[k].link!.target}`}>↗</span> : <input type="checkbox" aria-label={`Fit ${labels[k]}`} checked={current.params[k].fit} onChange={e => updateParam(k, { fit: e.target.checked })}/>}</div>)}</div></section><details className="site-properties"><summary aria-label="Site settings" title="Edit site type and profile">⚙</summary><div className="left-section"><div className="two-columns"><label className="stack-label">Site type<select aria-label="Site type" value={current.kind} onChange={e => changeKind(e.target.value as Site['kind'])}>{['Singlet','Doublet','Sextet'].map(s => <option key={s}>{s}</option>)}</select></label><label className="stack-label">Line profile<select aria-label="Line profile" value={current.profile} onChange={e => updateSite({ profile: e.target.value as Site['profile'] })}>{['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].map(s => <option key={s}>{s}</option>)}</select></label></div></div></details></fieldset> : <div className="empty-sites">No sites</div>}
 
         </fieldset>
-        <div className="fit-area">{busy ? <button className="fit-button stop" onClick={stop}><span className="spinner"/> Stop fitting</button> : <button className="fit-button" disabled={!ready || !!error || !!picking} onClick={() => void fit()}>Fit spectrum <span>↵</span></button>}</div>
-        <section className={`status-panel ${error ? 'status-error' : ''}`} aria-label="Fit status"><h3>Status</h3>{(restoreError || autosaveError) && <span className="local-save-warning" role="alert" title={restoreError || autosaveError}>Local save unavailable · Save project</span>}<div className="status-current" role={error ? 'alert' : 'status'} aria-live="polite">{error || (picking ? `${picking.stage + 1}/${picking.kind === 'Singlet' ? 2 : 3} · ${picking.index === null ? 'Adding site' : 'Redefining site'}` : busy ? `Fitting · ${progress?.iteration ?? 0} iterations` : result ? `${result.converged ? 'Converged' : 'Stopped'} · ${result.iterations} iterations · ${elapsed?.toFixed(0)} ms` : !ready ? 'Loading…' : log.at(-1))}</div>{error && <button className="clear-error" onClick={() => { setError(''); setEngineVersion(v => v + 1); }}>Retry</button>}{!picking && (busy || result) && <FitDetails warningCount={result?.warnings.length ?? 0}>{!picking && (busy || result) && <dl className="status-stats"><div><dt title="Sum of squared residuals; count weighting divides each term by the observation">{project.weighting === 'counts' ? 'Weighted SSE' : 'SSE'}</dt><dd data-testid="objective">{evaluation?.objective.toExponential(3) ?? '—'}</dd></div>{result && <div><dt title="Objective divided by the residual degrees of freedom">Reduced</dt><dd>{fmt(result.reduced_objective)}</dd></div>}</dl>}{!picking && result?.warnings.length ? <details className="status-warnings"><summary>{result.warnings.length} warning{result.warnings.length > 1 ? 's' : ''}</summary>{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details> : null}</FitDetails>}</section>
+        <div className="fit-area">{busy ? <button className="fit-button stop" onClick={stop}><span className="spinner"/> {busyTask === 'fit' ? 'Stop fitting' : 'Stop calculation'}</button> : <button className="fit-button" disabled={!ready || !!error || !!picking} onClick={() => void fit()}>Fit spectrum <span>↵</span></button>}</div>
+        <section className={`status-panel ${error ? 'status-error' : ''}`} aria-label="Fit status"><h3>Status</h3>{(restoreError || autosaveError) && <span className="local-save-warning" role="alert" title={restoreError || autosaveError}>Local save unavailable · Save project</span>}<div className="status-current" role={error ? 'alert' : 'status'} aria-live="polite">{error || (picking ? `${picking.stage + 1}/${picking.kind === 'Singlet' ? 2 : 3} · ${picking.index === null ? 'Adding site' : 'Redefining site'}` : busy ? busyTask === 'fold' ? 'Finding fold center…' : busyTask === 'load' ? 'Loading spectrum…' : `Fitting · ${progress?.iteration ?? 0} iterations` : result ? `${result.converged ? 'Converged' : 'Stopped'} · ${result.iterations} iterations · ${elapsed?.toFixed(0)} ms` : !ready ? 'Loading…' : log.at(-1))}</div>{error && <button className="clear-error" onClick={() => { setError(''); setEngineVersion(v => v + 1); }}>Retry</button>}{!picking && ((busy && busyTask === 'fit') || result) && <FitDetails warningCount={result?.warnings.length ?? 0}>{!picking && ((busy && busyTask === 'fit') || result) && <dl className="status-stats"><div><dt title="Sum of squared residuals; count weighting divides each term by the observation">{project.weighting === 'counts' ? 'Weighted SSE' : 'SSE'}</dt><dd data-testid="objective">{evaluation?.objective.toExponential(3) ?? '—'}</dd></div>{result && <div><dt title="Objective divided by the residual degrees of freedom">Reduced</dt><dd>{fmt(result.reduced_objective)}</dd></div>}</dl>}{!picking && result?.warnings.length ? <details className="status-warnings"><summary>{result.warnings.length} warning{result.warnings.length > 1 ? 's' : ''}</summary>{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details> : null}</FitDetails>}</section>
       </aside>
       <main className="center-panel"><div className="document-bar"><div><span className="file-icon">▤</span><strong title={filename}>{filename}</strong>{filename === 'Synthetic iron mixture' && <span className="demo-badge">SYNTHETIC</span>}</div><button className="toggle-options" aria-expanded={optionsOpen} onClick={() => setOptionsOpen(v => !v)}>Options</button></div>
         <Plot selectedSite={picking ? picking.index ?? project.sites.length : selected} project={progress ? { ...progress.project, spectrum: project.spectrum } : project} evaluation={evaluation} fitted={!!result && !picking} picking={picking} onPick={point => { void commitPick(point); }} onHover={hoverPick} onCancelPick={cancelPick}/>
@@ -217,7 +238,7 @@ export default function App() {
         {tab === 'Gen' && <>
           <section className="option-section"><h3>General</h3><label className="stack-label">Spectrum model<select aria-label="Spectrum model" value={project.mode} onChange={e => changeMode(e.target.value as Project['mode'])}><option value="thin">Thin absorber</option><option value="transmission">Full transmission integral</option></select></label></section>
           <section className="option-section"><div className="section-heading"><h3>Background</h3><span title="Checked parameters vary during fitting">Fit</span></div><label className="inline-label">Polynomial<select aria-label="Background order" value={project.background.length - 1} onChange={e => edit(p => ({ ...p, background: Array.from({ length: Number(e.target.value) + 1 }, (_, i) => p.background[i] ?? parameter(0)) }))}>{[0,1,2,3].map(i => <option value={i} key={i}>{i === 0 ? 'Constant' : `Order ${i}`}</option>)}</select></label>{project.background.map((p, i) => <div className="param-row" key={i}><label>{i === 0 ? 'I₀' : `b${i}`}</label><Numeric label={`Background ${i}`} value={p.value} onChange={v => edit(old => ({ ...old, background: old.background.map((b, j) => i === j ? { ...b, value: v! } : b) }))}/><input type="checkbox" aria-label={`Fit background ${i}`} checked={p.fit} onChange={e => edit(old => ({ ...old, background: old.background.map((b, j) => i === j ? { ...b, fit: e.target.checked } : b) }))}/></div>)}</section>
-          <section className="option-section" title="Calibrate from an iron reference; folding controls apply to raw-count spectra"><h3>Folding & calibration</h3><button className="full-width velocity-calibration-open" onClick={() => setCalibrationOpen(true)}>Velocity calibration…</button><fieldset className="bare" disabled={!raw}><label className="inline-label">Max. velocity<Numeric label="Maximum velocity" value={cal.max} onChange={v => setCal(c => ({ ...c, max: v! }))}/></label><label className="inline-label">Standard CS<Numeric label="Standard center shift" value={cal.shift} onChange={v => setCal(c => ({ ...c, shift: v! }))}/></label><label className="check-label"><input type="checkbox" checked={cal.sinusoidal} onChange={e => setCal(c => ({ ...c, sinusoidal: e.target.checked }))}/>Sinusoidal drive</label><label className="check-label"><input type="checkbox" checked={cal.folding} onChange={e => setCal(c => ({ ...c, folding: e.target.checked }))}/>Fold raw channels</label><label className="inline-label" title="1-based channel, integer or half-integer">Fold center<Numeric label="Fold center" value={cal.center} onChange={v => setCal(c => ({ ...c, center: v! }))}/></label><button className="full-width" onClick={applyCalibration}>Apply calibration</button></fieldset></section>
+          <section className="option-section" title="Calibrate from an iron reference; folding controls apply to raw-count spectra"><h3>Folding & calibration</h3><button className="full-width velocity-calibration-open" onClick={() => setCalibrationOpen(true)}>Velocity calibration…</button><fieldset className="bare" disabled={!raw}><label className="inline-label">Max. velocity<Numeric label="Maximum velocity" value={cal.max} onChange={v => setCal(c => ({ ...c, max: v! }))}/></label><label className="inline-label">Standard CS<Numeric label="Standard center shift" value={cal.shift} onChange={v => setCal(c => ({ ...c, shift: v! }))}/></label><label className="check-label"><input type="checkbox" checked={cal.sinusoidal} onChange={e => setCal(c => ({ ...c, sinusoidal: e.target.checked }))}/>Sinusoidal drive</label><label className="check-label"><input type="checkbox" checked={cal.folding} onChange={e => setCal(c => ({ ...c, folding: e.target.checked }))}/>Fold raw channels</label><label className="check-label"><input type="checkbox" checked={cal.autoFold !== false} disabled={!cal.folding} onChange={e => setCal(c => ({ ...c, autoFold: e.target.checked }))}/>Auto center on import</label><label className="inline-label" title="1-based channel, integer or half-integer">Fold center<Numeric label="Fold center" value={cal.center} onChange={v => setCal(c => ({ ...c, center: v!, autoFold: false }))}/></label><button className="full-width" disabled={!cal.folding} onClick={() => void findSampleFoldCenter()}>Find fold center</button><button className="full-width" onClick={applyCalibration}>Apply calibration</button></fieldset></section>
           <section className="option-section"><h3>Source profile</h3><label className="inline-label">FWHM (mm/s)<Numeric label="Source FWHM" value={project.source_fwhm} onChange={v => edit(p => ({ ...p, source_fwhm: v! }))} disabled={project.mode !== 'transmission'}/></label><label className="check-label"><input type="checkbox" disabled={project.mode !== 'transmission'} checked={project.source_squared} onChange={e => edit(p => ({ ...p, source_squared: e.target.checked }))}/>Lorentzian-squared source</label></section>
 
         </>}

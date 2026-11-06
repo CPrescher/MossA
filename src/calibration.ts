@@ -2,7 +2,7 @@ import { calibrateCounts } from './io.mjs';
 import { newSite, parameter, type FitResult, type Project } from './types';
 import type { Snapshot } from './session';
 
-export type CalibrationSettings = { max: number; field: number; sinusoidal: boolean; folding: boolean; center: number };
+export type CalibrationSettings = { max: number; field: number; sinusoidal: boolean; folding: boolean; center: number; autoCenter?: boolean };
 export type CalibrationReference = { name: string; counts: number[]; settings: CalibrationSettings; fittedField: number; rms: number; date: string };
 export type VelocityCalibration = { max: number; shift: number; reference: CalibrationReference; preview: Project; fit: FitResult };
 
@@ -57,12 +57,10 @@ export function referenceSeeds(counts: number[], settings: CalibrationSettings):
 
 export function finishCalibration(counts: number[], settings: CalibrationSettings, name: string, fit: FitResult): VelocityCalibration {
   const site = fit.project.sites[0], field = site.params.bhf.value;
-  // Never silently accept an optimizer failure, a rank-deficient solution, or
-  // a scan that does not cover all six lines.
-  if (!fit.converged || fit.rank < fit.free_parameters || !Number.isFinite(field) || field <= 0 || site.params.intensity.value <= 0) throw new Error('Reference fit did not converge to a full-rank sextet. Check the spectrum, folding, and initial velocity range.');
-  if (fit.warnings.length) throw new Error(`Reference fit needs attention: ${fit.warnings.join(' ')}`);
+  // A scan may show only part of the iron pattern, as in calib.m. Keep solver
+  // warnings visible instead of requiring every line or nuisance parameter.
+  if (!fit.converged || !Number.isFinite(field) || field <= 0 || site.params.intensity.value <= 0) throw new Error('Reference fit did not converge. Check the spectrum, folding, and initial velocity range.');
   const x = fit.project.spectrum.x, center = site.params.cs.value;
-  if (center - .1613 * field <= x[0] || center + .1613 * field >= x.at(-1)!) throw new Error('The reference scan must cover all six iron lines.');
   const scale = settings.field / field, max = settings.max * scale, shift = center * scale;
   // Uniform rescaling is exact for this model: scale CS, FWHM, field, and area,
   // and divide the linear-background slope by the same factor. This replaces
@@ -83,6 +81,9 @@ export function finishCalibration(counts: number[], settings: CalibrationSetting
 export function applyVelocityCalibration(snapshot: Snapshot, result: VelocityCalibration): Snapshot {
   const cal = { ...snapshot.cal, max: result.max, shift: result.shift, sinusoidal: result.reference.settings.sinusoidal, reference: result.reference };
   if (!snapshot.raw) return { ...snapshot, cal }; // Existing velocity columns retain their scale and fit.
+  if (snapshot.raw.length === result.reference.counts.length && snapshot.raw.every((v, i) => v === result.reference.counts[i])) {
+    cal.center = result.reference.settings.center; cal.folding = result.reference.settings.folding;
+  }
   const spectrum = calibrateCounts(snapshot.raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null);
   return { ...snapshot, cal, project: { ...snapshot.project, spectrum }, fit: null, fitElapsed: null };
 }

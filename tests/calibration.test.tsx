@@ -32,11 +32,12 @@ function calibrate(counts: number[], settings: CalibrationSettings): VelocityCal
   return results.sort((a, b) => a.fit.evaluation.sse - b.fit.evaluation.sse)[0];
 }
 
-test('WASM reference calibration recovers linear, sinusoidal, and folded velocity scales and center shifts', () => {
+test('WASM reference calibration recovers linear, sinusoidal, folded, and partial iron patterns', () => {
   for (const c of [
     { max: 8, shift: .27, sinusoidal: false, field: 33, folding: false, initial: 10 },
     { max: 10, shift: -.18, sinusoidal: true, field: 33, folding: false, initial: 8 },
     { max: 7, shift: .12, sinusoidal: false, field: 32.95, folding: true, initial: 10 },
+    { max: 5, shift: .07, sinusoidal: false, field: 33, folding: false, initial: 5 },
   ]) {
     const counts = reference(c.max, c.shift, c.sinusoidal, c.field, c.folding);
     const settings = { ...c, max: c.initial, center: counts.length / 2 + .5 };
@@ -73,15 +74,13 @@ test('applying a reference is one undoable change, preserves sample counts and s
   assert.equal(retained.cal.max, result.max);
 });
 
-test('invalid references, incomplete scans, and unsuccessful fits cannot produce calibration coefficients', () => {
+test('invalid references and unsuccessful fits cannot produce calibration coefficients; warnings stay available', () => {
   const settings = { max: 10, field: 33, sinusoidal: false, folding: false, center: 256.5 };
   assert.throws(() => referenceProject(Array(32).fill(100), settings), /no absorption/);
   assert.throws(() => referenceProject([NaN, ...Array(31).fill(100)], settings), /finite/);
   assert.throws(() => referenceProject(reference(8, 0, false), { ...settings, field: 0 }), /positive/);
   const result = calibrate(reference(8, .27, false), settings);
   assert.throws(() => finishCalibration(result.reference.counts, settings, 'reference', { ...result.fit, converged: false }), /did not converge/);
-  assert.throws(() => finishCalibration(result.reference.counts, settings, 'reference', { ...result.fit, rank: 1 }), /full-rank/);
-  const truncated = structuredClone(result.fit);
-  truncated.project.sites[0].params.bhf.value = 1000;
-  assert.throws(() => finishCalibration(result.reference.counts, settings, 'reference', truncated), /all six/);
+  const warned = { ...result.fit, rank: 1, warnings: ['Some nuisance parameters are not identifiable.'] };
+  assert.deepEqual(finishCalibration(result.reference.counts, settings, 'reference', warned).fit.warnings, warned.warnings);
 });

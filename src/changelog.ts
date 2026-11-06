@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.6',
+    date: '2026-11-06',
+    changes: [
+      'Velocity calibration also accepts partial iron patterns; outer lines may be outside the scan.',
+      'Find folding centers automatically with the MATLAB symmetry-search method, or override them manually.',
+      'Calibration now reports loaded points and folded points separately, including odd-length input.',
+    ],
+  },
+  {
     version: '2.0.0-preview.5',
     date: '2026-11-06',
     changes: [

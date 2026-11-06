@@ -23,7 +23,7 @@ export function parseSpectrum(text) {
 // Direct port of fold.m's 1-based integer/half-integer folding conventions.
 export function foldCounts(data, center) {
   const n = data.length;
-  if (n % 2 || n < 16) throw new Error('Folding requires an even number of at least 16 channels.');
+  if (n < 16) throw new Error('Folding requires at least 16 data points.');
   if (!Number.isFinite(center) || center < 1 || center > n || Math.abs(center * 2 - Math.round(center * 2)) > 1e-9) throw new Error('Fold center must be an integer or half-integer channel inside the spectrum (1-based).');
   const at = i => data[((i - 1) % n + n) % n];
   if (center % 1) return Array.from({ length: n / 2 }, (_, k) => at(Math.floor(center) - k) + at(Math.floor(center) + k + 1));
