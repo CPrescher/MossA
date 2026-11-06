@@ -14,3 +14,7 @@ MossA
 Moessbauer Fitting Program written in Matlab.
 
 This `main` branch retains the original MATLAB application. The browser rewrite is developed separately on the [`mossa2` branch](https://github.com/CPrescher/MossA/tree/mossa2).
+
+## License
+
+MossA is licensed under the [MIT License](LICENSE).
