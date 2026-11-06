@@ -1,6 +1,6 @@
 import { calibrateCounts } from './io.mjs';
 import { newSite, parameter, type FitResult, type Project } from './types';
-import type { Snapshot } from './session';
+import type { Calibration, Snapshot } from './session';
 
 export type CalibrationSettings = { max: number; field: number; sinusoidal: boolean; folding: boolean; center: number; autoCenter?: boolean };
 export type CalibrationReference = { name: string; counts: number[]; settings: CalibrationSettings; fittedField: number; rms: number; date: string };
@@ -78,12 +78,23 @@ export function finishCalibration(counts: number[], settings: CalibrationSetting
   return { max, shift, preview, fit, reference: { name, counts: [...counts], settings: { ...settings }, fittedField: field, rms: Math.sqrt(fit.evaluation.sse / x.length), date: new Date().toISOString() } };
 }
 
+export function applyRawCalibration(snapshot: Snapshot, cal: Calibration = snapshot.cal): Snapshot {
+  const next = cal === snapshot.cal ? snapshot : { ...snapshot, cal };
+  if (!snapshot.raw) return next;
+  const spectrum = calibrateCounts(snapshot.raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null);
+  const previous = snapshot.project.spectrum;
+  // Compare the actual data, since the controls may already have been edited.
+  // Retain the project identity too: Plot resets its viewport when x changes.
+  if (spectrum.x.length === previous.x.length && spectrum.y.length === previous.y.length && spectrum.x.every((v, i) => v === previous.x[i]) && spectrum.y.every((v, i) => v === previous.y[i])) return next;
+  // Calibration changes the observations, not the fitted background or sites.
+  return { ...next, project: { ...snapshot.project, spectrum }, fit: null, fitElapsed: null };
+}
+
 export function applyVelocityCalibration(snapshot: Snapshot, result: VelocityCalibration): Snapshot {
   const cal = { ...snapshot.cal, max: result.max, shift: result.shift, sinusoidal: result.reference.settings.sinusoidal, reference: result.reference };
   if (!snapshot.raw) return { ...snapshot, cal }; // Existing velocity columns retain their scale and fit.
   if (snapshot.raw.length === result.reference.counts.length && snapshot.raw.every((v, i) => v === result.reference.counts[i])) {
     cal.center = result.reference.settings.center; cal.folding = result.reference.settings.folding;
   }
-  const spectrum = calibrateCounts(snapshot.raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null);
-  return { ...snapshot, cal, project: { ...snapshot.project, spectrum }, fit: null, fitElapsed: null };
+  return applyRawCalibration(snapshot, cal);
 }

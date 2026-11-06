@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import init, { evaluate_json, fit_json } from '../src/wasm/mossa_core.js';
-import { applyVelocityCalibration, finishCalibration, referenceProject, referenceSeeds, type CalibrationSettings, type VelocityCalibration } from '../src/calibration';
+import { applyRawCalibration, applyVelocityCalibration, finishCalibration, referenceProject, referenceSeeds, type CalibrationSettings, type VelocityCalibration } from '../src/calibration';
 import { calibrateCounts } from '../src/io.mjs';
 import { decodeSession, defaultLayout, summarizeFit, type Snapshot } from '../src/session';
 import { historyReducer } from '../src/history';
-import type { FitResult } from '../src/types';
+import { parameter, type FitResult } from '../src/types';
 
 await init({ module_or_path: readFileSync(new URL('../src/wasm/mossa_core_bg.wasm', import.meta.url)) });
 
@@ -83,4 +83,66 @@ test('invalid references and unsuccessful fits cannot produce calibration coeffi
   assert.throws(() => finishCalibration(result.reference.counts, settings, 'reference', { ...result.fit, converged: false }), /did not converge/);
   const warned = { ...result.fit, rank: 1, warnings: ['Some nuisance parameters are not identifiable.'] };
   assert.deepEqual(finishCalibration(result.reference.counts, settings, 'reference', warned).fit.warnings, warned.warnings);
+});
+
+test('reapplying unchanged calibration preserves the fitted curve, residuals, uncertainties, and viewport identity', () => {
+  const settings = { max: 8, field: 33, sinusoidal: false, folding: false, center: 256.5 };
+  const seed = referenceProject(reference(8, .27, false), settings);
+  const fit = JSON.parse(fit_json(JSON.stringify(seed))) as FitResult;
+  assert.ok(fit.converged);
+  // Match App's completed-fit path: keep the original JS data arrays instead
+  // of replacing them with the worker's JSON-round-tripped spectrum.
+  const project = { ...fit.project, spectrum: seed.spectrum };
+  const before = JSON.parse(evaluate_json(JSON.stringify(project)));
+  const original: Snapshot = { project, raw: [...project.spectrum.y], cal: { ...settings, shift: 0 }, filename: 'fitted sample', selected: 0, fit: summarizeFit(fit), fitElapsed: 42 };
+  assert.notEqual(fit.project.background[0].value, Math.max(...original.raw!));
+  const next = applyRawCalibration(original);
+  assert.equal(next, original);
+  assert.equal(next.project.spectrum.x, original.project.spectrum.x, 'same x array keeps plot zoom/pan');
+  assert.equal(next.fit, original.fit);
+  assert.equal(next.fitElapsed, 42);
+  assert.deepEqual(JSON.parse(evaluate_json(JSON.stringify(next.project))), before);
+  const history = { past: [], present: original, future: [] };
+  assert.equal(historyReducer(history, { type: 'set', value: next, record: true }), history, 'no redundant undo step');
+});
+
+test('calibration preserves the background model; only changed observations invalidate the fit', () => {
+  for (const folding of [false, true]) for (const sinusoidal of [false, true]) for (const mode of ['thin', 'transmission'] as const) {
+    const counts = reference(8, .27, sinusoidal, 33, folding);
+    const settings = { max: 8, field: 33, sinusoidal, folding, center: counts.length / 2 + .5 };
+    const result = calibrate(counts, settings);
+    const cal = { ...settings, shift: .27 };
+    const project = { ...referenceProject(counts, settings), mode, spectrum: calibrateCounts(counts, cal.max, cal.shift, sinusoidal, folding ? cal.center : null), background: [parameter(99900, false, 99000, 101000), parameter(12, true, -50, 50), parameter(.1, false)] };
+    const original: Snapshot = { project, raw: counts, cal, filename: 'sample', selected: 0, fit: summarizeFit(result.fit), fitElapsed: 42 };
+    assert.equal(applyRawCalibration(original), original);
+    const next = applyRawCalibration(original, { ...cal, max: 9, shift: -.1 });
+    assert.equal(next.project.background, project.background, 'retain coefficients, order, fit flags, and bounds');
+    assert.equal(next.project.sites, project.sites);
+    assert.equal(next.fit, null);
+    assert.equal(next.fitElapsed, null);
+    assert.notDeepEqual(next.project.spectrum.x, project.spectrum.x);
+    assert.deepEqual(next.project.spectrum.y, project.spectrum.y);
+    assert.equal(applyRawCalibration(next), next);
+
+    const calibrated = applyVelocityCalibration(original, result);
+    const fitted = { ...calibrated, fit: original.fit, fitElapsed: 42 };
+    const reapplied = applyVelocityCalibration(fitted, { ...result, reference: { ...result.reference, date: '2026-11-06T12:00:00Z' } });
+    assert.equal(reapplied.project, fitted.project);
+    assert.equal(reapplied.fit, fitted.fit);
+    assert.equal(reapplied.fitElapsed, 42);
+  }
+});
+
+test('reapplying folding keeps the fit only when the folded counts are unchanged', () => {
+  const counts = reference(8, .27, false, 33, true);
+  const settings = { max: 8, field: 33, sinusoidal: false, folding: true, center: counts.length / 2 + .5 };
+  const result = calibrate(counts, settings);
+  const original: Snapshot = { project: { ...result.fit.project, spectrum: calibrateCounts(counts, 8, 0, false, settings.center) }, raw: counts, cal: { ...settings, shift: 0 }, filename: 'sample', selected: 0, fit: summarizeFit(result.fit), fitElapsed: 42 };
+  const same = applyRawCalibration(original, { ...original.cal, autoFold: false });
+  assert.equal(same.project, original.project);
+  assert.equal(same.fit, original.fit);
+  const changed = applyRawCalibration(same, { ...same.cal, center: settings.center + .5 });
+  assert.notDeepEqual(changed.project.spectrum.y, same.project.spectrum.y);
+  assert.equal(changed.fit, null);
+  assert.equal(changed.project.background, same.project.background);
 });
