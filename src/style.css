@@ -82,3 +82,32 @@ input.number.invalid:focus-visible:enabled,input.number.invalid:hover:enabled{bo
 .changelog-reload{background:#2b7976;border-color:#2b7976;color:white}
 .changelog-dialog .changelog-reload:hover{background:#216967;color:white}
 .changelog-footer a{font-size:10px}
+
+.velocity-calibration-open{margin:8px 0}
+.calibration-dialog{width:min(960px,calc(100vw - 32px));height:min(610px,90dvh);max-height:90dvh;padding:0;border:1px solid #ccd8de;border-radius:7px;background:#fafcfc;color:#61727d;box-shadow:0 15px 60px #233f4b25;overflow:hidden}
+.calibration-dialog[open]{display:flex;flex-direction:column}
+.calibration-dialog::backdrop{background:#263b4950}
+.calibration-heading{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #e0e7ea;flex-shrink:0}
+.calibration-heading h2{font-size:15px;color:#3b645f}
+.calibration-heading button{padding:1px 6px;border:0;background:transparent;font-size:20px}
+.calibration-body{display:grid;grid-template-columns:235px minmax(0,1fr);flex:1;min-height:0}
+.calibration-controls{padding:12px 14px;overflow:auto;border-right:1px solid #e0e7ea;scrollbar-width:thin}
+.calibration-controls .full-width{margin-bottom:6px;font-size:10px}
+.calibration-controls .inline-label{text-align:right;justify-content:flex-end;gap:7px}
+.calibration-controls .inline-label>input{max-width:85px}
+.calibration-controls .fit-button{font-size:11px;margin-top:9px;padding:7px}
+.calibration-note{font-size:10px;line-height:1.6;margin-bottom:12px}
+.calibration-filename{font-size:10px;margin:6px 0 10px;overflow-wrap:anywhere;color:#3b645f}
+.calibration-preview{display:flex;flex-direction:column;min-height:0;min-width:0;background:white}
+.calibration-preview>p{margin:auto;padding:25px;font-size:12px;text-align:center}
+.calibration-preview .plot-shell{flex:1;min-height:0;width:100%;padding:10px 10px 0;display:flex;flex-direction:column}
+.calibration-preview svg{flex:1;min-height:0;width:100%}
+.calibration-progress{min-height:18px;font-size:10px;margin-top:8px;color:#4f7c73}
+.calibration-error{font-size:10px;line-height:1.5;color:#ad5546;margin-top:6px}
+.calibration-values{font-size:11px;border-top:1px solid #dce4e8;padding-top:8px;margin:8px 0 0}
+.calibration-values>div{display:flex;justify-content:space-between;gap:8px;margin-top:5px}
+.calibration-values dd{margin:0;color:#3b645f;font-variant-numeric:tabular-nums}
+.calibration-footer{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 18px;border-top:1px solid #e0e7ea;flex-shrink:0}
+.calibration-footer p{font-size:10px;line-height:1.5;max-width:560px}
+.calibration-footer>button{font-size:11px;background:#2b7976;color:white;border-color:#2b7976}
+@media(max-width:650px){.calibration-body{grid-template-columns:190px minmax(0,1fr)}.calibration-controls{padding:10px}.calibration-controls .inline-label{font-size:9px}.calibration-controls .inline-label>input{max-width:65px}.calibration-footer{padding:9px;gap:8px}}

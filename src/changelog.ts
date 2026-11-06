@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.3',
+    date: '2026-11-06',
+    changes: [
+      'Calibrate the velocity scale from an iron reference under Gen → Velocity calibration.',
+      'Preview the reference fit and residuals, then apply the velocity range and center shift.',
+      'Keep calibration references with your project; Undo restores the previous scale and fit.',
+    ],
+  },
+  {
     version: '2.0.0-preview.2',
     date: '2026-11-06',
     changes: [

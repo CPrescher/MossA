@@ -44,6 +44,14 @@ Open **http://127.0.0.1:4173**. On macOS, `Start MossA.command` starts the same 
 - Export the spectrum/model/residuals as CSV, fit parameters and approximate uncertainties as CSV, and the current plot as SVG.
 - The results table shows values with **± 1 std** on a separate line. **Fit for errors** means no current fitted uncertainties are available; **fixed** marks a held parameter, and **± —** has a tooltip explaining why no std is reported. **Intensity (%)** is the first numeric column, calculated immediately as `100 × site intensity / sum of site intensities`, matching the MATLAB table definition. **Intensity (raw)** remains available separately. **Lorentz mix** is the pseudo-Voigt line-shape mixing fraction (0–1), which is a different quantity and is only shown for pseudo-Voigt sites. In full transmission the percentages are absorber-intensity fractions. Their std uses the full fit covariance and is in percentage points; exact fixed/link ratios can have 0 std. All-zero intensity has no defined percentages. Older saved fits need a refit to obtain the new fraction std. Percentage values/std are also exported as `intensity_fraction_percent` CSV rows.
 
+### Velocity calibration
+
+Open **Gen → Velocity calibration…**. Load an α-Fe reference as **one column of counts**, or use the current raw spectrum if it is an iron standard. Reference loading does not replace your sample. For an unfolded reference, enable **Fold reference channels** and set its integer/half-integer center; leave folding off for an already folded spectrum. Select the same linear/sinusoidal drive used for acquisition, enter an approximate initial maximum velocity, and set the reference field (default **33 T**, from MATLAB `calib.m`). Use the known field appropriate to your standard and measurement conditions.
+
+**Fit reference** runs a Lorentzian sextet with zero QS and linear background in a separate Rust/WASM worker, with live curve/residual updates and cancellation. Inspect the six-line fit before accepting it. The window reports the maximum velocity and standard center shift. **Apply calibration** recalculates your current raw spectrum with these values in one Undo/Redo step; it keeps sample counts/sites and clears the previous fit. If your sample already contains velocity columns, its spectrum and fit are retained, and **Use calibration** stores the settings for later raw-count imports. Calibration coefficients, reference counts/settings, and source filename are retained by local autosave and project export. The reference draft itself is committed only when you apply/use it.
+
+This currently supports the single-sextet iron reference used by MATLAB, not arbitrary calibration materials or a non-linear correction from manually assigned peak positions. Coefficient recovery has been checked with independent synthetic linear/sinusoidal and folded references; a measured-standard comparison with MATLAB is still needed. See PORTING.md for the exact scale/shift convention.
+
 ### Graph controls
 
 | Gesture | Action |
@@ -60,7 +68,7 @@ Residuals are drawn as points. Spectrum and residuals share their velocity range
 
 Singlets, doublets, sextets; Lorentzian, Gaussian, pseudo-Voigt, and Lorentzian-squared profiles; polynomial backgrounds of order 0–3; bounded trust-region-reflective least squares; fixed and proportionally linked parameters; unweighted or observed-count-weighted residuals; full transmission convolution with Lorentzian or Lorentzian-squared source and PCHIP interpolation; local-Jacobian uncertainty estimates with diagnostics for rank deficiency and active bounds.
 
-**Not yet ported:** xVBF distributions and their coupling/normalization constraints, automatic source calibration, automatic fold-center search, MATLAB class-based project import, instrument-specific importers, and the original formatted reporting workflow. The xVBF tab identifies the missing functionality.
+**Not yet ported:** xVBF distributions and their coupling/normalization constraints, automatic source-profile calibration, automatic fold-center search, MATLAB class-based project import, instrument-specific importers, and the original formatted reporting workflow. The xVBF tab identifies the missing functionality.
 
 This is an initial port, not a validated replacement for every MATLAB workflow. No measured reference spectra were supplied, and MATLAB is not installed in this environment. Numerical checks use independent transcriptions of the MATLAB expressions, synthetic fit recovery, and direct-convolution comparisons. `reference/export_mossa_reference.m` exports actual MATLAB profile outputs when run in MATLAB. See PORTING.md for conventions and validation limits.
 
