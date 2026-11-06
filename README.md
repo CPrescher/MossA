@@ -1,10 +1,16 @@
-# MossA browser prototype
+# MossA 2 browser preview
+
+**[Open MossA 2 in your browser](https://cprescher.github.io/MossA/)** — no installation or MATLAB license needed. Spectra and fitting remain on your device. Local autosave belongs to the browser used to open the app; Save project exports a portable backup.
 
 React/TypeScript interface with a Rust/WebAssembly fitting core. All spectrum calculations run on the user's device in a Web Worker. The production build is a static website; it needs no calculation server, Python, or MATLAB.
 
 This is the **`mossa2` preview branch** of [CPrescher/MossA](https://github.com/CPrescher/MossA/tree/mossa2). The **[`main` branch](https://github.com/CPrescher/MossA/tree/main)** retains the original MATLAB application.
 
 The original MATLAB source is also retained, unchanged, as ordinary tracked files in `reference/MossA/`, matching commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049`. Both implementation histories are preserved in this repository; no submodule setup is needed. Both the port and retained reference use GPL-3.0. See `LICENSE` and [PORTING.md](PORTING.md).
+
+## GitHub Pages
+
+Pushes to `mossa2` run the Rust/WASM and UI tests, build the static app, and deploy `dist/` through `.github/workflows/pages.yml`. The MATLAB `main` branch is not a deployment source. GitHub Pages uses the `github-pages` environment, restricted to `mossa2`. The site needs no calculation server; its relative asset URLs support the `/MossA/` project path. `build-info.json` identifies the deployed commit.
 
 ## Open the prebuilt prototype
 
