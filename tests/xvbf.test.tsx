@@ -5,7 +5,7 @@ import init, { evaluate_json, fit_json, fit_json_with_progress } from '../src/wa
 import { demo } from '../src/demo';
 import { newSite, parameter, type Project, type Site, type Xvbf, type FitResult } from '../src/types';
 import { enableXvbf, addDistribution, editDistribution, removeDistribution } from '../src/xvbf';
-import { decodeSession, defaultLayout, summarizeFit, type Snapshot } from '../src/session';
+import { decodeSession, defaultLayout, summarizeFit, writeSession, type Snapshot } from '../src/session';
 import { createProjectFile, openProjectFile } from '../src/projectFile';
 import { historyReducer } from '../src/history';
 await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm',import.meta.url))});
@@ -94,7 +94,7 @@ test('distribution editing, duplicate-safe data, snapshots, and portable project
  const before:Snapshot={project:fit.project,fit:summarizeFit(fit),fitElapsed:45,cal:{max:5,shift:0,sinusoidal:false,folding:false,center:256.5},raw:null,filename:'xVBF reference',selected:0};
  const next={...before,project:{...before.project,sites:[{...before.project.sites[0],xvbf:addDistribution(before.project.sites[0].xvbf!,'qs')}]},fit:null};
  let h=historyReducer({past:[] as Snapshot[],present:before,future:[] as Snapshot[]},{type:'set',value:next,record:true});h=historyReducer(h,{type:'undo'});assert.deepEqual(h.present,before);
- const session=decodeSession(JSON.stringify({version:1,snapshot:before,layout:defaultLayout,fit:before.fit,elapsed:45}));assert.deepEqual(session.snapshot.project,before.project);
+ let stored='';writeSession({version:1,snapshot:before,layout:defaultLayout,fit:before.fit!,elapsed:45},{getItem:()=>stored,setItem:(_key,value)=>{stored=value;}});assert.equal(JSON.parse(stored).version,2);const session=decodeSession(stored);assert.deepEqual(session.snapshot.project,before.project);
  const file=await createProjectFile(before,{});assert.equal(file.version,2);assert.deepEqual(file.required_features,['xvbf-v1']);const reopened=await openProjectFile(JSON.parse(JSON.stringify(file)),before.cal,'file',async p=>evaluate(p));assert.deepEqual(reopened.snapshot,before);
 });
 
