@@ -110,3 +110,9 @@ Final GUI check: three site rows visible, no duplicated plot status blocks, no a
 
 - The prototype is a standalone Git repository. The unchanged MATLAB reference is a submodule pinned to d201482b7990afbd0e2dcc23e306bfc8d60a5049; development instructions initialize it explicitly. Generated builds, WASM bindings, dependencies, caches, and test artifacts are excluded from version control.
 - Final full test run passed all 58 checks: 12 Rust, 21 JavaScript/WASM, and 25 UI/session/history tests. The production build had already passed for this implementation. Whitespace checks passed after removing incidental trailing whitespace and extra blank lines at the ends of the copied license files.
+
+## Integration into CPrescher/MossA
+
+- The `mossa2` branch combines the initial browser implementation history with the original MATLAB history. The legacy MATLAB branch is named `main` and retains commit d201482b7990afbd0e2dcc23e306bfc8d60a5049 unchanged.
+- `reference/MossA` is now ordinary tracked source rather than a submodule pointing back to this repository. Its complete Git tree is exactly 0dcc27b4acb4f8f418ab1827f14e2e2cf74339b0, matching the original MATLAB commit, including file contents and modes. No recursive submodule checkout is required.
+- The production build and all 58 tests passed from the relocated working checkout. The existing preview continued serving the same build through its compatibility path; its browser address was preserved.

@@ -2,7 +2,9 @@
 
 React/TypeScript interface with a Rust/WebAssembly fitting core. All spectrum calculations run on the user's device in a Web Worker. The production build is a static website; it needs no calculation server, Python, or MATLAB.
 
-The original MATLAB source is retained, unchanged, in `reference/MossA/` at commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049` from [CPrescher/MossA](https://github.com/CPrescher/MossA). Both the port and retained reference use GPL-3.0. See `LICENSE` and [PORTING.md](PORTING.md).
+This is the **`mossa2` preview branch** of [CPrescher/MossA](https://github.com/CPrescher/MossA/tree/mossa2). The **[`main` branch](https://github.com/CPrescher/MossA/tree/main)** retains the original MATLAB application.
+
+The original MATLAB source is also retained, unchanged, as ordinary tracked files in `reference/MossA/`, matching commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049`. Both implementation histories are preserved in this repository; no submodule setup is needed. Both the port and retained reference use GPL-3.0. See `LICENSE` and [PORTING.md](PORTING.md).
 
 ## Open the prebuilt prototype
 
@@ -58,10 +60,16 @@ This is an initial port, not a validated replacement for every MATLAB workflow. 
 
 ## Development
 
+Clone the preview branch:
+
+```sh
+git clone --branch mossa2 https://github.com/CPrescher/MossA.git
+cd MossA
+```
+
 Prerequisites: Node.js 26+ (or 22.22.2+/24.15+ for the DOM tests), Rust (1.87+), and the `wasm32-unknown-unknown` target. Lockfiles are included.
 
 ```sh
-git submodule update --init --recursive
 npm ci
 rustup target add wasm32-unknown-unknown
 npm run build
