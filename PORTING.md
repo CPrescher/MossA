@@ -39,6 +39,8 @@ The full-transmission convolution is computed with zero-padded FFTs instead of a
 
 Automated checks compare all 12 site/profile combinations with an independent JavaScript transcription of the MATLAB expressions, recover synthetic parameters, exercise bounds/fixed/linked parameters and uncertainty diagnostics, compare full transmission against direct convolution, and execute the actual compiled WASM APIs. The tests also cover progress throttling, import/folding/calibration, graph gestures, and click-to-define initialization. Browser checks exercise the real UI and worker.
 
+The noiseless native recovery test requires every active parameter within `1e-4` of its known input and SSE below `1e-7`. A host-specific `NumericalNoProgress` stopping code is accepted only with the stricter SSE below `1e-12`; the application still reports that solver status and its warning without relabeling it as convergence.
+
 **The profile fixtures are not MATLAB execution output.** MATLAB is unavailable here. The optional `reference/export_mossa_reference.m` can generate actual MATLAB values with the same test parameters. The next scientific validation step is a set of measured spectra with saved MATLAB models and results, including full transmission and difficult overlapping peaks. xVBF needs its own validation cases before porting.
 
 The bundled iron mixture is deterministic synthetic teaching data, not an experimental spectrum or evidence of real-sample agreement.
