@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.11', date: '2026-11-06',
+    changes: [
+      'Switch between CS and QS plots and parameter tables in the main workspace; use Both for comparison or Spectrum to inspect the fit.',
+      'Inspect the joint CS–QS correlation map, enlarge it, and export it as SVG.',
+      'Component rows scroll with fixed headers; bounds open from each row’s gear icon.',
+      'Distribution previews now use matching marginals of the MATLAB joint-density model; numerical fitting is unchanged.',
+    ],
+  },
+  {
     version: '2.0.0-preview.10', date: '2026-11-06',
     changes: [
       'xVBF fitting for Lorentzian doublets: CS/QS Gaussian mixtures, coupling, fixed flags, and component bounds.',

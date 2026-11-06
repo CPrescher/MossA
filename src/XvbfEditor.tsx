@@ -1,42 +1,45 @@
-import { useState } from 'react';
+import { useEffect,useRef,useState } from 'react';
 import { Numeric } from './Numeric';
-import { niceTicks, formatTick } from './axes.mjs';
-import { addDistribution, editDistribution, enableXvbf, removeDistribution } from './xvbf';
-import { formatResult, formatStd, uncertainty } from './results';
+import { JointDistributionPlot,DistributionPlot } from './XvbfPlots';
+import { addDistribution,editDistribution,enableXvbf,removeDistribution } from './xvbf';
+import { formatResult,formatStd,uncertainty } from './results';
 import type { FitSummary } from './session';
-import type { DistributionComponent, Project, Site, Xvbf } from './types';
+import type { DistributionComponent,Project,Site,Xvbf } from './types';
 
-function DistributionPlot({components,label}:{components:DistributionComponent[];label:string}) {
-  const lo=Math.min(...components.map(c=>c.center.value-2*Math.max(c.width.value,.01))),hi=Math.max(...components.map(c=>c.center.value+2*Math.max(c.width.value,.01)));
-  const xs=Array.from({length:161},(_,i)=>lo+(hi-lo)*i/160);
-  const curves=components.map(c=>xs.map(x=>c.width.value>0?c.weight.value*.8326/(c.width.value/2*1.7725)*Math.exp(-(((x-c.center.value)/(c.width.value/2)*.8326)**2)):0));
-  const sum=xs.map((_,i)=>curves.reduce((s,c)=>s+c[i],0)),height=Math.max(...sum,1e-6),xx=(x:number)=>12+216*(x-lo)/(hi-lo),yy=(y:number)=>63-53*y/height;
-  const path=(ys:number[])=>ys.map((y,i)=>`${i?'L':'M'}${xx(xs[i])},${yy(y)}`).join(' '),ticks=niceTicks(lo,hi,4);
-  return <svg className="xvbf-distribution-plot" viewBox="0 0 240 85" role="img" aria-label={`${label} distribution`}><title>{`${label} distribution; Gaussian components follow the original MossA width convention`}</title><line x1="12" x2="228" y1="63" y2="63" stroke="#a0aab2"/>{curves.map((y,i)=>components[i].width.value>0?<path key={i} d={path(y)} fill="none" stroke="#78aaa5" strokeWidth="1"/>:components[i].weight.value>0?<line key={i} x1={xx(components[i].center.value)} x2={xx(components[i].center.value)} y1="10" y2="63" stroke="#78aaa5"/>:null)}<path d={path(sum)} fill="none" stroke="currentColor" strokeWidth="1.5"/>{ticks.values.map((x:number)=><text key={x} x={xx(x)} y="78" textAnchor="middle" fontSize="9" fill="currentColor">{formatTick(x,ticks.step)}</text>)}</svg>;
-}
-export function XvbfEditor({project,selected,result,onSite}:{project:Project;selected:number;result:FitSummary|null;onSite:(site:Site)=>void}) {
-  const site=project.sites[selected],model=site?.xvbf;
-  const [error,setError]=useState('');
+type Props={project:Project;selected:number;result:FitSummary|null;onSite:(site:Site)=>void};
+function errorText(project:Project,result:FitSummary|null,id:string,scale=1) {const e=uncertainty(project,result,id);return e.state==='fixed'?'fixed':`± ${formatStd(e.error==null?null:e.error*scale)}`;}
+export function XvbfEditor({project,selected,result,onSite,onCorrelation}:{onCorrelation?:()=>void}&Props) {
+  const site=project.sites[selected],model=site?.xvbf,[error,setError]=useState('');
   const act=(change:()=>Site)=>{try{onSite(change());setError('');}catch(e){setError(String(e));}};
-  const change=(x:Xvbf)=>({...site,xvbf:x});
-  function std(id:string,scale=1) {const e=uncertainty(project,result,id);return e.state==='fixed'?'fixed':`± ${formatStd(e.error==null?null:e.error*scale)}`;}
-  function cell(axis:'cs'|'qs',index:number,key:keyof DistributionComponent,component:DistributionComponent) {
-    const p=component[key],id=`site:${selected}:${axis==='cs'?'csd':'qsd'}:${index}:${key}`,scale=key==='weight'?100:1,label=`${axis.toUpperCase()} ${index+1} ${key}`;
-    return <div className="xvbf-cell" key={key}><div><Numeric label={label} value={p.value*scale} disabled={key==='weight'&&model![axis].length===1} onChange={v=>act(()=>change(editDistribution(model!,axis,index,key,{value:v!/scale})))}/><input type="checkbox" aria-label={`Fit ${label}`} checked={p.fit} disabled={key==='weight'&&model![axis].length===1} onChange={e=>act(()=>change(editDistribution(model!,axis,index,key,{fit:e.target.checked})))}/></div><small title={key==='weight' ? `${uncertainty(project,result,id).reason} Displayed in percentage points.` : uncertainty(project,result,id).reason}>{std(id,key==='weight'?100:1)}</small></div>;
-  }
-  return <section className="option-section xvbf-editor"><h3>Extended Voigt-based fitting</h3>{!site?<p className="xvbf-note">Select a site.</p>:<>
-    <label className="check-label"><input type="checkbox" checked={!!model} disabled={!model&&(site.kind!=='Doublet'||site.profile!=='Lorentzian')} onChange={e=>act(()=>{if(e.target.checked)return enableXvbf(site);const {xvbf:_old,...normal}=site;return normal;})}/>xVBF for {site.name}</label>
+  return <section className="option-section xvbf-editor"><h3>xVBF</h3>{!site?<p className="xvbf-note">Select a site.</p>:<>
+    <label className="check-label"><input type="checkbox" checked={!!model} disabled={!model&&(site.kind!=='Doublet'||site.profile!=='Lorentzian')} onChange={e=>act(()=>{if(e.target.checked)return enableXvbf(site);const{xvbf:_old,...normal}=site;return normal;})}/>Enable for selected site</label>
     {!model&&<p className="xvbf-note">Available for Lorentzian doublets.</p>}
-    {model&&<>
-      <div className="param-row"><label title="Correlation between CS and QS broadening; −1 to 1">Coupling δ</label><Numeric label="xVBF coupling" value={model.delta.value} onChange={v=>act(()=>change({...model,delta:{...model.delta,value:v!}}))}/><input type="checkbox" aria-label="Fit xVBF coupling" checked={model.delta.fit} onChange={e=>act(()=>change({...model,delta:{...model.delta,fit:e.target.checked}}))}/></div><div className="xvbf-coupling-std">{std(`site:${selected}:delta`)}</div>
-      {(['cs','qs'] as const).map(axis=><section className="xvbf-axis" key={axis}><div className="section-heading"><h3>{axis==='cs'?'Center-shift':'Quadrupole-splitting'} distribution</h3><button type="button" aria-label={`Add ${axis.toUpperCase()} component`} title="Split a component weight and add a Gaussian" disabled={model[axis].length>=8} onClick={()=>act(()=>change(addDistribution(model,axis)))}>+</button></div>
-        <DistributionPlot components={model[axis]} label={axis.toUpperCase()}/>
-        <div className="xvbf-column-labels"><span>{axis.toUpperCase()} mm/s</span><span title="Legacy MossA width parameter used by voigt_curve.m">Width mm/s</span><span>Weight %</span></div>
-        {model[axis].map((c,index)=><div className="xvbf-component" key={index}><div className="xvbf-component-heading"><span>{axis.toUpperCase()} {index+1}</span><button type="button" className="xvbf-delete" aria-label={`Delete ${axis.toUpperCase()} component ${index+1}`} disabled={model[axis].length===1} onClick={()=>act(()=>change(removeDistribution(model,axis,index)))}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></div><div className="xvbf-row">{(['center','width','weight'] as const).map(key=>cell(axis,index,key,c))}</div>
-          <details className="xvbf-bounds"><summary>Bounds</summary>{(['center','width','weight'] as const).map(key=><div className="xvbf-bound-row" key={key}><label>{key}</label>{(['min','max'] as const).map(bound=><Numeric key={bound} label={`${axis.toUpperCase()} ${index+1} ${key} ${bound}`} value={c[key][bound]===null?null:c[key][bound]!*(key==='weight'?100:1)} nullable onChange={v=>act(()=>change(editDistribution(model,axis,index,key,{[bound]:v===null?null:v/(key==='weight'?100:1)})))}/>)}</div>)}</details>
-        </div>)}<p className="xvbf-total">Total {formatResult(model[axis].reduce((sum,c)=>sum+c.weight.value,0)*100)}%</p>
-      </section>)}
-      <details className="xvbf-notes"><summary>Model notes</summary><p>Weights in each distribution sum to 100%. One weight is dependent. Checked fields vary; fixed weights remain fixed.</p><p>A single symmetric doublet cannot identify both widths and coupling independently. The initial QS width is held fixed.</p><p>Widths preserve the original MossA Voigt parameter convention. They are not conventional spectral FWHMs. The Lorentzian parameter is fixed at 0.194 mm/s.</p></details>
+    {model&&<><div className="param-row"><label title="Correlation between CS and QS broadening; −1 to 1">Coupling δ</label><Numeric label="xVBF coupling" value={model.delta.value} onChange={v=>act(()=>({...site,xvbf:{...model,delta:{...model.delta,value:v!}}}))}/><input type="checkbox" aria-label="Fit xVBF coupling" checked={model.delta.fit} onChange={e=>act(()=>({...site,xvbf:{...model,delta:{...model.delta,fit:e.target.checked}}}))}/></div><div className="xvbf-coupling-std">{errorText(project,result,`site:${selected}:delta`)}</div>
+      <div className="xvbf-correlation-heading"><h3>CS–QS correlation</h3><button type="button" aria-label="Enlarge correlation plot" title="Enlarge correlation plot" disabled={!onCorrelation} onClick={onCorrelation}>↗</button></div>
+      <button type="button" className="xvbf-correlation-open" aria-label="Open joint CS–QS distribution" disabled={!onCorrelation} onClick={onCorrelation}><JointDistributionPlot model={model}/></button>
+      <details className="xvbf-notes"><summary>Model notes</summary><p>Weights in each distribution sum to 100%. One weight is dependent. Checked fields vary; fixed weights remain fixed.</p><p>A single symmetric doublet cannot identify both widths and coupling independently. The initial QS width is held fixed.</p><p>The joint map follows MATLAB pdd_calc. Its matching marginals use the legacy width as Gaussian sigma. Numerical fitting retains MossA’s Voigt width convention and Lorentzian parameter 0.194 mm/s.</p><p>Contours show fractions of the peak density, not confidence regions. Perfect correlation or zero width gives a singular distribution, drawn as ridges or points.</p></details>
     </>}
   </>}{error&&<p role="alert" className="calibration-error">{error}</p>}</section>;
+}
+function BoundsDialog({model,axis,index,onChange,onClose}:{model:Xvbf;axis:'cs'|'qs';index:number;onChange:(next:Xvbf)=>void;onClose:()=>void}) {
+  const dialog=useRef<HTMLDialogElement>(null),component=model[axis][index],[error,setError]=useState('');
+  useEffect(()=>{dialog.current?.showModal();},[]);
+  function update(key:keyof DistributionComponent,bound:'min'|'max',value:number|null){try{onChange(editDistribution(model,axis,index,key,{[bound]:value}));setError('');}catch(e){setError(String(e));}}
+  return <dialog className="xvbf-bounds-dialog" ref={dialog} onClose={onClose} onKeyDown={e=>e.stopPropagation()} aria-labelledby="xvbf-bounds-heading"><div className="help-heading"><h2 id="xvbf-bounds-heading">{axis.toUpperCase()} {index+1} bounds</h2><form method="dialog"><button aria-label="Close component bounds">×</button></form></div><div className="bounds-header"><span>Parameter</span><span>Lower</span><span>Upper</span></div>{(['center','width','weight'] as const).map(key=><div className="bounds-row" key={key}><label>{key==='weight'?'Weight %':key==='center'?`${axis.toUpperCase()} mm/s`:'Width mm/s'}</label>{(['min','max'] as const).map(bound=><Numeric key={bound} nullable label={`${axis.toUpperCase()} ${index+1} ${key} ${bound}`} value={component[key][bound]===null?null:component[key][bound]!*(key==='weight'?100:1)} onChange={v=>update(key,bound,v===null?null:v/(key==='weight'?100:1))}/>)}</div>)}{error&&<p role="alert" className="calibration-error">{error}</p>}</dialog>;
+}
+export function XvbfDistributions({project,selected,result,onSite,view='both',disabled=false}:{view?:'cs'|'qs'|'both';disabled?:boolean}&Props) {
+  const site=project.sites[selected],model=site?.xvbf,[error,setError]=useState(''),[bounds,setBounds]=useState<{axis:'cs'|'qs';index:number}|null>(null);
+  const act=(change:()=>Xvbf)=>{try{onSite({...site,xvbf:change()});setError('');}catch(e){setError(String(e));}};
+  if(!model)return null;
+  const axes=view==='both'?['cs','qs'] as const:[view];
+  function cell(axis:'cs'|'qs',index:number,key:keyof DistributionComponent,component:DistributionComponent) {
+    const p=component[key],id=`site:${selected}:${axis==='cs'?'csd':'qsd'}:${index}:${key}`,scale=key==='weight'?100:1,label=`${axis.toUpperCase()} ${index+1} ${key}`;
+    return <td className="xvbf-cell" key={key}><div><Numeric label={label} value={p.value*scale} disabled={key==='weight'&&model![axis].length===1} onChange={v=>act(()=>editDistribution(model!,axis,index,key,{value:v!/scale}))}/><input type="checkbox" aria-label={`Fit ${label}`} checked={p.fit} disabled={key==='weight'&&model![axis].length===1} onChange={e=>act(()=>editDistribution(model!,axis,index,key,{fit:e.target.checked}))}/></div><small title={key==='weight'?`${uncertainty(project,result,id).reason} Displayed in percentage points.`:uncertainty(project,result,id).reason}>{errorText(project,result,id,scale)}</small></td>;
+  }
+  return <div className={`xvbf-distributions ${view==='both'?'xvbf-both':'xvbf-single'}`} aria-label="xVBF distributions"><fieldset className="bare xvbf-distribution-grid" disabled={disabled}>
+    {axes.map(axis=><section className="xvbf-axis-panel" key={axis} aria-label={`${axis.toUpperCase()} parameters`}><div className="xvbf-axis-heading"><h2>{axis==='cs'?'Center-shift distribution':'Quadrupole-splitting distribution'}</h2><button type="button" aria-label={`Add ${axis.toUpperCase()} component`} title="Split a component weight and add a Gaussian" disabled={model[axis].length>=8} onClick={()=>act(()=>addDistribution(model,axis))}>+</button></div>
+      <div className="xvbf-axis-chart"><DistributionPlot components={model[axis]} label={axis.toUpperCase()}/></div>
+      <div className="xvbf-component-scroll"><table className="xvbf-parameter-table" aria-label={`${axis.toUpperCase()} distribution parameters`}><thead><tr><th aria-label="Component">#</th><th>{axis.toUpperCase()} <small>mm/s</small></th><th title="Legacy MossA width parameter">Width <small>mm/s</small></th><th>Weight <small>%</small></th><th aria-label="Actions"/></tr></thead><tbody>{model[axis].map((c,index)=><tr key={index}><th scope="row">{index+1}</th>{(['center','width','weight'] as const).map(key=>cell(axis,index,key,c))}<td className="xvbf-row-actions"><button type="button" aria-label={`Edit ${axis.toUpperCase()} component ${index+1} bounds`} title="Edit bounds" onClick={()=>setBounds({axis,index})}>⚙</button><button type="button" aria-label={`Delete ${axis.toUpperCase()} component ${index+1}`} title="Delete component" disabled={model[axis].length===1} onClick={()=>act(()=>removeDistribution(model,axis,index))}><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/></svg></button></td></tr>)}</tbody></table></div><div className="xvbf-axis-footer"><span>{model[axis].length} component{model[axis].length===1?'':'s'}</span><span>Total {formatResult(model[axis].reduce((s,c)=>s+c.weight.value,0)*100)}%</span></div>
+    </section>)}
+  </fieldset>{error&&<p role="alert" className="calibration-error xvbf-workspace-error">{error}</p>}{bounds&&model[bounds.axis][bounds.index]&&<BoundsDialog model={model} {...bounds} onChange={next=>onSite({...site,xvbf:next})} onClose={()=>setBounds(null)}/>}</div>;
 }
