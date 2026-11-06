@@ -205,6 +205,7 @@ struct Prepared {
     initial: Vec<f64>,
     // Precomputed source Fourier transform, shared by all model evaluations.
     source_fft: Option<Vec<Complex<f64>>>,
+    source_calibration: bool,
 }
 fn valid(p: &Project) -> Result<(), String> {
     let n = p.spectrum.x.len();
@@ -258,8 +259,41 @@ fn valid(p: &Project) -> Result<(), String> {
 }
 impl Prepared {
     fn new(p: &Project) -> Result<Self, String> {
+        Self::with_source_calibration(p, false)
+    }
+    fn with_source_calibration(p: &Project, source_calibration: bool) -> Result<Self, String> {
         valid(p)?;
+        if source_calibration
+            && (p.mode != "transmission"
+                || p.sites.len() != 1
+                || p.sites[0].kind != "Singlet"
+                || p.sites[0].profile != "Lorentzian"
+                || p.sites[0]
+                    .params
+                    .get("fwhm")
+                    .is_none_or(|v| v.fit || v.link.is_some())
+                || p.background.len() != 3
+                || p.weighting != "unweighted")
+        {
+            return Err("Source calibration requires one Lorentzian singlet with fixed absorber FWHM, a quadratic background, and unweighted transmission fitting.".into());
+        }
         let mut entries = Vec::new();
+        if source_calibration {
+            entries.push(Entry {
+                id: "source:fwhm".into(),
+                param: Parameter {
+                    value: p.source_fwhm,
+                    fit: true,
+                    min: None,
+                    max: None,
+                    link: None,
+                },
+                site: None,
+                key: "source_fwhm".into(),
+                lower: 0.001,
+                upper: 5.,
+            });
+        }
         for (i, param) in p.background.iter().enumerate() {
             entries.push(Entry {
                 id: format!("bkg:{i}"),
@@ -381,7 +415,7 @@ impl Prepared {
             }
             if e.param.fit && lo < hi {
                 let floor = match e.key.as_str() {
-                    "fwhm" => 0.2,
+                    "fwhm" | "source_fwhm" => 0.2,
                     "cs" | "qs" => 1.,
                     _ => 1.,
                 };
@@ -396,24 +430,8 @@ impl Prepared {
         if free.len() >= p.spectrum.x.len() {
             return Err("More observations than free parameters are required.".into());
         }
-        let source_fft = if p.mode == "transmission" {
-            let mut a = vec![Complex::default(); 16384];
-            for (i, z) in a.iter_mut().take(6001).enumerate() {
-                z.re = profile(
-                    -30. + i as f64 * 0.01,
-                    0.,
-                    p.source_fwhm,
-                    1.,
-                    if p.source_squared {
-                        "LorSquared"
-                    } else {
-                        "Lorentzian"
-                    },
-                    0.,
-                );
-            }
-            FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
-            Some(a)
+        let source_fft = if p.mode == "transmission" && !source_calibration {
+            Some(source_transform(p))
         } else {
             None
         };
@@ -427,6 +445,7 @@ impl Prepared {
             upper,
             initial,
             source_fft,
+            source_calibration,
         })
     }
     fn expand(&self, x: &[f64]) -> Project {
@@ -440,6 +459,7 @@ impl Prepared {
             let v = values[r] * f;
             match e.site {
                 Some(s) => p.sites[s].params.get_mut(&e.key).unwrap().value = v,
+                None if e.key == "source_fwhm" => p.source_fwhm = v,
                 None => p.background[e.key.parse::<usize>().unwrap()].value = v,
             };
         }
@@ -462,7 +482,8 @@ impl Prepared {
             .iter()
             .map(|s| xs.iter().map(|&v| site_curve(s, v)).collect())
             .collect();
-        let y = if let Some(source) = &self.source_fft {
+        let changing_source = self.source_calibration.then(|| source_transform(&p));
+        let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_ref()) {
             let mut a = vec![Complex::default(); source.len()];
             for (i, z) in a.iter_mut().take(6001).enumerate() {
                 let v = -30. + i as f64 * 0.01;
@@ -478,11 +499,18 @@ impl Prepared {
             // MATLAB conv(source, exp(-absorber), 'same'), then pchip; /100 is the original 0.01 grid step.
             let grid: Vec<_> = (0..6001).map(|i| a[i + 3000].re / len / 100.).collect();
             let slopes = pchip_slopes(&grid, 0.01);
-            xs.iter()
+            let sampled: Vec<_> = xs.iter().map(|&v| pchip(&grid, &slopes, v)).collect();
+            // MossA.m src_calib_model normalizes AFTER interpolation at the
+            // observed velocities. Ordinary transmission fitting does not.
+            let norm = if self.source_calibration {
+                sampled.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+            } else {
+                1.
+            };
+            sampled
+                .iter()
                 .zip(&background)
-                .map(|(&v, &b)| {
-                    p.background[0].value * pchip(&grid, &slopes, v) + b - p.background[0].value
-                })
+                .map(|(&v, &b)| p.background[0].value * v / norm + b - p.background[0].value)
                 .collect()
         } else {
             (0..xs.len())
@@ -505,6 +533,17 @@ impl Prepared {
             })
             .collect()
     }
+    fn solver_scale(&self) -> f64 {
+        // Count rates can differ by orders of magnitude. A CONSTANT rescaling
+        // leaves this unweighted least-squares minimum unchanged, while making
+        // the solver's absolute gradient tolerance meaningful for calibration.
+        // Reported objectives and covariance still use original count units.
+        if self.source_calibration {
+            self.project.spectrum.y.iter().copied().fold(1., f64::max)
+        } else {
+            1.
+        }
+    }
     fn derivative(&self, x: &[f64]) -> DMatrix<f64> {
         let n = x.len();
         let m = self.project.spectrum.x.len();
@@ -524,6 +563,25 @@ impl Prepared {
         }
         j
     }
+}
+fn source_transform(p: &Project) -> Vec<Complex<f64>> {
+    let mut a = vec![Complex::default(); 16384];
+    for (i, z) in a.iter_mut().take(6001).enumerate() {
+        z.re = profile(
+            -30. + i as f64 * 0.01,
+            0.,
+            p.source_fwhm,
+            1.,
+            if p.source_squared {
+                "LorSquared"
+            } else {
+                "Lorentzian"
+            },
+            0.,
+        );
+    }
+    FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
+    a
 }
 fn pchip_slopes(y: &[f64], h: f64) -> Vec<f64> {
     let d: Vec<_> = y.windows(2).map(|w| (w[1] - w[0]) / h).collect();
@@ -570,7 +628,13 @@ impl CostFunction for Prepared {
     type Output = f64;
     type Error = String;
     fn cost(&self, x: &Vec<f64>) -> Result<f64, String> {
-        Ok(0.5 * self.residuals(x).iter().map(|r| r * r).sum::<f64>())
+        let scale = self.solver_scale();
+        Ok(0.5
+            * self
+                .residuals(x)
+                .iter()
+                .map(|r| (r / scale).powi(2))
+                .sum::<f64>())
     }
 }
 impl Residual for Prepared {
@@ -578,7 +642,8 @@ impl Residual for Prepared {
     type Output = Vec<f64>;
     type Error = String;
     fn residual(&self, x: &Vec<f64>) -> Result<Vec<f64>, String> {
-        let r = self.residuals(x);
+        let scale = self.solver_scale();
+        let r: Vec<_> = self.residuals(x).iter().map(|r| r / scale).collect();
         if r.iter().any(|v| !v.is_finite()) {
             Err("Non-finite model residual.".into())
         } else {
@@ -595,7 +660,10 @@ impl Jacobian for Prepared {
                 "Non-finite numerical derivative; check parameter scales and bounds.".into(),
             );
         }
-        Ok(DenseMatrix::from_fn(j.nrows(), j.ncols(), |r, c| j[(r, c)]))
+        let scale = self.solver_scale();
+        Ok(DenseMatrix::from_fn(j.nrows(), j.ncols(), |r, c| {
+            j[(r, c)] / scale
+        }))
     }
 }
 fn evaluate_prepared(m: &Prepared, x: &[f64]) -> Evaluation {
@@ -617,6 +685,7 @@ fn evaluate_prepared(m: &Prepared, x: &[f64]) -> Evaluation {
         .map(|e| {
             let value = match e.site {
                 Some(i) => expanded.sites[i].params[&e.key].value,
+                None if e.key == "source_fwhm" => expanded.source_fwhm,
                 None => expanded.background[e.key.parse::<usize>().unwrap()].value,
             };
             (e.id.clone(), value)
@@ -722,6 +791,13 @@ pub fn fit_with_progress(
     callback: Option<Box<dyn FnMut(FitProgress)>>,
 ) -> Result<FitResult, String> {
     let m = Prepared::new(p)?;
+    fit_prepared(m, callback)
+}
+fn fit_prepared(
+    m: Prepared,
+    callback: Option<Box<dyn FnMut(FitProgress)>>,
+) -> Result<FitResult, String> {
+    let p = &m.project;
     let mut warnings = vec![];
     let (x, iterations, converged, termination) = if m.free.is_empty() {
         (vec![], 0, true, "All parameters fixed".to_string())
@@ -850,4 +926,37 @@ pub fn fit_json_with_progress(json: &str, callback: js_sys::Function) -> Result<
     let result =
         fit_with_progress(&p, Some(Box::new(notify))).map_err(|e| JsValue::from_str(&e))?;
     serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// MossA.m src_calib_model: variable source width, fixed absorber width,
+/// sampled-maximum normalization, and a quadratic additive background.
+#[wasm_bindgen]
+pub fn evaluate_source_json(json: &str) -> Result<String, JsValue> {
+    let p: Project = serde_json::from_str(json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let m = Prepared::with_source_calibration(&p, true).map_err(|e| JsValue::from_str(&e))?;
+    let v =
+        finite_evaluation(evaluate_prepared(&m, &m.initial)).map_err(|e| JsValue::from_str(&e))?;
+    serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+#[wasm_bindgen]
+pub fn fit_source_json(json: &str) -> Result<String, JsValue> {
+    let p: Project = serde_json::from_str(json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let m = Prepared::with_source_calibration(&p, true).map_err(|e| JsValue::from_str(&e))?;
+    let v = fit_prepared(m, None).map_err(|e| JsValue::from_str(&e))?;
+    serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+#[wasm_bindgen]
+pub fn fit_source_json_with_progress(
+    json: &str,
+    callback: js_sys::Function,
+) -> Result<String, JsValue> {
+    let p: Project = serde_json::from_str(json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let m = Prepared::with_source_calibration(&p, true).map_err(|e| JsValue::from_str(&e))?;
+    let notify = move |progress: FitProgress| {
+        if let Ok(json) = serde_json::to_string(&progress) {
+            let _ = callback.call1(&JsValue::NULL, &JsValue::from_str(&json));
+        }
+    };
+    let v = fit_prepared(m, Some(Box::new(notify))).map_err(|e| JsValue::from_str(&e))?;
+    serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
 }

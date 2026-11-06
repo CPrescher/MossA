@@ -15,7 +15,7 @@ export class Engine {
     };
     this.worker.onerror = e => { onError(e.message || 'The fitting worker failed.'); this.stop(); };
   }
-  request(method: 'fit' | 'evaluate', project: Project, onProgress?: (v: FitProgress) => void) {
+  request(method: 'fit' | 'evaluate' | 'fit-source' | 'evaluate-source', project: Project, onProgress?: (v: FitProgress) => void) {
     return new Promise<{ result: unknown; elapsed: number }>((resolve, reject) => {
       const id = ++this.counter; this.pending.set(id, { resolve, reject, onProgress }); this.worker.postMessage({ id, method, project });
     });

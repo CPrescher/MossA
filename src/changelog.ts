@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.9',
+    date: '2026-11-06',
+    changes: [
+      'Calibrate the source profile from a known-width singlet standard using the MATLAB transmission calibration model.',
+      'Inspect live fit curves, residuals, source width, and approximate std before applying Lorentzian or squared source settings.',
+      'Source references are retained in project files and local autosave; applying is undoable and preserves sample sites and data.',
+    ],
+  },
+  {
     version: '2.0.0-preview.8',
     date: '2026-11-06',
     changes: [

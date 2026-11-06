@@ -1,7 +1,8 @@
 import { validCalibrationReference, type CalibrationReference } from './calibration';
+import { validSourceReference, type SourceReference } from './source-calibration';
 import type { FitResult, Parameter, Project } from './types';
 export const SESSION_KEY = 'mossa.session.v1';
-export type Calibration = { max: number; shift: number; sinusoidal: boolean; folding: boolean; center: number; autoFold?: boolean; reference?: CalibrationReference };
+export type Calibration = { max: number; shift: number; sinusoidal: boolean; folding: boolean; center: number; autoFold?: boolean; reference?: CalibrationReference; sourceReference?: SourceReference };
 export type Snapshot = { project: Project; raw: number[] | null; cal: Calibration; filename: string; selected: number; fit?: FitSummary | null; fitElapsed?: number | null };
 export type Layout = { resultsHeight: number; sitesHeight: number; tab: string; optionsOpen: boolean };
 export type FitSummary = Omit<FitResult, 'project' | 'evaluation'>;
@@ -23,6 +24,7 @@ export function decodeSession(text: string): Session {
   if (!Array.isArray(p.sites) || p.sites.length > 16 || !p.sites.every(site => typeof site.name === 'string' && ['Singlet','Doublet','Sextet'].includes(site.kind) && ['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].includes(site.profile) && ['cs','fwhm','intensity','qs','bhf','a12','a13','mix'].every(k => parameterOK(site.params?.[k]))) || !Array.isArray(p.background) || p.background.length < 1 || p.background.length > 4 || !p.background.every(parameterOK) || !['thin','transmission'].includes(p.mode) || !['unweighted','counts'].includes(p.weighting) || !finite(p.source_fwhm) || typeof p.source_squared !== 'boolean' || !finite(p.max_iterations)) throw new Error('Invalid saved model.');
   if (typeof s.filename !== 'string' || (s.raw !== null && (!Array.isArray(s.raw) || s.raw.length < 8 || s.raw.length > 20000 || !s.raw.every(finite))) || !s.cal || ![s.cal.max,s.cal.shift,s.cal.center].every(finite) || s.cal.max <= 0 || typeof s.cal.folding !== 'boolean' || typeof s.cal.sinusoidal !== 'boolean') throw new Error('Invalid saved preprocessing.');
   if (s.cal.reference && !validCalibrationReference(s.cal.reference)) throw new Error('Invalid saved velocity reference.');
+  if (s.cal.sourceReference && !validSourceReference(s.cal.sourceReference)) throw new Error('Invalid saved source reference.');
   s.selected = Number.isInteger(s.selected) ? Math.max(0,Math.min(p.sites.length-1,s.selected)) : 0;
   const l = saved.layout ?? {};
   const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(196,Math.min(2000,l.resultsHeight)) : 200, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true };
