@@ -66,6 +66,8 @@ This is an initial port, not a validated replacement for every MATLAB workflow. 
 
 ## Development
 
+The header shows the running app version and source commit. Public builds check `build-info.json` on startup, when returning to the app, and every five minutes while visible. A green dot means the running commit matches the latest deployment; **Update available** lets you reload when ready. Failed checks are identified in the tooltip and can be retried by clicking the version. The app never reloads automatically. Local builds are labeled **local**, with **modified** for uncommitted changes. Build identity is embedded in the JavaScript bundle and also included in saved-project provenance. Vite generates matching deployment metadata for every build; no release/tag is required. Increment `package.json` and its lockfile for named preview/release versions; the commit identifies changes between those versions.
+
 Clone the preview branch:
 
 ```sh

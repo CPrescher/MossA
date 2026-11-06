@@ -55,17 +55,6 @@ jobs:
         run: npm test
       - name: Build static browser application
         run: npm run build:web
-      - name: Record deployed source revision
-        run: |
-          node --input-type=module <<'NODE'
-          import { writeFile } from 'node:fs/promises';
-          await writeFile('dist/build-info.json', JSON.stringify({
-            application: 'MossA 2 preview',
-            commit: process.env.GITHUB_SHA,
-            branch: process.env.GITHUB_REF_NAME,
-            run: process.env.GITHUB_RUN_ID
-          }, null, 2) + '\n');
-          NODE
       - name: Upload static site
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
         with:

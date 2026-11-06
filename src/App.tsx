@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from './engine';
+import { VersionIndicator } from './VersionIndicator';
+import { buildInfo } from './version';
 import { demo } from './demo';
 import { calibrateCounts, csvSpectrum, parseSpectrum, validateProjectFile } from './io.mjs';
 import { Plot } from './Plot';
@@ -123,7 +125,7 @@ export default function App() {
       edit(p, { filename: typeof doc.name === 'string' ? doc.name : file.name, raw: savedRaw ?? null, cal: savedCal ?? cal, selected: 0 }); setEvaluation(checked.result as Evaluation); append('Browser project loaded; fit results cleared.');
     } catch (e) { setError(String(e)); }
   }
-  function saveProject() { download('spectrum.mossa.json', JSON.stringify({ format: 'mossa-project', version: 1, name: filename, project, preprocessing: { raw_counts: raw, controls: cal }, provenance: { application: 'MossA browser 0.1.0', matlab_reference: 'd201482b7990afbd0e2dcc23e306bfc8d60a5049' }, fit: result }, null, 2), 'application/json'); append('Project saved with data, parameters, bounds, and links.'); }
+  function saveProject() { download('spectrum.mossa.json', JSON.stringify({ format: 'mossa-project', version: 1, name: filename, project, preprocessing: { raw_counts: raw, controls: cal }, provenance: { application: `MossA ${buildInfo.version}`, commit: buildInfo.commit, modified: buildInfo.dirty, matlab_reference: 'd201482b7990afbd0e2dcc23e306bfc8d60a5049' }, fit: result }, null, 2), 'application/json'); append('Project saved with data, parameters, bounds, and links.'); }
   function exportResults() {
     if (!result) return;
     const rows = ['site,type,profile,parameter,value,approx_1std,link'];
@@ -189,7 +191,7 @@ export default function App() {
   const linkOptions = project.sites.flatMap((s, i) => keys(s).map(k => ({ id: `site:${i}:${k}`, label: `${i + 1} · ${s.name} · ${labels[k]}` }))).filter(o => o.id !== paramId(targetKey));
   const canCalculate = ready && !busy && !picking;
   return <div className="app">
-    <header className="app-header"><div className="brand"><span className="brand-mark">MossA 2</span><span className="brand-divider"/><h1>Mössbauer analysis</h1></div><button className="help-button" onClick={() => helpDialog.current?.showModal()}>Help</button></header>
+    <header className="app-header"><div className="brand"><span className="brand-mark">MossA 2</span><span className="brand-divider"/><h1>Mössbauer analysis</h1></div><div className="header-actions"><VersionIndicator/><button className="help-button" onClick={() => helpDialog.current?.showModal()}>Help</button></div></header>
     <nav className="main-toolbar" aria-label="File actions"><div className="toolbar-group"><button disabled={!canCalculate} onClick={() => fileInput.current?.click()}><span aria-hidden>↥</span> Open spectrum</button><button disabled={!canCalculate} onClick={() => projectInput.current?.click()}>Open project</button><button disabled={!canCalculate || !!error} onClick={saveProject}>Save project</button></div><div className="toolbar-group"><button disabled={!evaluation || busy || !!picking} onClick={() => download('mossa-spectrum.csv', csvSpectrum(project, evaluation!), 'text/csv')}>Export data</button><button disabled={!evaluation || busy || !!picking} onClick={() => { const svg = document.getElementById('spectrum-plot')!.cloneNode(true) as SVGElement; svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg'); const style = document.createElementNS('http://www.w3.org/2000/svg', 'style'); style.textContent = '.grid{stroke:#e8edf0;stroke-width:1}.axis{stroke:#a0aab2}.tick{fill:#687783;font:12px sans-serif}.axis-label{fill:#4a5964;font:13px sans-serif}.section-label{fill:#687783;font:11px sans-serif}'; svg.prepend(style); download('mossa-spectrum.svg', new XMLSerializer().serializeToString(svg), 'image/svg+xml'); }}>Export graph</button></div><div className="toolbar-group history-controls"><button aria-label="Undo" title="Undo (⌘/Ctrl+Z)" disabled={!canCalculate || !history.past.length} onClick={() => travel('undo')}>↶ Undo</button><button aria-label="Redo" title="Redo (⌘/Ctrl+Shift+Z)" disabled={!canCalculate || !history.future.length} onClick={() => travel('redo')}>↷ Redo</button></div><button className="example-button" disabled={!canCalculate} onClick={() => { edit(demo(), { selected: 0, raw: null, filename: 'Synthetic iron mixture' }); append('Synthetic teaching example reset.'); }}>Load example</button></nav>
     <input ref={fileInput} type="file" hidden aria-label="Spectrum file" accept=".txt,.dat,.csv,.asc" onChange={e => { void loadSpectrum(e.target.files?.[0]); e.target.value = ''; }}/><input ref={projectInput} type="file" hidden aria-label="Project file" accept=".json" onChange={e => { void loadProject(e.target.files?.[0]); e.target.value = ''; }}/>
     <div className={`workspace ${optionsOpen ? 'options-open' : ''}`}>

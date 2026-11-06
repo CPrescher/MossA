@@ -48,3 +48,17 @@ input.number.invalid:focus-visible:enabled,input.number.invalid:hover:enabled{bo
 .parameter-results .uncertainty[data-state=needs-fit],.parameter-results .uncertainty[data-state=unavailable],.parameter-results .result-fixed{color:#8b99a1;font-size:9px}
 .table-scroll .parameter-results td{height:38px;padding:5px 8px;vertical-align:top}
 .results-note{font-size:9px;color:#758c94;white-space:nowrap}.results-note.needs-fit{color:#9b7b44}
+
+/* Build identity stays visible without taking space from the spectrum. */
+.header-actions{display:flex;align-items:center;gap:14px;min-width:0}
+.version-indicator{min-width:0;font-size:10px;color:#7a8e96}
+.version-button,.version-local{display:flex;align-items:center;gap:6px;font-size:10px;font-variant-numeric:tabular-nums}
+.version-button{border:1px solid transparent;background:transparent;padding:4px 5px;color:inherit}
+.version-dot{width:5px;height:5px;border-radius:50%;background:#a0adb3;flex-shrink:0}
+.version-indicator.current .version-dot{background:#459a7f}
+.version-indicator.update .version-button{color:#8c631e;background:#fff5df;border-color:#e6ce9a}
+.version-indicator.update .version-dot{background:#b98528}
+.version-indicator.unavailable .version-dot{background:#b9975c}
+.version-button strong{font-weight:550}
+.version-announcement{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:700px){.header-actions{gap:5px}.version-button,.version-local{font-size:9px;gap:4px}.brand h1,.brand-divider{display:none}}
