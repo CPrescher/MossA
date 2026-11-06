@@ -1,13 +1,16 @@
+import { distributionMean } from './xvbf';
 import type { FitSummary } from './session';
 import { type Evaluation, type Parameter, type Project } from './types';
 export const formatResult = (value: number | null | undefined, digits = 5) => value == null ? '—' : Number(value.toPrecision(digits)).toLocaleString('en-US', { maximumSignificantDigits: digits });
 export const formatStd = (value: number | null | undefined) => value == null ? '—' : value === 0 ? '0' : Math.abs(value) < 1e-5 || Math.abs(value) >= 1e6 ? value.toExponential(1) : value.toLocaleString('en-US',{ minimumSignificantDigits: 2, maximumSignificantDigits: 2 });
 export function parameterValue(project: Project, evaluation: Evaluation | null, site: number, key: string) {
+  if(project.sites[site].xvbf&&(key==='cs'||key==='qs'))return evaluation?.parameters?.[`site:${site}:${key}`]??distributionMean(project.sites[site],key);
   const p = project.sites[site].params[key];
   return p.link ? evaluation?.parameters?.[`site:${site}:${key}`] ?? resolveValue(project, `site:${site}:${key}`, new Set()) : p.value;
 }
 function parameterAt(project: Project, id: string): Parameter | undefined {
   const bits = id.split(':');
+  if(bits[0]==='site'&&project.sites[Number(bits[1])]?.xvbf) { const x=project.sites[Number(bits[1])].xvbf!;if(['cs','qs'].includes(bits[2]))return undefined;if(bits[2]==='delta')return x.delta; if(bits.length===5) {const c=(bits[2]==='csd'?x.cs:x.qs)[Number(bits[3])];return c?.[bits[4] as 'center'|'width'|'weight'];} }
   return bits[0] === 'site' ? project.sites[Number(bits[1])]?.params[bits[2]] : bits[0] === 'bkg' ? project.background[Number(bits[1])] : undefined;
 }
 function resolveValue(project: Project, id: string, seen: Set<string>): number {
@@ -19,7 +22,8 @@ function resolveValue(project: Project, id: string, seen: Set<string>): number {
 export function uncertainty(project: Project, result: FitSummary | null, id: string) {
   let p = parameterAt(project,id), fixed = false; const seen = new Set<string>();
   while (p?.link && !seen.has(p.link.target)) { if (p.link.factor === 0) { fixed = true; break; } seen.add(p.link.target); p = parameterAt(project,p.link.target); }
-  fixed ||= !!p && !p.link && (!p.fit || (p.min !== null && p.min === p.max));
+  const bits=id.split(':'),derivedMean=bits[0]==='site'&&!!project.sites[Number(bits[1])]?.xvbf&&['cs','qs'].includes(bits[2]);
+  fixed ||= !derivedMean&&!!p && !p.link && (!p.fit || (p.min !== null && p.min === p.max));
   const error = result?.errors[id];
   if (fixed) return { state: 'fixed', error: null, reason: 'Fixed by parameter settings or a link to a fixed parameter.' } as const;
   if (!result) return { state: 'needs-fit', error: null, reason: 'Fit the current model to estimate its std. Model or data changes invalidate previous uncertainties.' } as const;

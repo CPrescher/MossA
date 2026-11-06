@@ -27,7 +27,7 @@ async function binding(project: Project) {
 export async function createProjectFile(snapshot: Snapshot, provenance: Record<string, unknown>) {
   const fit = snapshot.fit ?? null;
   return {
-    format: 'mossa-project', version: 1, name: snapshot.filename, project: snapshot.project,
+    format: 'mossa-project', version: snapshot.project.sites.some(s=>s.xvbf) ? 2 : 1, required_features: snapshot.project.sites.some(s=>s.xvbf) ? ['xvbf-v1'] : undefined, name: snapshot.filename, project: snapshot.project,
     selected_site: snapshot.selected,
     preprocessing: { raw_counts: snapshot.raw, controls: snapshot.cal }, provenance, fit,
     fit_state: fit ? { binding: await binding(snapshot.project), elapsed_ms: snapshot.fitElapsed ?? null } : null,

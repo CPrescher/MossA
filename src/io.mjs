@@ -35,7 +35,7 @@ export function calibrateCounts(data, maxVelocity, shift, sinusoidal, foldCenter
   return { x: y.map((_, i) => (sinusoidal ? -Math.cos(i / (y.length - 1) * Math.PI) : -1 + 2 * i / (y.length - 1)) * maxVelocity - shift), y };
 }
 export function validateProjectFile(doc) {
-  if (doc?.format !== 'mossa-project' || doc.version !== 1 || !doc.project) throw new Error('This is not a supported MossA browser project (version 1). MATLAB .map files need conversion.');
+  if (doc?.format !== 'mossa-project' || ![1,2].includes(doc.version) || !doc.project || (doc.version === 2 && (doc.required_features !== undefined && (!Array.isArray(doc.required_features) || !doc.required_features.length || doc.required_features.some(feature => feature !== 'xvbf-v1'))))) throw new Error('This is not a supported MossA browser project version or it requires a newer app. MATLAB .map files need conversion.');
   const p = doc.project;
   if (!Array.isArray(p.spectrum?.x) || !Array.isArray(p.spectrum?.y) || !Array.isArray(p.sites) || !Array.isArray(p.background) || p.sites.length > 16 || p.spectrum.x.length > 20000) throw new Error('Invalid project structure or size.');
   return p;

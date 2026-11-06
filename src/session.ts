@@ -1,4 +1,5 @@
 import { validCalibrationReference, type CalibrationReference } from './calibration';
+import { validXvbf } from './xvbf';
 import { validSourceReference, type SourceReference } from './source-calibration';
 import type { FitResult, Parameter, Project } from './types';
 export const SESSION_KEY = 'mossa.session.v1';
@@ -22,6 +23,7 @@ export function decodeSession(text: string): Session {
   const saved = JSON.parse(text), s = saved?.snapshot as Snapshot, p = s?.project;
   if (saved?.version !== 1 || !p || !Array.isArray(p.spectrum?.x) || !Array.isArray(p.spectrum?.y) || p.spectrum.x.length < 8 || p.spectrum.x.length > 20000 || p.spectrum.x.length !== p.spectrum.y.length || !p.spectrum.x.every(finite) || !p.spectrum.y.every(finite) || p.spectrum.x.some((x,i,a) => i > 0 && x <= a[i-1])) throw new Error('Invalid saved spectrum.');
   if (!Array.isArray(p.sites) || p.sites.length > 16 || !p.sites.every(site => typeof site.name === 'string' && ['Singlet','Doublet','Sextet'].includes(site.kind) && ['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].includes(site.profile) && ['cs','fwhm','intensity','qs','bhf','a12','a13','mix'].every(k => parameterOK(site.params?.[k]))) || !Array.isArray(p.background) || p.background.length < 1 || p.background.length > 4 || !p.background.every(parameterOK) || !['thin','transmission'].includes(p.mode) || !['unweighted','counts'].includes(p.weighting) || !finite(p.source_fwhm) || typeof p.source_squared !== 'boolean' || !finite(p.max_iterations)) throw new Error('Invalid saved model.');
+  if (p.sites.some(site=>site.xvbf && (site.kind!=='Doublet'||site.profile!=='Lorentzian'||!validXvbf(site.xvbf)))) throw new Error('Invalid saved xVBF model.');
   if (typeof s.filename !== 'string' || (s.raw !== null && (!Array.isArray(s.raw) || s.raw.length < 8 || s.raw.length > 20000 || !s.raw.every(finite))) || !s.cal || ![s.cal.max,s.cal.shift,s.cal.center].every(finite) || s.cal.max <= 0 || typeof s.cal.folding !== 'boolean' || typeof s.cal.sinusoidal !== 'boolean') throw new Error('Invalid saved preprocessing.');
   if (s.cal.reference && !validCalibrationReference(s.cal.reference)) throw new Error('Invalid saved velocity reference.');
   if (s.cal.sourceReference && !validSourceReference(s.cal.sourceReference)) throw new Error('Invalid saved source reference.');

@@ -33,6 +33,7 @@ fn project(kind: &str, shape: &str) -> Project {
             kind: kind.into(),
             profile: shape.into(),
             params,
+            xvbf: None,
         }],
         background: vec![par(1000., true)],
         mode: "thin".into(),
@@ -330,4 +331,54 @@ fn zero_sites_support_background_only_fitting() {
     assert!(r.converged);
     assert!((r.project.background[0].value - 1234.5).abs() < 1e-8);
     assert_eq!(r.free_parameters, 1);
+}
+
+#[test]
+fn xvbf_simplex_enforces_physical_bounds_and_fixed_weights_on_all_trials() {
+    let mut p = project("Doublet", "Lorentzian");
+    for value in p.sites[0].params.values_mut() {
+        value.fit = false;
+    }
+    p.background[0].fit = false;
+    let component = |center, weight, free, lower, upper| DistributionComponent {
+        center: par(center, false),
+        width: par(0.2, false),
+        weight: Parameter {
+            value: weight,
+            fit: free,
+            min: Some(lower),
+            max: Some(upper),
+            link: None,
+        },
+    };
+    p.sites[0].xvbf = Some(Xvbf {
+        delta: par(0.3, false),
+        cs: vec![component(0.2, 1., false, 0., 1.)],
+        qs: vec![
+            component(0.8, 0.1, true, 0.1, 0.3),
+            component(1.5, 0.25, true, 0.1, 0.4),
+            component(2.3, 0.25, true, 0.1, 0.4),
+            component(3., 0.4, false, 0., 1.),
+        ],
+    });
+    let model = Prepared::new(&p).unwrap();
+    assert_eq!(model.free.len(), 2);
+    for a in [0., 0.25, 0.5, 0.75, 1.] {
+        for b in [0., 0.25, 0.5, 0.75, 1.] {
+            let trial = model.expand(&[a, b]);
+            let qs = &trial.sites[0].xvbf.as_ref().unwrap().qs;
+            assert!((qs.iter().map(|c| c.weight.value).sum::<f64>() - 1.).abs() < 1e-14);
+            assert_eq!(qs[3].weight.value, 0.4);
+            for c in qs {
+                assert!(
+                    c.weight.value >= c.weight.min.unwrap() - 1e-14
+                        && c.weight.value <= c.weight.max.unwrap() + 1e-14
+                );
+            }
+            assert!(evaluate_prepared(&model, &[a, b])
+                .y
+                .iter()
+                .all(|v| v.is_finite()));
+        }
+    }
 }

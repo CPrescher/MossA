@@ -1,6 +1,14 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.10', date: '2026-11-06',
+    changes: [
+      'xVBF fitting for Lorentzian doublets: CS/QS Gaussian mixtures, coupling, fixed flags, and component bounds.',
+      'Distribution weights stay normalized during fitting; component and mean-parameter std include their constraints.',
+      'Edit and preview distributions in xVBF; save projects, export parameters, and restore fits with Undo/Redo.',
+    ],
+  },
+  {
     version: '2.0.0-preview.9',
     date: '2026-11-06',
     changes: [

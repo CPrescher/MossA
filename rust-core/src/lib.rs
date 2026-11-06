@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, f64::consts::PI};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
+mod xvbf;
+pub use xvbf::{Component as DistributionComponent, Xvbf};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Link {
@@ -31,6 +33,8 @@ pub struct Site {
     pub kind: String,
     pub profile: String,
     pub params: BTreeMap<String, Parameter>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub xvbf: Option<Xvbf>,
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Spectrum {
@@ -145,6 +149,9 @@ fn get(s: &Site, key: &str) -> f64 {
     s.params[key].value
 }
 pub fn site_curve(s: &Site, x: f64) -> f64 {
+    if s.xvbf.is_some() {
+        return xvbf::curve(s, x);
+    }
     let (cs, w, area) = (get(s, "cs"), get(s, "fwhm"), get(s, "intensity"));
     let mix = s.params.get("mix").map_or(0.5, |p| p.value);
     let line = |c, a| profile(x, c, w, a, &s.profile, mix);
@@ -172,6 +179,9 @@ pub fn site_curve(s: &Site, x: f64) -> f64 {
     }
 }
 fn active_keys(s: &Site) -> Vec<&'static str> {
+    if s.xvbf.is_some() {
+        return vec!["intensity"];
+    }
     let mut k = vec!["cs", "fwhm", "intensity"];
     if s.kind != "Singlet" {
         k.extend(["qs", "a12"]);
@@ -206,6 +216,7 @@ struct Prepared {
     // Precomputed source Fourier transform, shared by all model evaluations.
     source_fft: Option<Vec<Complex<f64>>>,
     source_calibration: bool,
+    simplexes: Vec<xvbf::Simplex>,
 }
 fn valid(p: &Project) -> Result<(), String> {
     let n = p.spectrum.x.len();
@@ -268,6 +279,7 @@ impl Prepared {
                 || p.sites.len() != 1
                 || p.sites[0].kind != "Singlet"
                 || p.sites[0].profile != "Lorentzian"
+                || p.sites[0].xvbf.is_some()
                 || p.sites[0]
                     .params
                     .get("fwhm")
@@ -305,6 +317,7 @@ impl Prepared {
             });
         }
         for (i, s) in p.sites.iter().enumerate() {
+            xvbf::validate(s)?;
             if !["Singlet", "Doublet", "Sextet"].contains(&s.kind.as_str())
                 || !["Lorentzian", "Gaussian", "PseudoVoigt", "LorSquared"]
                     .contains(&s.profile.as_str())
@@ -334,6 +347,9 @@ impl Prepared {
                     upper: hi,
                 });
             }
+            if let Some(x) = &s.xvbf {
+                xvbf::entries(&mut entries, i, x);
+            }
         }
         for e in &mut entries {
             if !e.param.value.is_finite()
@@ -347,10 +363,13 @@ impl Prepared {
             }
             e.lower = e.lower.max(e.param.min.unwrap_or(f64::NEG_INFINITY));
             e.upper = e.upper.min(e.param.max.unwrap_or(f64::INFINITY));
-            if e.lower > e.upper {
+            if e.lower > e.upper
+                || (e.param.link.is_none() && (e.param.value < e.lower || e.param.value > e.upper))
+            {
                 return Err(format!("{}: incompatible bounds.", e.id));
             }
         }
+        let simplexes = xvbf::simplexes(&mut entries, p)?;
         fn root(
             i: usize,
             entries: &[Entry],
@@ -446,6 +465,7 @@ impl Prepared {
             initial,
             source_fft,
             source_calibration,
+            simplexes,
         })
     }
     fn expand(&self, x: &[f64]) -> Project {
@@ -458,11 +478,12 @@ impl Prepared {
             let (r, f) = self.roots[i];
             let v = values[r] * f;
             match e.site {
-                Some(s) => p.sites[s].params.get_mut(&e.key).unwrap().value = v,
+                Some(s) => xvbf::parameter_mut(&mut p.sites[s], &e.key).value = v,
                 None if e.key == "source_fwhm" => p.source_fwhm = v,
                 None => p.background[e.key.parse::<usize>().unwrap()].value = v,
             };
         }
+        xvbf::expand(&self.simplexes, &mut p, &values, &self.entries);
         p
     }
     fn curves(&self, x: &[f64]) -> (Vec<f64>, Vec<f64>, Vec<Vec<f64>>) {
@@ -679,18 +700,25 @@ fn evaluate_prepared(m: &Prepared, x: &[f64]) -> Evaluation {
     let sse = residual.iter().map(|r| r * r).sum();
     let objective = m.residuals(x).iter().map(|r| r * r).sum();
     let expanded = m.expand(x);
-    let parameters = m
+    let mut parameters: BTreeMap<String, f64> = m
         .entries
         .iter()
         .map(|e| {
             let value = match e.site {
-                Some(i) => expanded.sites[i].params[&e.key].value,
+                Some(i) => xvbf::parameter(&expanded.sites[i], &e.key).value,
                 None if e.key == "source_fwhm" => expanded.source_fwhm,
                 None => expanded.background[e.key.parse::<usize>().unwrap()].value,
             };
             (e.id.clone(), value)
         })
         .collect();
+    for (i, s) in expanded.sites.iter().enumerate() {
+        if s.xvbf.is_some() {
+            for k in ["cs", "qs"] {
+                parameters.insert(format!("site:{i}:{k}"), s.params[k].value);
+            }
+        }
+    }
     Evaluation {
         parameters,
         y,
@@ -793,6 +821,37 @@ pub fn fit_with_progress(
     let m = Prepared::new(p)?;
     fit_prepared(m, callback)
 }
+fn derived_error(
+    m: &Prepared,
+    x: &[f64],
+    covariance: Option<&DMatrix<f64>>,
+    active: &[bool],
+    value: impl Fn(&Project) -> f64,
+) -> Option<f64> {
+    let mut gradient = DVector::zeros(x.len());
+    for k in 0..x.len() {
+        let h = 6e-6 * x[k].abs().max(1.);
+        let mut a = x.to_vec();
+        let mut b = x.to_vec();
+        a[k] = (x[k] + h).min(m.upper[k]);
+        b[k] = (x[k] - h).max(m.lower[k]);
+        gradient[k] = (value(&m.expand(&a)) - value(&m.expand(&b))) / (a[k] - b[k]);
+    }
+    if gradient.iter().all(|g| g.abs() < 1e-10) {
+        return Some(0.);
+    }
+    if gradient
+        .iter()
+        .enumerate()
+        .any(|(k, g)| active.get(k).copied().unwrap_or(false) && g.abs() > 1e-10)
+    {
+        return None;
+    }
+    covariance.and_then(|c| {
+        let v = gradient.dot(&(c * &gradient));
+        v.is_finite().then(|| v.max(0.).sqrt())
+    })
+}
 fn fit_prepared(
     m: Prepared,
     callback: Option<Box<dyn FnMut(FitProgress)>>,
@@ -875,15 +934,34 @@ fn fit_prepared(
             warnings.push("One or more parameters are at a bound; symmetric uncertainty estimates for them and their linked parameters are omitted.".into());
         }
     }
-    let errors = m
+    let mut errors: BTreeMap<String, Option<f64>> = m
         .entries
         .iter()
         .enumerate()
         .map(|(i, e)| {
             let (r, f) = m.roots[i];
-            (e.id.clone(), root_errors[r].map(|s| s * f.abs()))
+            let error = if e.site.is_some() && e.key.ends_with(":weight") {
+                derived_error(&m, &x, covariance.as_ref(), &active, |p| {
+                    xvbf::parameter(&p.sites[e.site.unwrap()], &e.key).value
+                })
+            } else {
+                root_errors[r].map(|s| s * f.abs())
+            };
+            (e.id.clone(), error)
         })
         .collect();
+    for (i, site) in p.sites.iter().enumerate() {
+        if site.xvbf.is_some() {
+            for key in ["cs", "qs"] {
+                errors.insert(
+                    format!("site:{i}:{key}"),
+                    derived_error(&m, &x, covariance.as_ref(), &active, |p| {
+                        p.sites[i].params[key].value
+                    }),
+                );
+            }
+        }
+    }
     Ok(FitResult {
         project: m.expand(&x),
         evaluation,
