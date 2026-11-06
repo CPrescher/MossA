@@ -1,6 +1,14 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.5',
+    date: '2026-11-06',
+    changes: [
+      'MossA uses the MIT License; updated legal notes and package information.',
+      'License text and third-party notices are included with the browser app.',
+    ],
+  },
+  {
     version: '2.0.0-preview.4',
     date: '2026-11-06',
     changes: [

@@ -22,6 +22,9 @@ export default defineConfig({
     name: 'mossa-build-info',
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'build-info.json', source: JSON.stringify(buildInfo, null, 2) + '\n' });
+      for (const [fileName, sourceName] of [['LICENSE.txt', 'LICENSE'], ['THIRD_PARTY_NOTICES.txt', 'THIRD_PARTY_NOTICES.txt']]) {
+        this.emitFile({ type: 'asset', fileName, source: readFileSync(new URL(`./${sourceName}`, import.meta.url), 'utf8') });
+      }
     },
   }],
   define: { __MOSSA_BUILD__: JSON.stringify(buildInfo) },

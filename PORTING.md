@@ -1,6 +1,6 @@
 # Numerical provenance and migration notes
 
-Reference: `CPrescher/MossA`, commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049` (retained unchanged under `reference/MossA`). The browser and native Rust code share one numerical implementation.
+Reference: `CPrescher/MossA`, commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049` (MATLAB code retained under `reference/MossA`; the license file was updated to MIT at the author’s request). The browser and native Rust code share one numerical implementation.
 
 ## Preserved conventions
 

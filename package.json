@@ -1,9 +1,9 @@
 {
   "name": "mossa-browser",
-  "version": "2.0.0-preview.4",
+  "version": "2.0.0-preview.5",
   "private": true,
   "type": "module",
-  "license": "GPL-3.0-only",
+  "license": "MIT",
   "scripts": {
     "wasm": "wasm-pack build rust-core --target web --out-dir ../src/wasm --release",
     "dev": "vite --host 127.0.0.1",
