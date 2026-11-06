@@ -1,6 +1,14 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.4',
+    date: '2026-11-06',
+    changes: [
+      'A compact footer explains that spectra stay on your device and processing runs locally.',
+      'Find privacy information, the Impressum, legal notes, and the version/changelog in the footer.',
+    ],
+  },
+  {
     version: '2.0.0-preview.3',
     date: '2026-11-06',
     changes: [

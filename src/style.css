@@ -111,3 +111,21 @@ input.number.invalid:focus-visible:enabled,input.number.invalid:hover:enabled{bo
 .calibration-footer p{font-size:10px;line-height:1.5;max-width:560px}
 .calibration-footer>button{font-size:11px;background:#2b7976;color:white;border-color:#2b7976}
 @media(max-width:650px){.calibration-body{grid-template-columns:190px minmax(0,1fr)}.calibration-controls{padding:10px}.calibration-controls .inline-label{font-size:9px}.calibration-controls .inline-label>input{max-width:65px}.calibration-footer{padding:9px;gap:8px}}
+
+.app-footer{display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex:0 0 auto;min-height:30px;padding:3px 14px;background:#f5f8f9;border-top:1px solid #d9e2e6;color:#7a8e96;font-size:10px}
+.footer-privacy{flex:1 1 300px;font-size:10px;line-height:1.5}
+.footer-links{display:flex;align-items:center;gap:10px}
+.footer-links button{border:0;background:transparent;border-radius:2px;padding:3px 0;font-size:10px;color:#637f83}
+.footer-links button:hover:not(:disabled){border:0;background:transparent;color:#217c79;text-decoration:underline}
+.app-footer>.version-indicator{margin-left:auto}
+.legal-dialog{width:min(560px,calc(100vw - 32px));max-height:80dvh;padding:0;border:1px solid #ccd8de;border-radius:7px;background:#fafcfc;color:#61727d;box-shadow:0 15px 60px #233f4b25;overflow:hidden;font-size:12px}
+.legal-dialog[open]{display:flex;flex-direction:column}
+.legal-dialog::backdrop{background:#263b4950}
+.legal-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;border-bottom:1px solid #e0e7ea;flex-shrink:0}
+.legal-heading h2{font-size:15px;color:#3b645f}
+.legal-heading button{padding:1px 6px;border:0;background:transparent;font-size:20px}
+.legal-content{min-height:0;overflow:auto;padding:4px 20px 17px;line-height:1.7;scrollbar-width:thin}
+.legal-content h3{font-size:12px;color:#4d696a;margin:14px 0 5px}
+.legal-content p{margin:0 0 10px}
+.legal-content address{font-style:normal;line-height:1.8;margin-bottom:15px}
+@media(max-width:750px){.app-footer{gap:3px 10px;padding:3px 10px}.footer-privacy{flex-basis:100%;font-size:9px}.footer-links button,.app-footer .version-button{font-size:9px}}
