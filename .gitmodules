@@ -1,0 +1,3 @@
+[submodule "reference/MossA"]
+	path = reference/MossA
+	url = https://github.com/CPrescher/MossA.git

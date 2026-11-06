@@ -1,0 +1,15 @@
+export type Parameter = { value: number; fit: boolean; min: number | null; max: number | null; link?: { target: string; factor: number } | null };
+export type Site = { name: string; kind: 'Singlet' | 'Doublet' | 'Sextet'; profile: 'Lorentzian' | 'Gaussian' | 'PseudoVoigt' | 'LorSquared'; params: Record<string, Parameter> };
+export type Project = { spectrum: { x: number[]; y: number[] }; sites: Site[]; background: Parameter[]; mode: 'thin' | 'transmission'; source_fwhm: number; source_squared: boolean; weighting: 'unweighted' | 'counts'; max_iterations: number };
+export type Evaluation = { parameters: Record<string, number>; y: number[]; background: number[]; components: number[][]; residual: number[]; sse: number; objective: number };
+export type FitResult = { project: Project; evaluation: Evaluation; errors: Record<string, number | null>; intensity_fractions?: { value: number | null; error: number | null }[]; iterations: number; converged: boolean; termination: string; free_parameters: number; dof: number; rank: number; reduced_objective: number; warnings: string[] };
+export type FitProgress = { project: Project; evaluation: Evaluation; iteration: number; elapsed_ms: number };
+export const labels: Record<string, string> = { cs: 'CS', fwhm: 'FWHM', intensity: 'Intensity', qs: 'QS', bhf: 'BHF', a12: 'A12', a13: 'A13', mix: 'L fraction' };
+export const colors = ['#168a87', '#c47735', '#8261a9', '#5684b3', '#a85e78', '#6c8f42'];
+export function keys(site: Site) {
+  return ['cs', 'fwhm', 'intensity', ...(site.kind !== 'Singlet' ? ['qs', 'a12'] : []), ...(site.kind === 'Sextet' ? ['bhf', 'a13'] : []), ...(site.profile === 'PseudoVoigt' ? ['mix'] : [])];
+}
+export function parameter(value: number, fit = true, min: number | null = null, max: number | null = null): Parameter { return { value, fit, min, max, link: null }; }
+export function newSite(index: number, kind: Site['kind'] = 'Doublet'): Site {
+  return { name: `Site ${index + 1}`, kind, profile: 'Lorentzian', params: { cs: parameter(0, true, -10, 10), fwhm: parameter(.35, true, .01, 3), intensity: parameter(400, true, 0), qs: parameter(1, true, -10, 10), bhf: parameter(33, true, 0, 60), a12: parameter(kind === 'Doublet' ? .5 : 1.5, false, kind === 'Doublet' ? 0 : .001, kind === 'Doublet' ? 1 : null), a13: parameter(3, false, .001), mix: parameter(.5, true, 0, 1) } };
+}

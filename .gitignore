@@ -1,0 +1,8 @@
+node_modules/
+dist/
+rust-core/target/
+src/wasm/
+test-results/
+playwright-report/
+.DS_Store
+*.tsbuildinfo

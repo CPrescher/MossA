@@ -1,0 +1,22 @@
+import { useEffect, useRef, useState } from 'react';
+import type { Site } from './types';
+
+export function AddSiteMenu({ disabled, kind, profile, onKind, onProfile, onDefine }: { disabled: boolean; kind: Site['kind']; profile: Site['profile']; onKind: (kind: Site['kind']) => void; onProfile: (profile: Site['profile']) => void; onDefine: () => void }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null), first = useRef<HTMLSelectElement>(null), trigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    first.current?.focus();
+    const outside = (event: PointerEvent) => { if (!root.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, [open]);
+  return <div className="add-site-control" ref={root} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); trigger.current?.focus(); } }}>
+    <button ref={trigger} title="Add a site" aria-label="Add site" aria-haspopup="dialog" aria-expanded={open} disabled={disabled} onClick={() => setOpen(v => !v)}>＋</button>
+    {open && <div className="add-site-popover" role="dialog" aria-label="New site">
+      <label className="stack-label">Site type<select ref={first} aria-label="New site type" value={kind} onChange={e => onKind(e.target.value as Site['kind'])}>{['Singlet','Doublet','Sextet'].map(v => <option key={v}>{v}</option>)}</select></label>
+      <label className="stack-label">Line profile<select aria-label="New line profile" value={profile} onChange={e => onProfile(e.target.value as Site['profile'])}>{['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].map(v => <option key={v}>{v}</option>)}</select></label>
+      <button className="define-new-site" onClick={() => { setOpen(false); onDefine(); }}>Define on graph</button>
+    </div>}
+  </div>;
+}
