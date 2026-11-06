@@ -10,6 +10,13 @@ export const defaultLayout: Layout = { resultsHeight: 200, sitesHeight: 104, tab
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 function parameterOK(p: Parameter) { return p && finite(p.value) && typeof p.fit === 'boolean' && (p.min === null || finite(p.min)) && (p.max === null || finite(p.max)) && (p.link == null || (typeof p.link.target === 'string' && finite(p.link.factor))); }
+export function decodeFitSummary(value: unknown, sites: number): FitSummary | null {
+  const f = value as FitSummary | null;
+  if (!f || typeof f.converged !== 'boolean' || typeof f.termination !== 'string' || ![f.iterations, f.free_parameters, f.dof, f.rank].every(v => Number.isInteger(v) && v >= 0) || f.rank > f.free_parameters || !finite(f.reduced_objective) || f.reduced_objective < 0 || !f.errors || Array.isArray(f.errors) || typeof f.errors !== 'object' || !Object.values(f.errors).every(n => n === null || (finite(n) && n >= 0)) || !Array.isArray(f.warnings) || !f.warnings.every(w => typeof w === 'string')) return null;
+  const fit: FitSummary = { converged: f.converged, termination: f.termination, iterations: f.iterations, free_parameters: f.free_parameters, dof: f.dof, rank: f.rank, reduced_objective: f.reduced_objective, errors: { ...f.errors }, warnings: [...f.warnings] };
+  if (Array.isArray(f.intensity_fractions) && f.intensity_fractions.length === sites && f.intensity_fractions.every(v => v && (v.value === null || (finite(v.value) && v.value >= 0 && v.value <= 100)) && (v.error === null || (finite(v.error) && v.error >= 0)))) fit.intensity_fractions = f.intensity_fractions.map(v => ({ ...v }));
+  return fit;
+}
 export function decodeSession(text: string): Session {
   const saved = JSON.parse(text), s = saved?.snapshot as Snapshot, p = s?.project;
   if (saved?.version !== 1 || !p || !Array.isArray(p.spectrum?.x) || !Array.isArray(p.spectrum?.y) || p.spectrum.x.length < 8 || p.spectrum.x.length > 20000 || p.spectrum.x.length !== p.spectrum.y.length || !p.spectrum.x.every(finite) || !p.spectrum.y.every(finite) || p.spectrum.x.some((x,i,a) => i > 0 && x <= a[i-1])) throw new Error('Invalid saved spectrum.');
@@ -19,9 +26,7 @@ export function decodeSession(text: string): Session {
   s.selected = Number.isInteger(s.selected) ? Math.max(0,Math.min(p.sites.length-1,s.selected)) : 0;
   const l = saved.layout ?? {};
   const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(196,Math.min(2000,l.resultsHeight)) : 200, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true };
-  const f = saved.fit;
-  const fit: FitSummary | null = f && typeof f.converged === 'boolean' && typeof f.termination === 'string' && [f.iterations,f.free_parameters,f.dof,f.rank,f.reduced_objective].every(finite) && f.errors && Object.values(f.errors).every(n => n === null || finite(n)) && Array.isArray(f.warnings) && f.warnings.every((w: unknown) => typeof w === 'string') ? f : null;
-  if (fit?.intensity_fractions && (!Array.isArray(fit.intensity_fractions) || fit.intensity_fractions.length !== p.sites.length || !fit.intensity_fractions.every(v => v && (v.value === null || (finite(v.value) && v.value >= 0 && v.value <= 100)) && (v.error === null || (finite(v.error) && v.error >= 0))))) delete fit.intensity_fractions;
+  const fit = decodeFitSummary(saved.fit, p.sites.length);
   return { version: 1, snapshot: s, layout, fit, elapsed: finite(saved.elapsed) ? saved.elapsed : null };
 }
 export function readSession(storage?: Store): { session: Session | null; error: string } {

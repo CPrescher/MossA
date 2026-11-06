@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.8',
+    date: '2026-11-06',
+    changes: [
+      'Reopening a saved project restores its completed fit, uncertainties, fractions, and timing without refitting.',
+      'Stored results are checked against the model/data; Undo and Redo retain the fit for each project.',
+      'Older fitted project files remain readable, with legacy provenance identified in fit warnings.',
+    ],
+  },
+  {
     version: '2.0.0-preview.7',
     date: '2026-11-06',
     changes: [
