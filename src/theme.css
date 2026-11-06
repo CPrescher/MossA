@@ -81,7 +81,7 @@
 :root[data-theme=dark] :is(.tick,.axis-label,.section-label,.fold-chart svg text) { fill:var(--dark-secondary); }
 :root[data-theme=dark] .plot-shell .observed-point { fill:#c2d0d9; opacity:.8; }
 :root[data-theme=dark] .plot-shell .total-model-curve { stroke:#f1f5f7; }
-:root[data-theme=dark] .plot-shell .selected-site-halo { stroke:var(--dark-canvas); }
+:root[data-theme=dark] .plot-shell .highlighted-site-halo { stroke:var(--dark-canvas); }
 :root[data-theme=dark] .plot-shell .residual-point { fill:#9fb9cb; }
 :root[data-theme=dark] .plot-shell .cursor-label { fill:var(--dark-raised); }
 :root[data-theme=dark] .plot-legend .dot { background:#c2d0d9; }

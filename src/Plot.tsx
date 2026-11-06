@@ -8,7 +8,7 @@ type Point={x:number;y:number};
 type Drag={button:number;start:Point;last:Point;view:View;yrange:Range;region:'main'|'residual';moved:boolean};
 export type Picking={stage:number;first?:Point;width?:Point;cursor?:Point;kind:string};
 function extent(a:number[],fallback:Range):Range{let lo=Infinity,hi=-Infinity;for(const n of a){lo=Math.min(lo,n);hi=Math.max(hi,n);}return Number.isFinite(lo)&&Number.isFinite(hi)?[lo,hi]:fallback;}
-export function Plot({id="spectrum-plot",project,evaluation,fitted,selectedSite=0,picking,onPick,onHover,onCancelPick}:{id?:string;project:Project;evaluation:Evaluation|null;fitted:boolean;selectedSite?:number;picking:Picking|null;onPick:(p:Point)=>void;onHover:(p:Point)=>void;onCancelPick:()=>void}){
+export function Plot({id="spectrum-plot",project,evaluation,fitted,highlightedSite=null,picking,onPick,onHover,onCancelPick}:{id?:string;project:Project;evaluation:Evaluation|null;fitted:boolean;highlightedSite?:number|null;picking:Picking|null;onPick:(p:Point)=>void;onHover:(p:Point)=>void;onCancelPick:()=>void}){
  const clipPrefix=id==='spectrum-plot'?'':`${id}-`;
  const xs=project.spectrum.x,ys=project.spectrum.y,full:Range=[xs[0],xs[xs.length-1]];
  const [view,setView]=useState<View>({x:full,y:null,residual:null});
@@ -69,13 +69,13 @@ export function Plot({id="spectrum-plot",project,evaluation,fitted,selectedSite=
    {yt.values.map((t,i)=><g key={i}><line x1={L} x2={R} y1={py(t)} y2={py(t)} className="grid"/><text x={L-12} y={py(t)+4} textAnchor="end" className="tick">{formatTick(t,yt.step)}</text></g>)}
    {xt.values.map((t,i)=><g key={i}><line x1={px(t)} x2={px(t)} y1={T} y2={B} className="grid"/><line x1={px(t)} x2={px(t)} y1={RT} y2={RB} className="grid"/><text x={px(t)} y={RB+20} textAnchor="middle" className="tick">{formatTick(t,xt.step)}</text></g>)}
    <g clipPath={`url(#${clipPrefix}spectrum-clip)`}>
-    {evaluation&&showSites&&evaluation.components.map((c,k)=>k===selectedSite?null:<path data-site-index={k} key={k} d={path(c.map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" stroke={colors[k%colors.length]} strokeWidth="1.3" opacity=".65"/>)}
+    {evaluation&&showSites&&evaluation.components.map((c,k)=>k===highlightedSite?null:<path data-site-index={k} key={k} d={path(c.map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" stroke={colors[k%colors.length]} strokeWidth="1.3" opacity=".65"/>)}
     {evaluation&&<path d={path(evaluation.background)} fill="none" stroke="#a6afb6" strokeDasharray="5 4" strokeWidth="1.2"/>}
     {sampled.map(i=><circle className="observed-point" key={i} cx={px(xs[i])} cy={py(ys[i])} r="1.65" fill="#3e4852" opacity=".65"/>)}
     {evaluation&&<path d={path(evaluation.y)} fill="none" className="total-model-curve" stroke="#171c20" strokeWidth="2.2"/>}
-    {evaluation&&showSites&&evaluation.components[selectedSite]&&<g className="selected-site-curve" data-site-index={selectedSite}>
-      <path d={path(evaluation.components[selectedSite].map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" className="selected-site-halo" stroke="white" strokeWidth="4.6" opacity=".75"/>
-      <path d={path(evaluation.components[selectedSite].map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" stroke={colors[selectedSite%colors.length]} strokeWidth="2.8"/>
+    {evaluation&&showSites&&highlightedSite!==null&&evaluation.components[highlightedSite]&&<g className="highlighted-site-curve" data-site-index={highlightedSite}>
+      <path d={path(evaluation.components[highlightedSite].map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" className="highlighted-site-halo" stroke="white" strokeWidth="4.6" opacity=".75"/>
+      <path d={path(evaluation.components[highlightedSite].map((v,i)=>evaluation.background[i]-v*componentScale))} fill="none" stroke={colors[highlightedSite%colors.length]} strokeWidth="2.8"/>
     </g>}
    </g>
    <line x1={L} x2={R} y1={B} y2={B} className="axis"/><line x1={L} x2={L} y1={T} y2={B} className="axis"/><text transform={`translate(14 ${(T+B)/2}) rotate(-90)`} textAnchor="middle" className="axis-label">Counts / intensity</text><text x={L} y={RT-13} className="section-label">Residual</text><line x1={L} x2={R} y1={pr(0)} y2={pr(0)} stroke="#aeb7bd" strokeDasharray="4 4"/><g clipPath={`url(#${clipPrefix}residual-clip)`}>{evaluation&&sampled.map(i=><circle className="residual-point" key={i} cx={px(xs[i])} cy={pr(evaluation.residual[i])} r="1.5" fill="#647c8b" opacity=".8"/>)}</g>{rt.values.map((t,i)=><g key={i}><line x1={L} x2={R} y1={pr(t)} y2={pr(t)} className="grid"/><text x={L-12} y={pr(t)+4} textAnchor="end" className="tick">{formatTick(t,rt.step)}</text></g>)}<line x1={L} x2={R} y1={RB} y2={RB} className="axis"/><text x={(L+R)/2} y={H-8} textAnchor="middle" className="axis-label">Velocity (mm/s)</text>
