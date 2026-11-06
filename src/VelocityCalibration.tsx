@@ -6,7 +6,8 @@ import { Plot } from './Plot';
 import { finishCalibration, referenceProject, referenceSeeds, type CalibrationSettings, type VelocityCalibration } from './calibration';
 import type { Calibration } from './session';
 import type { Evaluation, FitResult, Project } from './types';
-import { estimateFoldCenter } from './folding';
+import { estimateFoldCenter, type FoldEstimate } from './folding';
+import { FoldingDiagnostics } from './FoldingDiagnostics';
 
 export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal: Calibration; raw: number[] | null; onApply: (result: VelocityCalibration) => void; onClose: () => void }) {
   const saved = cal.reference;
@@ -17,6 +18,8 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
   const [progress, setProgress] = useState('');
   const [view, setView] = useState<{ project: Project; evaluation: Evaluation | null } | null>(null);
   const [result, setResult] = useState<VelocityCalibration | null>(null);
+  const [previewTab, setPreviewTab] = useState<'spectrum' | 'folding'>('spectrum');
+  const [foldEstimate, setFoldEstimate] = useState<FoldEstimate | null>(null);
   const [workerVersion, setWorkerVersion] = useState(0);
   const engine = useRef<Engine | null>(null), token = useRef(0), dialog = useRef<HTMLDialogElement>(null), input = useRef<HTMLInputElement>(null);
   useEffect(() => { dialog.current?.showModal(); }, []);
@@ -31,9 +34,9 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
     try { setView({ project: referenceProject(counts, settings), evaluation: null }); setError(''); }
     catch (e) { setView(null); setError(String(e)); }
   }, [counts, settings]);
-  const change = (next: Partial<CalibrationSettings>) => { setResult(null); setSettings(old => ({ ...old, ...next })); setProgress(''); };
+  const change = (next: Partial<CalibrationSettings>) => { setResult(null); setSettings(old => ({ ...old, ...next })); setProgress(''); if (next.folding === false) setPreviewTab('spectrum'); };
   const useCounts = (next: number[], filename: string, folding = settings.folding, center = next.length / 2 + .5) => {
-    setCounts(next); setName(filename); setResult(null); setProgress(''); setSettings(old => ({ ...old, folding, center, autoCenter: true }));
+    setCounts(next); setName(filename); setResult(null); setFoldEstimate(null); setProgress(''); setSettings(old => ({ ...old, folding, center, autoCenter: true }));
   };
   async function load(file?: File) {
     if (!file) return;
@@ -48,14 +51,14 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
     if (!counts || !engine.current || !ready || busy) return;
     if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before fitting.'); return; }
     const id = ++token.current;
-    setResult(null); setError(''); setBusy(true);
+    setResult(null); setError(''); setBusy(true); setPreviewTab('spectrum');
     try {
       const usedSettings = { ...settings };
       if (usedSettings.folding && usedSettings.autoCenter !== false) {
         setProgress('Finding fold center…');
         const found = await estimateFoldCenter(counts, async project => (await engine.current!.request('fit', project)).result as FitResult);
         if (id !== token.current) return;
-        usedSettings.center = found.center; setSettings(usedSettings);
+        usedSettings.center = found.center; setSettings(usedSettings); setFoldEstimate(found);
       }
       const seeds = referenceSeeds(counts, usedSettings);
       let best: VelocityCalibration | null = null, failure = '';
@@ -86,12 +89,12 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
   async function findCenter() {
     if (!counts || !engine.current || !ready || busy) return;
     const id = ++token.current;
-    setBusy(true); setResult(null); setError(''); setProgress('Finding fold center…');
+    setBusy(true); setResult(null); setError(''); setPreviewTab('folding'); setProgress('Finding fold center…');
     try {
       const found = await estimateFoldCenter(counts, async project => (await engine.current!.request('fit', project)).result as FitResult);
       if (id !== token.current) return;
       const next = { ...settings, center: found.center };
-      setSettings(next); setView({ project: referenceProject(counts, next), evaluation: null });
+      setSettings(next); setFoldEstimate(found); setView({ project: referenceProject(counts, next), evaluation: null });
       setProgress(`Fold center ${found.center}${found.refined ? '' : ' · best half-channel match'}`);
     } catch (e) { if (id === token.current) setError(String(e)); }
     finally { if (id === token.current) setBusy(false); }
@@ -119,7 +122,10 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
       {error && <p className="calibration-error" role="alert">{error}</p>}
       {result && <dl className="calibration-values"><div><dt>Max. velocity</dt><dd>{result.max.toPrecision(6)} mm/s</dd></div><div><dt>Standard CS</dt><dd>{result.shift.toPrecision(6)} mm/s</dd></div></dl>}
       {result && result.fit.warnings.length > 0 && <details className="calibration-warnings"><summary>Fit warnings ({result.fit.warnings.length})</summary>{result.fit.warnings.map(warning => <p key={warning}>{warning}</p>)}</details>}
-    </div><div className="calibration-preview">{view ? <Plot id="calibration-plot" project={view.project} evaluation={view.evaluation} fitted={!!result} selectedSite={-1} picking={null} onPick={() => {}} onHover={() => {}} onCancelPick={() => {}}/> : <p>Open a reference spectrum to preview its fit.</p>}</div></div>
-    <div className="calibration-footer"><p>{raw ? 'Apply recalibrates the current raw spectrum. Undo restores its previous scale and fit.' : 'This spectrum already has velocity values. The calibration will be saved for future raw-count imports.'}</p><button disabled={!result || busy} onClick={() => { if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>{raw ? 'Apply calibration' : 'Use calibration'}</button></div>
+    </div><div className="calibration-preview"><div className="calibration-view-tabs" role="tablist" aria-label="Calibration preview"><button role="tab" id="cal-spectrum-tab" aria-controls="cal-spectrum-view" aria-selected={previewTab === 'spectrum'} onClick={() => setPreviewTab('spectrum')}>Spectrum</button><button role="tab" id="cal-folding-tab" aria-controls="cal-folding-view" aria-selected={previewTab === 'folding'} disabled={!counts || !settings.folding} onClick={() => setPreviewTab('folding')}>Folding</button></div>
+      {previewTab === 'folding' && counts && settings.folding ? <div className="calibration-view" id="cal-folding-view" role="tabpanel" aria-labelledby="cal-folding-tab"><FoldingDiagnostics counts={counts} center={settings.center} estimate={foldEstimate} disabled={busy} onCenter={center => change({ center, autoCenter: false })}/></div>
+        : <div className="calibration-view" id="cal-spectrum-view" role="tabpanel" aria-labelledby="cal-spectrum-tab">{view ? <Plot id="calibration-plot" project={view.project} evaluation={view.evaluation} fitted={!!result} selectedSite={-1} picking={null} onPick={() => {}} onHover={() => {}} onCancelPick={() => {}}/> : <p>Open a reference spectrum to preview its fit.</p>}</div>}
+    </div></div>
+    <div className="calibration-footer"><p>{raw ? 'Apply recalibrates the current raw spectrum. Undo restores its previous scale and fit.' : 'This spectrum already has velocity values. The calibration will be saved for future raw-count imports.'}</p><button disabled={!result || busy} onClick={() => { if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before applying.'); return; } if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>{raw ? 'Apply calibration' : 'Use calibration'}</button></div>
   </dialog>;
 }

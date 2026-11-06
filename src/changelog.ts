@@ -1,6 +1,15 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.7',
+    date: '2026-11-06',
+    changes: [
+      'Inspect folding with raw counts, overlaid halves, their difference, and a symmetry-score plot.',
+      'Compare centers by clicking symmetry bars; inspect the Gaussian estimate and paired-count RMS.',
+      'Apply sample folding in one Undo/Redo step, or inspect it in the velocity-calibration window.',
+    ],
+  },
+  {
     version: '2.0.0-preview.6',
     date: '2026-11-06',
     changes: [

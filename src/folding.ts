@@ -1,7 +1,30 @@
 import { newSite, parameter, type FitResult, type Project } from './types';
 
 export type FoldScan = { centers: number[]; mismatch: number[]; project: Project; best: number };
-export type FoldEstimate = { center: number; refined: boolean; scan: FoldScan };
+export type FoldEstimate = { center: number; refined: boolean; scan: FoldScan; fit: FitResult };
+
+export function foldingPairs(data: number[], center: number) {
+  if (data.length < 16 || !Number.isFinite(center) || center < 1 || center > data.length || Math.abs(center * 2 - Math.round(center * 2)) > 1e-9) throw new Error('Choose an integer or half-integer fold center inside the data (1-based).');
+  const at = (i: number) => data[((i - 1) % data.length + data.length) % data.length];
+  const half = Math.floor(data.length / 2), left: number[] = [], right: number[] = [];
+  for (let k = 0; k < half; k++) {
+    left.push(at(center % 1 ? Math.floor(center) - k : center - k));
+    right.push(at(center % 1 ? Math.floor(center) + k + 1 : center + k));
+  }
+  const difference = left.map((v, i) => v - right[i]);
+  // At an integer center, point zero is self-paired: not an independent comparison.
+  const start = center % 1 ? 0 : 1, pairs = half - start;
+  const rms = Math.sqrt(difference.slice(start).reduce((sum, v) => sum + v * v, 0) / pairs);
+  const mean = left.slice(start).reduce((sum, v, i) => sum + (v + right[i + start]) / 2, 0) / pairs;
+  return { left, right, difference, rms, relativeRms: mean ? 100 * rms / Math.abs(mean) : null, pairs, selfPaired: start === 1 };
+}
+
+// Same literal Gaussian constants as gauss_curve.m and the Rust evaluator.
+export function foldingGaussianScore(estimate: FoldEstimate, center: number) {
+  if (!estimate.refined) return null;
+  const p = estimate.fit.project.sites[0].params, halfWidth = p.fwhm.value / 2;
+  return 100 - estimate.fit.project.background[0].value + p.intensity.value * .8326 / (halfWidth * 1.7725) * Math.exp(-(((center - p.cs.value) / halfWidth * .8326) ** 2));
+}
 
 // getfp.m: 24 half-channel candidates around the middle, with circular pairing.
 export function foldCenterScan(data: number[]): FoldScan {
@@ -37,5 +60,5 @@ export async function estimateFoldCenter(data: number[], fit: (project: Project)
   const result = await fit(scan.project);
   const value = result.project.sites[0].params.cs.value;
   const refined = result.converged && Number.isFinite(value) && value >= 1 && value <= data.length;
-  return { center: Math.round((refined ? value : scan.best) * 2) / 2, refined, scan };
+  return { center: Math.round((refined ? value : scan.best) * 2) / 2, refined, scan, fit: result };
 }

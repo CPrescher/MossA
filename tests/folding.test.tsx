@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import init, { fit_json } from '../src/wasm/mossa_core.js';
-import { foldCenterScan, estimateFoldCenter } from '../src/folding';
+import init, { fit_json, evaluate_json } from '../src/wasm/mossa_core.js';
+import { foldCenterScan, estimateFoldCenter, foldingPairs, foldingGaussianScore } from '../src/folding';
 import { foldCounts, parseSpectrum } from '../src/io.mjs';
 
 await init({ module_or_path: readFileSync(new URL('../src/wasm/mossa_core_bg.wasm', import.meta.url)) });
@@ -20,6 +20,29 @@ test('MATLAB-style fold search recovers shifted integer and half-integer centers
     assert.ok(found.scan.mismatch[at] < Math.max(...found.scan.mismatch) * 1e-6);
     assert.equal(foldCounts(data, found.center).length, Math.floor(n / 2));
   }
+});
+
+test('diagnostic halves reproduce fold.m, exclude self-pairs from RMS, and expose wrong-center mismatch', () => {
+  const data = Array.from({ length: 514 }, (_, i) => 10000 + 300 * Math.cos(2 * Math.PI * (i + 1 - 258) / 514) + 80 * Math.cos(14 * Math.PI * (i + 1 - 258) / 514));
+  for (const center of [258, 258.5, 254]) {
+    const pairs = foldingPairs(data, center);
+    assert.deepEqual(pairs.left.map((v, i) => v + pairs.right[i]), foldCounts(data, center));
+    const independent = pairs.selfPaired ? pairs.difference.slice(1) : pairs.difference;
+    assert.equal(pairs.pairs, independent.length);
+    assert.equal(pairs.rms, Math.sqrt(independent.reduce((sum, v) => sum + v * v, 0) / independent.length));
+  }
+  assert.ok(foldingPairs(data, 258).rms < 1e-8);
+  assert.ok(foldingPairs(data, 254).rms > 10);
+  assert.throws(() => foldingPairs(data, 258.2), /half-integer/);
+});
+
+test('displayed Gaussian symmetry curve is the inverse of the actual WASM fit model', async () => {
+  const data = Array.from({ length: 514 }, (_, i) => 10000 + 300 * Math.cos(2 * Math.PI * (i + 1 - 258) / 514) + 80 * Math.cos(14 * Math.PI * (i + 1 - 258) / 514));
+  const estimate = await estimateFoldCenter(data, fit);
+  const modeled = JSON.parse(evaluate_json(JSON.stringify(estimate.fit.project)));
+  const displayed = { ...estimate, refined: true };
+  estimate.scan.centers.forEach((center, i) => assert.ok(Math.abs(foldingGaussianScore(displayed, center)! - (100 - modeled.y[i])) < 1e-9));
+  assert.equal(foldingGaussianScore({ ...estimate, refined: false }, 258), null);
 });
 
 test('failed Gaussian refinement uses the discrete symmetry minimum; flat counts are not assigned a fake center', async () => {
