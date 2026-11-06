@@ -18,6 +18,7 @@ function TraceChart({ title, series, xLabel, marker, difference }: { title: stri
   const residualTop = bottom + 21, residualBottom = h - 43, maxX = Math.max(2, series[0].values.length), xt = niceTicks(1, maxX, Math.max(2, Math.floor(w / 100)));
   const x = (v: number) => left + (v - 1) / (maxX - 1) * (right - left), y = (v: number) => bottom - (v - yt[0]) / (yt[1] - yt[0]) * (bottom - top);
   const rm = Math.max(.001, ...(difference ?? []).map(Math.abs)) * 1.1, ry = (v: number) => (residualTop + residualBottom) / 2 - v / rm * (residualBottom - residualTop) / 2;
+  const differenceTicks = niceTicks(-rm, rm, 3);
   const sampled = (values: number[]) => values.map((v, i) => ({ v, i })).filter((_, i) => i % Math.max(1, Math.ceil(values.length / 1500)) === 0);
   return <section className="fold-chart"><div className="fold-chart-heading"><h3>{title}</h3><div className="fold-legend">{series.map(s => <span key={s.label}><i style={{ background: s.color }}/>{s.label}</span>)}</div></div>
     <svg ref={ref} viewBox={`0 0 ${w} ${h}`} role="img" aria-label={title}>
@@ -29,7 +30,7 @@ function TraceChart({ title, series, xLabel, marker, difference }: { title: stri
       </g>
       <line x1={left} x2={right} y1={bottom} y2={bottom} className="axis"/>
       {marker !== undefined && <text x={Math.max(left + 22, Math.min(right - 22, x(marker)))} y={top + 10} textAnchor="middle" fill="#217c79">{marker}</text>}
-      {difference && <><line x1={left} x2={right} y1={ry(0)} y2={ry(0)} stroke="#a9b6bd" strokeDasharray="4 3"/><text x={left} y={residualTop - 6}>Left − right (counts)</text>{[-rm, 0, rm].map(v => <text key={v} x={left - 7} y={ry(v) + 3} textAnchor="end">{Number(v.toPrecision(2)).toLocaleString('en-US')}</text>)}{sampled(difference).map(({ v, i }) => <circle key={i} data-testid="fold-difference" cx={x(i + 1)} cy={ry(v)} r="1.25" fill="#697f8c"/>)}<line x1={left} x2={right} y1={residualBottom} y2={residualBottom} className="axis"/></>}
+      {difference && <><line x1={left} x2={right} y1={ry(0)} y2={ry(0)} stroke="#a9b6bd" strokeDasharray="4 3"/><text x={left} y={residualTop - 6}>Left − right (counts)</text>{differenceTicks.values.map(v => <text key={v} x={left - 7} y={ry(v) + 3} textAnchor="end">{formatTick(v, differenceTicks.step)}</text>)}{sampled(difference).map(({ v, i }) => <circle key={i} data-testid="fold-difference" cx={x(i + 1)} cy={ry(v)} r="1.25" fill="#697f8c"/>)}<line x1={left} x2={right} y1={residualBottom} y2={residualBottom} className="axis"/></>}
       <text transform={`translate(12 ${(top + bottom) / 2}) rotate(-90)`} textAnchor="middle">Counts</text><text x={(left + right) / 2} y={h - 7} textAnchor="middle">{xLabel}</text>
     </svg>
   </section>;
