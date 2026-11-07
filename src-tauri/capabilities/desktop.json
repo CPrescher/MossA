@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "desktop",
-  "description": "Local application and offline documentation windows. File writes require a native Save As dialog in Rust.",
+  "description": "Local application and offline documentation windows. Export writes require a native Save As dialog. Project Save can reuse only a file previously chosen in a native Open/Save dialog; project commands are restricted to the analysis window.",
   "windows": ["main", "documentation"],
   "permissions": ["core:default"]
 }

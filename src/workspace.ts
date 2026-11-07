@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useSnapshotHistory } from './history';
 import { decodeSession, defaultLayout, snapshotVersion, type Calibration, type FitSummary, type Snapshot } from './session';
 import type { Project } from './types';
@@ -165,11 +165,23 @@ export function decodeWorkspace(value: unknown): Workspace {
 export function useWorkspaceHistory(initial: () => Workspace) {
   // Entries are immutable. Comparing by identity avoids serializing every
   // spectrum's observations whenever the user changes tabs.
+  const documents = useRef(new WeakMap<Workspace, object>());
   const collection = useSnapshotHistory(initial, true);
+  const documentFor = (workspace: Workspace) => {
+    let document = documents.current.get(workspace);
+    if (!document) { document = {}; documents.current.set(workspace, document); }
+    return document;
+  };
+  const setWorkspace = (value: Workspace, record = true, newDocument = false) => {
+    const document = newDocument ? {} : documentFor(collection.present);
+    documents.current.set(value, document);
+    collection.set(value, record);
+    return document;
+  };
   const present = useMemo(() => activeSnapshot(collection.present), [collection.present]);
-  return { ...collection, workspace: collection.present, present,
+  return { ...collection, workspace: collection.present, present, document: documentFor(collection.present),
     past: collection.past.map(activeSnapshot), future: collection.future.map(activeSnapshot),
-    set: (snapshot: Snapshot, record = true) => collection.set(updateActiveSnapshot(collection.present, snapshot), record),
-    setWorkspace: collection.set,
+    set: (snapshot: Snapshot, record = true) => setWorkspace(updateActiveSnapshot(collection.present, snapshot), record),
+    setWorkspace,
   };
 }

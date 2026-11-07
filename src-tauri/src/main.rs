@@ -5,6 +5,8 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
+mod project_files;
+
 const BRIDGE: &str = include_str!("../desktop-bridge.js");
 
 #[tauri::command]
@@ -116,6 +118,7 @@ fn local_navigation(url: &url::Url) -> bool {
 
 fn main() {
     tauri::Builder::default()
+        .manage(project_files::ProjectFiles::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_opener::Builder::new()
@@ -124,6 +127,8 @@ fn main() {
         )
         .invoke_handler(tauri::generate_handler![
             save_file,
+            project_files::open_project_file,
+            project_files::save_project_file,
             focus_main,
             open_document,
             open_external

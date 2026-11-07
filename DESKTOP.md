@@ -53,9 +53,9 @@ search indexes work without rewriting scientific source documents.
 
 ## Files, documentation, and updates
 
-- ⌘/Ctrl+O opens a project and ⌘/Ctrl+S opens Save As.
-- Open project and spectrum imports use the operating system file chooser.
-- Project, CSV, comparison JSON, SVG, PNG, and tutorial downloads use native
+- ⌘/Ctrl+O opens a project. ⌘/Ctrl+S saves to the current project file; the first save asks for a location. Save As (⌘/Ctrl+Shift+S) always asks for a destination and makes that file the current project. Canceling or failing Save As retains the previous destination.
+- Open project and spectrum imports use the operating system file chooser. Opening a desktop project remembers its file for Save after the project has loaded successfully. New project gets a separate destination; Undo/Redo restores the appropriate project association. File associations stay in memory for the editor session and are not embedded in portable projects or browser autosaves.
+- Project Save As, CSV, comparison JSON, SVG, PNG, and tutorial downloads use native
   Save As dialogs. Cancel does not report a successful save. Rust writes through
   a temporary file in the chosen directory before replacing the destination.
 - Help opens an offline documentation window, leaving the analysis window open.
@@ -154,3 +154,18 @@ unavailable; fit the synthetic spectrum; import a tutorial spectrum; save/reopen
 a project and confirm fit results; cancel a Save As dialog; export CSV/SVG/PNG;
 search the manual and save tutorial files; quit/relaunch and confirm autosave.
 Build success alone does not establish native runtime behavior on another OS.
+
+## Project Save verification (2026-11-07)
+
+The desktop file tests cover first Save, reusing a selected target, Save As target
+switching, cancellation and write errors, and distinct document identities through
+New/Open/Undo/Redo. Native Rust tests cover file replacement, read-only failures,
+unknown file capabilities, and invalid/oversized project input.
+
+An isolated macOS validation app with its own application identifier verified the
+actual native Save/Open dialogs, both keyboard shortcuts, repeated Save without a
+dialog, canceled Save As, switching to a Save As copy, New requiring a destination,
+the app's Undo button restoring the earlier file association, opening an existing
+project and saving back to it, and a read-only Save failure preserving the file.
+The generated original and copy were checked independently on disk. These runtime
+checks were on macOS; Windows/Linux receive native command tests and build checks.

@@ -38,10 +38,10 @@ export function ProjectSplit({ ratio, onChange, spectra, models }: { ratio: numb
   </div>;
 }
 
-export function ProjectSidebar({ workspace, disabled, collapsed, ratio, onCollapse, onRatio, onSelect, onImport, onNew, onOpen, onSave, saveDisabled, onRename, onRemove, renamingSpectrumId, onCommitName, onCancelName, children }: {
+export function ProjectSidebar({ workspace, disabled, collapsed, ratio, onCollapse, onRatio, onSelect, onImport, onNew, onOpen, onSave, onSaveAs, saveDisabled, onRename, onRemove, renamingSpectrumId, onCommitName, onCancelName, children }: {
   workspace: Workspace; disabled: boolean; collapsed: boolean; ratio: number; onCollapse: () => void;
   onRatio: (ratio: number) => void; onSelect: (id: string) => void; onImport: () => void;
-  onNew?: () => void; onOpen?: () => void; onSave?: () => void; saveDisabled?: boolean;
+  onNew?: () => void; onOpen?: () => void; onSave?: () => void; onSaveAs?: () => void; saveDisabled?: boolean;
   onRename: (kind: 'project' | 'spectrum') => void; onRemove: () => void; children: ReactNode;
   renamingSpectrumId?: string; onCommitName?: (name: string) => void; onCancelName?: () => void;
 }) {
@@ -57,6 +57,7 @@ export function ProjectSidebar({ workspace, disabled, collapsed, ratio, onCollap
       {onNew && <button disabled={disabled} aria-label="New project" title="New project — start fresh; Undo restores the previous project" onClick={onNew}><FileActionIcon action="new"/></button>}
       {onOpen && <button disabled={disabled} aria-label="Open project" title="Open project" onClick={onOpen}><FileActionIcon action="open"/></button>}
       {onSave && <button disabled={disabled || saveDisabled} aria-label="Save project" title="Save project" onClick={onSave}><FileActionIcon action="save"/></button>}
+      {onSaveAs && <button disabled={disabled || saveDisabled} aria-label="Save project as" title="Save project as… (⌘/Ctrl+Shift+S)" onClick={onSaveAs}><FileActionIcon action="save-as"/></button>}
     </nav></div>
     {collapsed && <span className="project-rail-count" title={`${spectra.length} spectra`}>{spectra.length}</span>}
     <div id="project-browser-content" className="project-sidebar-content" hidden={collapsed}>

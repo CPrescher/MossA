@@ -2040,6 +2040,7 @@ dependencies = [
 name = "mossa-desktop"
 version = "2.0.0-preview.16"
 dependencies = [
+ "serde",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",

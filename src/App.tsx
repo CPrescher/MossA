@@ -1,3 +1,5 @@
+import { isTauri } from '@tauri-apps/api/core';
+import { ProjectFiles, openDesktopProject, type ProjectFileTarget } from './project-files';
 import { saveText } from './file-save';
 import { newNuclearConstants } from './nuclear-constants.mjs';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -117,6 +119,10 @@ function ProjectEditor({ restored }: { restored: RestoredProject }) {
   }, []);
   const fileInput = useRef<HTMLInputElement>(null), projectInput = useRef<HTMLInputElement>(null);
   const fitToken = useRef(0);
+  const projectFiles = useRef(new ProjectFiles());
+  const fileOperation = useRef(false);
+  const [fileBusy, setFileBusy] = useState(false);
+  const [fileError, setFileError] = useState('');
   const autosaveError = useWorkspaceAutosave({ version: 1, workspace, layout }, !restoreError);
   const evaluationCache = useRef(new Map<string, { model: typeof modelEntry.project; spectrum: Project['spectrum']; evaluation: Evaluation }>());
   const append = (message: string) => setLog(old => [...old.slice(-5), message]);
@@ -167,18 +173,19 @@ function ProjectEditor({ restored }: { restored: RestoredProject }) {
     finally { if (token === fitToken.current) { setBusy(false); setProgress(null); } }
   }
   function stop() { fitToken.current++; worker.current?.stop(); setProgress(null); setEvaluation(null); setBusy(false); setReady(false); setEngineVersion(v => v + 1); append('Calculation canceled; previous project retained.'); }
-  function changeWorkspace(next: Workspace, record = true) {
-    history.setWorkspace(next, record); setRestoreError(''); setError(''); setHoveredSite(null); setLinkSource(''); setTargetKey('fwhm');
+  function changeWorkspace(next: Workspace, record = true, newDocument = false) {
+    const document = history.setWorkspace(next, record, newDocument); setRestoreError(''); setError(''); setFileError(''); setHoveredSite(null); setLinkSource(''); setTargetKey('fwhm');
     const model = activeModel(next), data = activeSpectrum(next).spectrum, cached = evaluationCache.current.get(model.id);
     append(`${model.name} · ${model.fit ? 'Saved fit restored.' : 'Not fitted.'}`);
     if (model.project !== modelEntry.project || data !== project.spectrum) setEvaluation(cached?.model === model.project && cached.spectrum === data ? cached.evaluation : null);
+    return document;
   }
   function resetProject() {
     if (!ready || busy || picking || calibrationOpen || sourceCalibrationOpen || foldingOpen || renaming || comparisonSpectrum) return;
     evaluationCache.current.clear(); setEvaluation(null); setProgress(null);
     setRenaming(null); setRenameModelId(undefined); setLinkFactor(1);
     setNewKind('Doublet'); setNewProfile('Lorentzian');
-    changeWorkspace(freshWorkspace());
+    changeWorkspace(freshWorkspace(), true, true);
     setLayout(l => ({ ...l, tab: 'Gen' }));
     setLog(['Started a new project. Undo restores the previous project.']);
   }
@@ -216,29 +223,44 @@ function ProjectEditor({ restored }: { restored: RestoredProject }) {
       if (failures.length) setError(failures.join('\n'));
     } finally { if (id === fitToken.current) setBusy(false); }
   }
-  async function loadProject(file?: File) {
+  async function loadProject(file?: File, nativeTarget?: ProjectFileTarget) {
     if (!file || busy || !ready) return;
     const id = ++fitToken.current; setBusyTask('load'); setBusy(true);
     try {
       if (file.size > 256e6) throw new Error('Project file is too large (maximum 256 MB).');
       const loaded = await openWorkspaceFile(JSON.parse(await file.text()), cal, file.name, async p => (await worker.current!.request('evaluate', p)).result as Evaluation);
       if (id !== fitToken.current) return;
-      changeWorkspace(loaded.workspace); setEvaluation(loaded.evaluation);
+      const document = changeWorkspace(loaded.workspace, true, true);
+      if (nativeTarget) projectFiles.current.opened(document, nativeTarget);
+      setEvaluation(loaded.evaluation);
       append(loaded.notice || `Opened ${loaded.workspace.spectra.length} spectra with all models and saved fit results.`);
-    } catch (e) { if (id === fitToken.current) setError(String(e)); }
+    } catch (e) { if (id === fitToken.current) setFileError(String(e)); }
     finally { if (id === fitToken.current) setBusy(false); }
   }
-  async function saveProject() {
+  async function openProject() {
+    if (!isTauri()) { projectInput.current?.click(); return; }
+    if (!ready || busy || fileOperation.current) return;
+    fileOperation.current = true; setFileBusy(true); setFileError('');
+    try {
+      const opened = await openDesktopProject();
+      if (opened) await loadProject(new File([opened.contents], opened.filename), opened);
+    } catch (e) { setFileError(String(e)); }
+    finally { fileOperation.current = false; setFileBusy(false); }
+  }
+  async function saveProject(saveAs = false) {
+    if (fileOperation.current) return;
+    fileOperation.current = true; setFileBusy(true); setFileError('');
     try {
       const file = await createWorkspaceFile(workspace, { application: `MossA ${buildInfo.version}`, commit: buildInfo.commit, modified: buildInfo.dirty, matlab_reference: 'd201482b7990afbd0e2dcc23e306bfc8d60a5049' });
-      if (await saveText(`${workspace.name.replace(/[\\/:*?"<>|]/g, '_')}.mossa`, JSON.stringify(file, null, 2), 'application/json')) append('Saved the whole project with every spectrum, model, and completed fit.');
-    } catch (e) { setError(String(e)); }
+      if (await projectFiles.current.save(history.document, `${workspace.name.replace(/[\\/:*?"<>|]/g, '_')}.mossa`, JSON.stringify(file, null, 2), saveAs)) append('Saved the whole project with every spectrum, model, and completed fit.');
+    } catch (e) { setFileError(String(e)); }
+    finally { fileOperation.current = false; setFileBusy(false); }
   }
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
-      if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || document.querySelector('dialog[open]')) return;
-      if (event.key.toLowerCase() === 's') { event.preventDefault(); if (!busy) void saveProject(); }
-      if (event.key.toLowerCase() === 'o') { event.preventDefault(); if (ready && !busy) projectInput.current?.click(); }
+      if (!(event.metaKey || event.ctrlKey) || event.altKey || (event.shiftKey && !isTauri()) || document.querySelector('dialog[open]')) return;
+      if (event.key.toLowerCase() === 's') { event.preventDefault(); if (!busy) void saveProject(event.shiftKey && isTauri()); }
+      if (!event.shiftKey && event.key.toLowerCase() === 'o') { event.preventDefault(); if (ready && !busy) void openProject(); }
     };
     window.addEventListener('keydown', key);
     return () => window.removeEventListener('keydown', key);
@@ -327,8 +349,8 @@ function ProjectEditor({ restored }: { restored: RestoredProject }) {
     </header>
     <input ref={fileInput} type="file" multiple hidden aria-label="Spectrum file" accept=".txt,.dat,.csv,.asc,.mca" onChange={e => { void loadSpectra(Array.from(e.target.files ?? [])); e.target.value = ''; }}/><input ref={projectInput} type="file" hidden aria-label="Project file" accept=".mossa,.json" onChange={e => { void loadProject(e.target.files?.[0]); e.target.value = ''; }}/>
     <div className="project-shell">
-      <ProjectSidebar workspace={workspace} disabled={!canCalculate || calibrationOpen || sourceCalibrationOpen || foldingOpen} collapsed={!!layout.projectCollapsed} ratio={layout.projectSplit ?? .55} onCollapse={() => setLayout(l => ({ ...l, projectCollapsed: !l.projectCollapsed }))} onRatio={projectSplit => setLayout(l => ({ ...l, projectSplit }))} onSelect={id => changeWorkspace(selectEntry(workspace, id), false)} onImport={() => fileInput.current?.click()} onNew={resetProject} onOpen={() => projectInput.current?.click()} onSave={saveProject} saveDisabled={!!error} onRename={setRenaming} onRemove={() => changeWorkspace(removeSpectrum(workspace))} renamingSpectrumId={renaming === 'spectrum' ? spectrumEntry.id : undefined} onCommitName={name => { changeWorkspace(renameEntry(workspace, 'spectrum', name)); setRenaming(null); }} onCancelName={() => setRenaming(null)}>
-        {hasSpectrum ? <ModelNavigation onCompare={() => setComparisonSpectrum(structuredClone(spectrumEntry))} workspace={workspace} disabled={!canCalculate || calibrationOpen || sourceCalibrationOpen || foldingOpen} onSelect={id => changeWorkspace(selectEntry(workspace, spectrumEntry.id, id), false)} onDuplicate={id => changeWorkspace(addModel(workspace, true, id))} onNew={() => changeWorkspace(addModel(workspace, false))} onRename={id => { setRenameModelId(id); setRenaming('model'); }} onRemove={id => changeWorkspace(removeModel(workspace, id))} renamingModelId={renaming === 'model' ? renameModelId ?? modelEntry.id : undefined} onCommitName={name => { changeWorkspace(renameEntry(workspace, 'model', name, renameModelId)); setRenaming(null); setRenameModelId(undefined); }} onCancelName={() => { setRenaming(null); setRenameModelId(undefined); }}/>: <p className="no-spectra">Add a spectrum to create models.</p>}
+      <ProjectSidebar workspace={workspace} disabled={!canCalculate || fileBusy || calibrationOpen || sourceCalibrationOpen || foldingOpen} collapsed={!!layout.projectCollapsed} ratio={layout.projectSplit ?? .55} onCollapse={() => setLayout(l => ({ ...l, projectCollapsed: !l.projectCollapsed }))} onRatio={projectSplit => setLayout(l => ({ ...l, projectSplit }))} onSelect={id => changeWorkspace(selectEntry(workspace, id), false)} onImport={() => fileInput.current?.click()} onNew={resetProject} onOpen={() => void openProject()} onSave={() => void saveProject()} onSaveAs={isTauri() ? () => void saveProject(true) : undefined} saveDisabled={!!error || fileBusy} onRename={setRenaming} onRemove={() => changeWorkspace(removeSpectrum(workspace))} renamingSpectrumId={renaming === 'spectrum' ? spectrumEntry.id : undefined} onCommitName={name => { changeWorkspace(renameEntry(workspace, 'spectrum', name)); setRenaming(null); }} onCancelName={() => setRenaming(null)}>
+        {hasSpectrum ? <ModelNavigation onCompare={() => setComparisonSpectrum(structuredClone(spectrumEntry))} workspace={workspace} disabled={!canCalculate || fileBusy || calibrationOpen || sourceCalibrationOpen || foldingOpen} onSelect={id => changeWorkspace(selectEntry(workspace, spectrumEntry.id, id), false)} onDuplicate={id => changeWorkspace(addModel(workspace, true, id))} onNew={() => changeWorkspace(addModel(workspace, false))} onRename={id => { setRenameModelId(id); setRenaming('model'); }} onRemove={id => changeWorkspace(removeModel(workspace, id))} renamingModelId={renaming === 'model' ? renameModelId ?? modelEntry.id : undefined} onCommitName={name => { changeWorkspace(renameEntry(workspace, 'model', name, renameModelId)); setRenaming(null); setRenameModelId(undefined); }} onCancelName={() => { setRenaming(null); setRenameModelId(undefined); }}/>: <p className="no-spectra">Add a spectrum to create models.</p>}
       </ProjectSidebar>
       <div className="analysis-body">
     <div className={`workspace ${optionsVisible ? 'options-visible' : 'options-collapsed'} ${tab==='xVBF'?'xvbf-open':''}`}>
@@ -340,13 +362,13 @@ function ProjectEditor({ restored }: { restored: RestoredProject }) {
 
         </fieldset>
         <div className="fit-area">{busy ? <button className="fit-button stop" onClick={stop}><span className="spinner"/> {busyTask === 'fit' ? 'Stop fitting' : 'Stop calculation'}</button> : <button className="fit-button" disabled={!ready || !hasSpectrum || !!error || !!picking} onClick={() => void fit()}>Fit spectrum <span>↵</span></button>}</div>
-        <section className={`status-panel ${error ? 'status-error' : ''}`} aria-label="Fit status"><h3>Status</h3>{(restoreError || autosaveError) && <span className="local-save-warning" role="alert" title={restoreError || autosaveError}>Local save unavailable · Save project</span>}<div className="status-current" role={error ? 'alert' : 'status'} aria-live="polite">{error || (picking ? `${picking.stage + 1}/${picking.kind === 'Singlet' ? 2 : 3} · ${picking.index === null ? 'Adding site' : 'Redefining site'}` : busy ? busyTask === 'fold' ? 'Finding fold center…' : busyTask === 'load' ? 'Loading spectrum…' : `Fitting${progress?.search_start ? ` · start ${progress.search_start}/${progress.search_starts}` : ''} · ${progress?.iteration ?? 0} iterations` : result ? `${result.converged ? 'Converged' : 'Stopped'}${result.search ? ` · best of ${result.search.completed} starts` : ''} · ${result.iterations} iterations${elapsed == null ? '' : ` · ${elapsed.toFixed(0)} ms`}` : !ready ? 'Loading…' : log.at(-1))}</div>{error && <button className="clear-error" onClick={() => { setError(''); setEngineVersion(v => v + 1); }}>Retry</button>}{!picking && ((busy && busyTask === 'fit') || result) && <FitDetails warningCount={result?.warnings.length ?? 0}>{!picking && ((busy && busyTask === 'fit') || result) && <dl className="status-stats"><div><dt title="Sum of squared residuals; count weighting divides each term by the observation">{project.weighting === 'counts' ? 'Weighted SSE' : 'SSE'}</dt><dd data-testid="objective">{evaluation?.objective.toExponential(3) ?? '—'}</dd></div>{result && <div><dt title="Objective divided by the residual degrees of freedom">Reduced</dt><dd>{fmt(result.reduced_objective)}</dd></div>}</dl>}{!picking && result?.warnings.length ? <details className="status-warnings"><summary>{result.warnings.length} warning{result.warnings.length > 1 ? 's' : ''}</summary>{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details> : null}</FitDetails>}</section>
+        <section className={`status-panel ${error || fileError ? 'status-error' : ''}`} aria-label="Fit status"><h3>Status</h3>{(restoreError || autosaveError) && <span className="local-save-warning" role="alert" title={restoreError || autosaveError}>Local save unavailable · Save project</span>}<div className="status-current" role={error || fileError ? 'alert' : 'status'} aria-live="polite">{fileError || error || (picking ? `${picking.stage + 1}/${picking.kind === 'Singlet' ? 2 : 3} · ${picking.index === null ? 'Adding site' : 'Redefining site'}` : busy ? busyTask === 'fold' ? 'Finding fold center…' : busyTask === 'load' ? 'Loading spectrum…' : `Fitting${progress?.search_start ? ` · start ${progress.search_start}/${progress.search_starts}` : ''} · ${progress?.iteration ?? 0} iterations` : result ? `${result.converged ? 'Converged' : 'Stopped'}${result.search ? ` · best of ${result.search.completed} starts` : ''} · ${result.iterations} iterations${elapsed == null ? '' : ` · ${elapsed.toFixed(0)} ms`}` : !ready ? 'Loading…' : log.at(-1))}</div>{fileError && <button className="clear-error" onClick={() => setFileError('')}>Dismiss</button>}{error && <button className="clear-error" onClick={() => { setError(''); setEngineVersion(v => v + 1); }}>Retry</button>}{!picking && ((busy && busyTask === 'fit') || result) && <FitDetails warningCount={result?.warnings.length ?? 0}>{!picking && ((busy && busyTask === 'fit') || result) && <dl className="status-stats"><div><dt title="Sum of squared residuals; count weighting divides each term by the observation">{project.weighting === 'counts' ? 'Weighted SSE' : 'SSE'}</dt><dd data-testid="objective">{evaluation?.objective.toExponential(3) ?? '—'}</dd></div>{result && <div><dt title="Objective divided by the residual degrees of freedom">Reduced</dt><dd>{fmt(result.reduced_objective)}</dd></div>}</dl>}{!picking && result?.warnings.length ? <details className="status-warnings"><summary>{result.warnings.length} warning{result.warnings.length > 1 ? 's' : ''}</summary>{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details> : null}</FitDetails>}</section>
       </aside>
       <main className="center-panel" id="model-workspace" role="tabpanel" aria-label={hasSpectrum ? undefined : "Empty project"} aria-labelledby={hasSpectrum ? `model-${modelEntry.id}` : undefined}><div className="document-bar"><div><span className="file-icon">▤</span><strong title={filename}>{filename}</strong>{filename === 'Synthetic iron mixture' && <span className="demo-badge">SYNTHETIC</span>}{hasSpectrum && <span className="document-model-name" title={modelEntry.name}>{modelEntry.name}</span>}</div></div>
         {hasSpectrum ? <Plot highlightedSite={picking ? picking.index ?? project.sites.length : hoveredSite} project={progress ? { ...progress.project, spectrum: project.spectrum } : project} evaluation={evaluation} fitted={!!result && !picking} picking={picking} onPick={point => { void commitPick(point); }} onHover={hoverPick} onCancelPick={cancelPick}/> : <div className="empty-project">
           <FileActionIcon action="new"/><h2>Start a new project</h2>
           <p>Add spectra or open a saved project to begin.</p>
-          <div><button className="primary" disabled={!canCalculate} onClick={() => fileInput.current?.click()}>Add spectra</button><button disabled={!canCalculate} onClick={() => projectInput.current?.click()}>Open project</button></div>
+          <div><button className="primary" disabled={!canCalculate} onClick={() => fileInput.current?.click()}>Add spectra</button><button disabled={!canCalculate} onClick={() => void openProject()}>Open project</button></div>
           {history.past.length > 0 && <p className="empty-project-undo">Undo restores your previous project.</p>}
         </div>}
 
