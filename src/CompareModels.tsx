@@ -109,6 +109,7 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
       {a.weighting !== b.weighting && <p className="comparison-note">Objectives use different weightings and cannot be compared numerically.</p>}
       {fits?.map((fit, i) => fit.warnings.length > 0 && <details key={i}><summary>{i ? large.name : simple.name}: observed fit warnings</summary>{fit.warnings.map((w, j) => <p key={j}>{w}</p>)}</details>)}
       </div><div className="comparison-controls"><section className="comparison-test"><h3>Does the additional component improve the fit beyond noise?</h3>
+        <p className="comparison-help"><a href="./manual/foundations/model-comparison/" target="_blank" rel="noreferrer">F-test explained, with an interactive example ↗</a></p>
         <p>Simulate spectra from the fitted simpler model, refit both models to every spectrum, and compare their improvement with the measured improvement. Bounds, links, and fixed values are preserved. Stalled fits automatically retry on the same spectrum with a simpler-model start and additional iterations.</p>
         <fieldset className="comparison-settings bare" disabled={!!progress}>
           <label className="stack-label">Measurement noise<select aria-label="Measurement noise" value={options.noise} onChange={e => changeOptions({ noise: e.target.value as ComparisonOptions['noise'] })}><option value="poisson">Poisson · raw counting statistics</option><option value="gaussian">Gaussian · common residual std</option></select></label>

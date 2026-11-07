@@ -291,3 +291,15 @@ Browser inspection confirms the header link at 1,280 and 390 pixels, no horizont
 page overflow at 390 pixels, and keyboard activation opens the local manual in
 another tab. The viewport override was reset. Local screenshots are retained in
 `test-results/manual-link-qa/` in the shared working checkout.
+
+## Contextual F-test explanation link (2026-11-07)
+
+The model-comparison dialog includes a permanently visible, labelled link directly
+below its added-component question, above the simulation settings. It opens the
+F-test/simulation chapter in another tab, preserving the current dialog. The
+relative manual path follows release, preview, and bundled desktop routing.
+
+The six release comparison-dialog/desktop regressions pass, as does the
+TypeScript/Vite build. The preview's comparison-dialog regressions also pass.
+Local browser inspection confirms the link is visible without opening Statistical
+method, and clicking it opens the intended chapter while the dialog stays open.
