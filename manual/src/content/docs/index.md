@@ -7,9 +7,9 @@ MossA 2 fits Mössbauer spectra directly in your browser. You can prepare a velo
 
 [Open MossA 2](https://cprescher.github.io/MossA/) or begin with [your first fit](/MossA/manual/getting-started/first-fit/).
 
-![MossA workspace with the measured almandine spectrum, alternative fitted models, site editor, and results table.](../../assets/screenshots/workspace.png)
+![MossA workspace with the measured almandine spectrum, alternative fitted models, site editor, and results table.](../../assets/screenshots/workspace.jpg)
 
-*The Freiburg worked project contains measured almandine, augite, and omphacite spectra. Each spectrum has its own model alternatives; the displayed fits are new browser examples.*
+*The almandine worked project retains several alternative models of the measured spectrum. The displayed fits are new browser examples.*
 
 ## Choose a starting point
 
@@ -18,7 +18,8 @@ MossA 2 fits Mössbauer spectra directly in your browser. You can prepare a velo
 | Try the app with a complete example | [Your first fit](/MossA/manual/getting-started/first-fit/) |
 | Understand what the spectrum measures | [The physics behind the spectrum](/MossA/manual/foundations/physics/) |
 | Find the equations and parameter conventions | [Line shapes](/MossA/manual/foundations/line-shapes/) and [the full transmission integral](/MossA/manual/foundations/transmission-integral/) |
-| Follow the Freiburg measured-data practical | [Almandine](/MossA/manual/tutorials/almandine/), then [augite and omphacite](/MossA/manual/tutorials/clinopyroxenes/) |
+| Decide whether an extra site earns its flexibility | [Understand the F-test and watch the simulation](/MossA/manual/foundations/model-comparison/) |
+| Follow a measured-data tutorial from the Freiburg practical | [Almandine](/MossA/manual/tutorials/almandine/) |
 | Analyze a synchrotron-source magnetic spectrum | [SMS Fe₇C₃ tutorial](/MossA/manual/tutorials/sms/) |
 | Work with SYNCmoss's public measured standards | [SYNCmoss CMS and SMS examples](/MossA/manual/tutorials/syncmoss/) |
 | Find the controls | [The workspace](/MossA/manual/getting-started/workspace/) |
@@ -36,8 +37,8 @@ This structure lets you compare interpretations of the same observations while r
 
 ## Scope of this edition
 
-This manual describes the **MossA 2 browser preview** on the repository's `main` branch. Development builds are tested on `develop`. The original MATLAB application is retained on `matlab-legacy` and under `reference/MossA/`; its interface and file formats differ.
+This manual describes the **MossA 2 browser preview** on the repository's `main` and `develop` branches. The original MATLAB application is retained on `matlab-legacy` and under `reference/MossA/`; its interface and file formats differ.
 
-The manual is a first edition under development. It covers the physical foundations and model equations, the current analysis workflow, the Freiburg conventional-source/clinopyroxene and SMS practicals, public SYNCmoss standards, and selected advanced features. General combined-Hamiltonian, polarization, and instrument-specific models remain outside the implemented scope. The app's footer identifies its running version and commit.
+The manual is a first edition under development. It covers the physical foundations and model equations, the current analysis workflow, the Freiburg almandine and SMS tutorials, public SYNCmoss standards, and selected advanced features. General combined-Hamiltonian, polarization, and instrument-specific models remain outside the implemented scope. The app's footer identifies its running version and commit.
 
 Before reporting research results, read [numerical conventions and validation](/MossA/manual/reference/conventions-and-validation/), including the distinction between implementation checks and agreement with measured spectra.

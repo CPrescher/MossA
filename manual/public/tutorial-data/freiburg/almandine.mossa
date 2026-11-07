@@ -11,7 +11,7 @@
     "name": "Almandine · worked tutorial",
     "spectra": [
       {
-        "id": "3e11f6b1-f547-4fcd-b5f3-3998716b5d6b",
+        "id": "8b84e66a-0210-4e18-b362-6c4d6c2b6b38",
         "name": "almandine",
         "spectrum": {
           "x": [
@@ -1594,7 +1594,7 @@
             },
             "fittedField": 32.85838484558759,
             "rms": 0.44133479312473367,
-            "date": "2026-11-06T22:16:19.453Z"
+            "date": "2026-11-07T04:58:11.055Z"
           }
         },
         "models": [
@@ -2346,10 +2346,10 @@
         "activeModelId": "teaching-almandine-model-2"
       }
     ],
-    "activeSpectrumId": "3e11f6b1-f547-4fcd-b5f3-3998716b5d6b",
+    "activeSpectrumId": "8b84e66a-0210-4e18-b362-6c4d6c2b6b38",
     "calibrationPresets": [
       {
-        "id": "d50e823c-3b5a-4312-80a5-536760a1fe36",
+        "id": "4e601fe7-29e3-448e-8bcc-402b30e26114",
         "name": "Reference calibration",
         "cal": {
           "max": 5.021549317636565,
@@ -2900,12 +2900,12 @@
             },
             "fittedField": 32.85838484558759,
             "rms": 0.44133479312473367,
-            "date": "2026-11-06T22:16:19.453Z"
+            "date": "2026-11-07T04:58:11.055Z"
           }
         }
       },
       {
-        "id": "2e307c3b-7e21-4ec4-b636-579fd6461b13",
+        "id": "fa1d9fd8-5ed5-4840-8f36-af855647bf05",
         "name": "5 mm/s",
         "cal": {
           "max": 5,
@@ -2925,7 +2925,7 @@
         }
       },
       {
-        "id": "d2d43170-7a20-44ce-81ce-ffead22414f1",
+        "id": "3dd82211-895d-423c-ac48-4956e579f35a",
         "name": "10 mm/s",
         "cal": {
           "max": 10,
@@ -2945,6 +2945,6 @@
         }
       }
     ],
-    "importCalibrationPresetId": "d50e823c-3b5a-4312-80a5-536760a1fe36"
+    "importCalibrationPresetId": "4e601fe7-29e3-448e-8bcc-402b30e26114"
   }
 }

@@ -251,3 +251,28 @@ Three linked foundations chapters explain recoil-free absorption, Doppler veloci
 The browser rendered all 27 display equations in the foundations with zero KaTeX errors. Desktop and 390 × 844 layouts were inspected, with page width equal to viewport width for the wide sextet expressions. Original SMS download bytes match the supplied file, theme-specific enlargement links select the appropriate capture, and search finds the new physics pages. Search indexing excludes duplicate MathML/TeX copies while retaining accessible math on the page. The viewport override was reset. Source-access limits and exact evidence locations are recorded in `manual/RESEARCH.md`.
 
 The final combined Pages build passes, including the application TypeScript/Vite build and 1,283 local-link checks across 21 generated HTML files. Static output checks verified 50 paired image placements, matching alt text, no KaTeX errors, original input hashes, full embedded license text, and exact browser-imported SMS velocity/count arrays. Local review screenshots are `test-results/syncmoss-tutorial/physics-light.jpg` and `manual-dark.jpg`. All changes remain local.
+
+
+## Manual Pages publication and reserved classroom exercises (2026-11-07)
+
+The latest manual adds the detailed F-test/simulation explanation, arithmetic
+control, production-WASM bootstrap replay, worked reports and projects, and
+completed comparison screenshots in both themes. The separate classroom
+exercises, their raw data, solutions, combined project, and dedicated screenshots
+are excluded from source and generated output. Shared workspace/import/folding
+screenshots now use the almandine-only project. The public course-data generator
+exports only almandine. Original course files remain unchanged.
+
+Documentation updates were prepared in isolated checkouts of the newly established
+main/develop release layout, preserving their application source and Pages
+workflow. Stable and preview manuals each build 21 pages; local-link checks pass
+1,308 and 1,297 links respectively. The main checkout's full suite passes 14 Rust,
+35 JavaScript, and 162 TypeScript/DOM tests (211 total). Seven targeted preview
+routing, storage, and lesson tests also pass in the develop checkout. Application
+TypeScript/Vite and combined Pages assembly pass for main.
+
+Generated output checks confirm local replay/script/download paths in each base,
+no KaTeX errors in the new chapter, and no reserved classroom paths or textual
+references on either site. Relative replay URLs keep the animation within its
+own manual, and the preview link processor supports data-source attributes.
+No application source, desktop release workflow, or version tag is changed.

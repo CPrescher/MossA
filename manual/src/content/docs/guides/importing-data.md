@@ -37,7 +37,7 @@ Do not sort raw channels by count value. Their order carries the acquisition inf
 
 Raw-count imports use the calibration preset selected with **Use for new imports**. Choosing a preset for inspection or applying it to an existing spectrum does not automatically make it the import default.
 
-![Measured omphacite with its raw-count calibration controls visible in Gen and the pyroxene preset selected for subsequent imports.](../../../assets/screenshots/importing-raw-counts.png)
+![Measured almandine with its raw-count calibration controls visible in Gen and its reference preset selected for subsequent imports.](../../../assets/screenshots/importing-raw-counts.jpg)
 
 *Check the preset and its import-default checkbox before adding the next raw-count file. The selected spectrum retains its own applied calibration.*
 

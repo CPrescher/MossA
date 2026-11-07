@@ -1,0 +1,61 @@
+.comparison-lesson {
+  display: block;
+  margin-block: 1.5rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 0.5rem;
+  color: var(--sl-color-text);
+  background: var(--sl-color-bg);
+  --lesson-main: var(--sl-color-text-accent);
+  --lesson-extra: var(--sl-color-orange-high);
+}
+.comparison-lesson > * { margin-top: 0; }
+.comparison-lesson .lesson-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.75rem; }
+.comparison-lesson .lesson-note { font-size: 0.85rem; color: var(--sl-color-gray-2); line-height: 1.55; margin-block: 0.5rem; }
+.comparison-lesson .lesson-case, .comparison-lesson .lesson-slider { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.comparison-lesson select { min-width: 10rem; }
+.comparison-lesson :is(select, button) { font: inherit; padding: 0.35rem 0.6rem; border: 1px solid var(--sl-color-gray-4); border-radius: 0.3rem; background: var(--sl-color-bg-nav); color: var(--sl-color-text); }
+.comparison-lesson button { cursor: pointer; }
+.comparison-lesson button:disabled { cursor: default; opacity: 0.55; }
+.comparison-lesson :is(button, input, select):focus-visible { outline: 3px solid var(--sl-color-accent); outline-offset: 3px; }
+.comparison-lesson .lesson-controls { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-block: 0.75rem; }
+.comparison-lesson :is(.lesson-controls, .lesson-legend, .lesson-case, .lesson-calculation) > * { margin-block: 0; }
+.comparison-lesson [data-play] { color: var(--sl-color-text-invert); background: var(--sl-color-text-accent); }
+.comparison-lesson .lesson-legend { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; font-size: 0.8rem; margin-block: 0.5rem; }
+.comparison-lesson .lesson-legend > span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.comparison-lesson .lesson-legend i { display: inline-block; width: 1.15rem; }
+.comparison-lesson .lesson-point { height: 0.25rem; background: var(--sl-color-gray-2); width: 0.25rem !important; border-radius: 50%; }
+.comparison-lesson .lesson-line { border-top: 2px solid var(--lesson-main); }
+.comparison-lesson .lesson-line-extra { border-color: var(--lesson-extra); border-top-style: dashed; }
+.comparison-lesson .lesson-bin { height: 0.6rem; background: var(--lesson-main); }
+.comparison-lesson .lesson-bin-tail { background: var(--lesson-extra); }
+.comparison-lesson .lesson-observed { border-top: 2px solid currentColor; }
+.comparison-lesson .lesson-stage { font-size: 0.9rem; margin-block: 0.65rem 0.15rem; font-weight: 600; }
+.comparison-lesson :is(.lesson-spectrum, .lesson-histogram) { display: block; width: 100%; overflow: visible; }
+.comparison-lesson .lesson-spectrum { height: 292px; }
+.comparison-lesson .lesson-histogram { height: 218px; }
+.comparison-lesson svg text { fill: var(--sl-color-text); font: 12px var(--sl-font); }
+.comparison-lesson .lesson-grid { stroke: var(--sl-color-gray-5); stroke-width: 1; }
+.comparison-lesson .lesson-data-point { fill: var(--sl-color-gray-2); }
+.comparison-lesson .lesson-fit { stroke: var(--lesson-main); stroke-width: 2; }
+.comparison-lesson .lesson-fit-extra { stroke: var(--lesson-extra); stroke-dasharray: 6 4; }
+.comparison-lesson .lesson-bar { fill: var(--lesson-main); }
+.comparison-lesson .lesson-bar-tail { fill: var(--lesson-extra); }
+.comparison-lesson .lesson-observed-marker { stroke: var(--sl-color-text); stroke-width: 1.5; }
+.comparison-lesson :is(.lesson-measures, .lesson-progress) { font-size: 0.85rem; font-variant-numeric: tabular-nums; margin-block: 0.5rem; }
+.comparison-lesson .lesson-null { font-size: 0.9rem; margin-block: 1rem 0.5rem; }
+.comparison-lesson .lesson-result { font-size: 0.9rem; border-top: 1px solid var(--sl-color-gray-5); padding-top: 0.75rem; margin-top: 0.75rem; }
+.comparison-lesson .lesson-result p { margin-block: 0.5rem 0; }
+.comparison-lesson .lesson-slider input { width: 100%; accent-color: var(--sl-color-accent); }
+.comparison-lesson .lesson-slider output { margin-left: auto; font-variant-numeric: tabular-nums; }
+.comparison-lesson .lesson-error-bar { display: flex; height: 1rem; background: var(--sl-color-gray-6); margin-block: 1rem; overflow: hidden; }
+.comparison-lesson [data-remaining] { background: var(--lesson-main); }
+.comparison-lesson [data-removed] { background: var(--lesson-extra); }
+.comparison-lesson .lesson-error-bar span { transition: width 0.2s ease; }
+.comparison-lesson .lesson-calculation { display: grid; gap: 0.35rem; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.comparison-lesson .lesson-division { text-align: center; font-size: 1.25rem; }
+.comparison-lesson [data-f] { padding-top: 0.5rem; font-size: 1.3rem; }
+@media (prefers-reduced-motion: reduce) { .comparison-lesson .lesson-error-bar span { transition: none; } }
+@media print {
+  .comparison-lesson { display: none; }
+}

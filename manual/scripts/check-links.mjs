@@ -5,7 +5,7 @@ import { resolve, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(fileURLToPath(new URL(process.env.MOSSA_DESKTOP === '1' ? '../dist-desktop/' : '../dist/', import.meta.url)));
-const base = new URL('https://cprescher.github.io/MossA/manual/');
+const base = new URL(`https://cprescher.github.io${(process.env.MOSSA_PUBLIC_BASE || '/MossA').replace(/\/$/, '')}/manual/`);
 const pages = new Map();
 async function visit(directory) {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
