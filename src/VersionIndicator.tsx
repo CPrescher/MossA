@@ -62,7 +62,7 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
       <div className="changelog-footer"><span role="status">{message}</span>{deployed && <div className="changelog-actions">
         <button disabled={status === 'checking'} onClick={() => void check()}>Check for updates</button>
         {status === 'update' && <button className="changelog-reload" onClick={reload}>Reload to update</button>}
-      </div>}<a href="https://github.com/CPrescher/MossA/commits/mossa2/" target="_blank" rel="noreferrer">Full history on GitHub ↗</a></div>
+      </div>}<a href="https://github.com/CPrescher/MossA/commits/main/" target="_blank" rel="noreferrer">Full history on GitHub ↗</a></div>
     </dialog>
     <span className="version-announcement" role="status">{deployed && status === 'update' ? 'A newer MossA 2 version is available. Open the changelog to reload when ready.' : ''}</span>
   </div>;

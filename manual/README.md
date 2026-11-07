@@ -32,6 +32,14 @@ Screenshots throughout the substantive manual pages were captured from the real 
 
 Click a screenshot to enlarge it, or use its keyboard-focusable button. The preview supports Escape/Close and provides a full-size image link. Image assets, the enlargement script, and search are served locally with the manual.
 
+Application screenshots follow the manual's Light/Dark/Auto theme. Keep the light capture (`.png` or `.jpg`) in `src/assets/screenshots/` (the first-fit image is in `src/assets/`) and a real app dark-mode capture with the same basename in `public/screenshots/dark/<name>.jpg`. The Markdown processor creates the paired markup and fails the build if a dark capture is missing. Capture both from the corresponding workflow; do not invert or recolor a screenshot. The enlarged preview uses the active theme, and printing uses the light capture for legibility. Existing light captures and newer dark captures can show different local build timestamps; the capture record retains their provenance.
+
+The physics section contains original, explicitly labeled calculated figures. Regenerate them with `python3 scripts/plot-transmission-tutorial.py` and `python3 scripts/plot-syncmoss-source.py` from the repository root. These figures also have light/dark variants but are not app screenshots or measured data.
+
+KaTeX renders equations with both MathML and visual HTML. The math-search plugin keeps those accessibility/rendering representations intact while excluding the duplicate MathML/TeX text from Pagefind snippets.
+
+The SYNCmoss tutorial pins upstream commit `b712fbc1521004a47409b964b9ab012fe5c5e255`. The three original `.dat` files and upstream MIT notice in `public/tutorial-data/syncmoss/` retain exact bytes. `Calibration.dat` duplicates the CMS numeric observations. Regenerate the four new worked fits with `node --import tsx scripts/prepare-syncmoss-tutorial.ts` (Node 26 and compiled WASM); the script verifies the original Git blob hashes and reopens every saved fit. Preserve attribution, full license notices, source conversion, and the distinction between empirical CMS models, the supplied SMS source, and newly calculated fits.
+
 The five course count files are distributed byte for byte under `public/tutorial-data/freiburg/`, with simplified download names and SHA-256 provenance. The `.mossa` files contain **new browser fits**, not original MATLAB answer files. To regenerate them after compiling WASM, run:
 
 ```sh

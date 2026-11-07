@@ -3,7 +3,8 @@ name: Build MossA desktop apps
 on:
   workflow_dispatch:
   push:
-    branches: [mossa2, 'codex/tauri-*']
+    branches: [develop]
+    tags: ['v*']
     paths:
       - 'src/**'
       - 'src-tauri/**'
@@ -18,7 +19,7 @@ on:
       - 'THIRD_PARTY_NOTICES.txt'
       - '.github/workflows/desktop.yml'
   pull_request:
-    branches: [mossa2]
+    branches: [main, develop]
 
 permissions:
   contents: read

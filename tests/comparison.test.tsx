@@ -133,7 +133,7 @@ test('a stalled simulated fit is recovered on the same observations with recorde
   }, evaluate);
   assert.equal(result.improvements.length, 99); assert.equal(result.diagnostics.length, 99);
   const recovered = result.fitAttempts!.find(a => a.stage === 'Simulation 1, larger model')!;
-  assert.ok(recovered.attempts.length >= 2); assert.ok(recovered.attempts.length <= 4);
+  assert.ok(recovered.attempts.length >= 2); assert.ok(recovered.attempts.length <= 6);
   assert.equal(recovered.attempts[0].termination, 'MaxIter');
   assert.equal(recovered.attempts[1].start, 'simpler-fit start, 5% added area');
   assert.ok(recovered.attempts.every(a => a.iterationLimit <= 2000));
@@ -183,4 +183,51 @@ test('bounded LM recovery preserves fixed values, linked intensity ratios, linke
     for (let i=0;i<2;i++) { assert.equal(result.project.sites[i].params.cs.value,b.sites[i].params.cs.value); assert.equal(result.project.sites[i].params.fwhm.value,b.sites[i].params.fwhm.value); }
     assert.equal(JSON.stringify(b),before);
   }
+});
+test('a stalled width narrower than the channel spacing is retried at its existing bound while remaining free', () => {
+  const [a,b] = models(35), originalSimpler = JSON.stringify(a);
+  b.sites[1].params.fwhm.fit = true; b.sites[1].params.fwhm.min = .01;
+  const configured = JSON.stringify(b); let attempts = 0;
+  const prepared = prepareComparison(a,b,options,(p,algorithm)=>{
+    if (p.sites.length === 1) return fit(p,algorithm);
+    attempts++;
+    if (attempts === 5) {
+      assert.equal(algorithm,'bounded-lm');
+      assert.equal(p.sites[1].params.fwhm.value,.01);
+      assert.equal(p.sites[1].params.fwhm.fit,true);
+      assert.equal(nestingIssue(a,p),null);
+      assert.deepEqual(p.spectrum,a.spectrum);
+      assert.deepEqual(p.sites[0].params.fwhm,a.sites[0].params.fwhm);
+    }
+    const f = fit(p,algorithm);
+    if (attempts <= 4) {
+      f.project.sites[1].params.fwhm.value = .06;
+      f.evaluation.objective = 1e20;
+      f.converged = false; f.termination = 'MaxIter';
+    }
+    return f;
+  },evaluate);
+  assert.equal(attempts,5);
+  assert.match(prepared.fitAttempts[1].attempts[4].start,/existing lower bounds/);
+  assert.equal(prepared.fitAttempts[1].attempts[4].iterationLimit,2000);
+  assert.equal(JSON.stringify(b),configured);
+  assert.equal(JSON.stringify(a),originalSimpler);
+});
+test('persistent local failure invokes a recorded deterministic search without propagating recovery settings', () => {
+  const [a,b] = models(35), original = JSON.stringify([a,b]); let attempts = 0;
+  const prepared = prepareComparison(a,b,options,(p,algorithm)=>{
+    const f = fit(p,algorithm);
+    if (p.sites.length === 2 && ++attempts <= 4) {
+      f.converged = false; f.termination = 'MaxIter'; f.evaluation.objective = 1e20;
+    }
+    return f;
+  },evaluate);
+  const last = prepared.fitAttempts[1].attempts.at(-1)!;
+  assert.equal(attempts,5);
+  assert.match(last.start,/five deterministic/);
+  assert.equal(last.algorithm,'trf'); assert.equal(last.iterationLimit,1000);
+  assert.equal(last.search?.requested,5); assert.equal(last.search?.completed,5);
+  assert.equal(prepared.larger.project.search_starts,b.search_starts);
+  assert.equal(prepared.larger.project.max_iterations,b.max_iterations);
+  assert.equal(JSON.stringify([a,b]),original);
 });

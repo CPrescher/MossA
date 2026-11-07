@@ -2,7 +2,7 @@ name: Check MossA manual
 
 on:
   pull_request:
-    branches: [mossa2]
+    branches: [main, develop]
     paths:
       - 'manual/**'
       - '.github/workflows/manual.yml'

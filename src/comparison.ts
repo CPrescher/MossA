@@ -11,7 +11,7 @@ export type ComparisonResult = {
   noiseStd: number | null; improvements: number[]; warnings: string[];
   execution?: { workers: number };
   diagnostics: { simpler: FitDiagnostic; larger: FitDiagnostic }[];
-  fitAttempts?: { stage: string; attempts: (FitDiagnostic & { start: string; iterationLimit: number; algorithm?: 'trf' | 'bounded-lm' })[] }[];
+  fitAttempts?: { stage: string; attempts: (FitDiagnostic & { start: string; iterationLimit: number; algorithm?: 'trf' | 'bounded-lm'; search?: FitResult['search'] })[] }[];
 };
 type FitDiagnostic = Pick<FitResult, 'converged' | 'termination' | 'stationarity' | 'rank' | 'free_parameters' | 'iterations'> & { objective: number };
 function diagnostic(f: FitResult): FitDiagnostic {
@@ -163,6 +163,21 @@ function residualStart(larger: Project, simpler: FitResult) {
   }
   return p;
 }
+function widthBoundStart(project: Project) {
+  const p = structuredClone(project); let changed = false;
+  const steps = p.spectrum.x.slice(1).map((x,i) => x-p.spectrum.x[i]).sort((a,b) => a-b);
+  const step = steps[Math.floor(steps.length/2)] ?? 0;
+  const targets = new Set([...p.background, ...p.sites.flatMap(siteParameters)].flatMap(parameter => parameter.link ? [parameter.link.target] : []));
+  for (const [index,site] of p.sites.entries()) {
+    const width = site.params.fwhm, lower = Math.max(1e-6, width.min ?? 1e-6);
+    // A very narrow component may approach its existing bound extremely
+    // slowly. Try that boundary as a start; the width remains free to move.
+    if (width.fit && !width.link && !targets.has(`site:${index}:fwhm`) && width.value > lower && width.value <= Math.max(1.5 * lower,2 * step)) {
+      width.value = lower; changed = true;
+    }
+  }
+  return changed ? p : null;
+}
 export type PreparedComparison = Pick<ComparisonResult, 'options' | 'simpler' | 'larger' | 'improvement' | 'noiseStd'> & {
   fitAttempts: NonNullable<ComparisonResult['fitAttempts']>;
 };
@@ -181,28 +196,33 @@ function createRefitter(options: ComparisonOptions, fit: LocalFit, notify: Progr
     const sufficient = (f: FitResult) => acceptableFit(f) && Number.isFinite(f.evaluation.objective) && f.dof > 0
       && (!f.search || (!f.search.failed_starts && f.search.completed === f.search.requested))
       && (!nullFit || f.evaluation.objective <= nullFit.evaluation.objective + 1e-7 * Math.max(1, nullFit.evaluation.objective));
-    for (let attempt = 0; attempt < 4; attempt++) {
-      const candidate: Project = attempt === 0 ? structuredClone(project)
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const candidate: Project | null = attempt === 0 ? structuredClone(project)
         : attempt === 1 && nullFit ? nullStart(project, nullFit)
-        : attempt === 2 && nullFit ? residualStart(project, nullFit) : structuredClone(best!.project);
+        : attempt === 2 && nullFit ? residualStart(project, nullFit)
+        : attempt === 4 ? widthBoundStart(best!.project)
+        : attempt === 5 ? structuredClone(project) : structuredClone(best!.project);
+      if (!candidate) continue;
+      if (attempt === 5) candidate.search_starts = Math.max(5, project.search_starts ?? 1);
       const iterationLimit = attempt === 0 ? project.max_iterations
-        : Math.min(2000, Math.max(project.max_iterations, [0, 400, 1000, 2000][attempt]));
+        : Math.min(2000, Math.max(project.max_iterations, [0, 400, 1000, 2000, 2000, 1000][attempt]));
       candidate.max_iterations = iterationLimit;
-      if (attempt) notify({ phase: `${stage}: recovery ${attempt}/3`, completed, total: options.simulations });
-      const algorithm = attempt >= 2 && !(attempt === 2 && nullFit) ? 'bounded-lm' : 'trf';
+      if (attempt) notify({ phase: `${stage}: recovery ${attempt}`, completed, total: options.simulations });
+      const algorithm = attempt >= 2 && attempt !== 5 && !(attempt === 2 && nullFit) ? 'bounded-lm' : 'trf';
       const fitted = fit(candidate, algorithm);
-      attempts.push({ ...diagnostic(fitted), start: attempt === 0 ? 'supplied model start' : attempt === 1 && nullFit ? 'simpler-fit start, 5% added area' : attempt === 2 && nullFit ? 'simpler-fit start, residual peaks for added singlets/doublets' : 'continue best attempt', iterationLimit, algorithm });
+      attempts.push({ ...diagnostic(fitted), start: attempt === 0 ? 'supplied model start' : attempt === 1 && nullFit ? 'simpler-fit start, 5% added area' : attempt === 2 && nullFit ? 'simpler-fit start, residual peaks for added singlets/doublets' : attempt === 4 ? 'best attempt, near-bound free widths started at existing lower bounds' : attempt === 5 ? 'supplied model start with at least five deterministic starting models' : 'continue best attempt', iterationLimit, algorithm, ...(fitted.search ? { search: structuredClone(fitted.search) } : {}) });
       if (!best || fitted.evaluation.objective < best.evaluation.objective) best = fitted;
       if (sufficient(fitted) && (!bestAcceptable || fitted.evaluation.objective < bestAcceptable.evaluation.objective)) bestAcceptable = fitted;
       if (bestAcceptable && bestAcceptable.evaluation.objective <= best.evaluation.objective + 1e-7 * Math.max(1, best.evaluation.objective)) {
         // Keep the model's configured iteration budget for subsequent datasets;
         // the per-attempt diagnostics preserve recovery budgets and outcomes.
         bestAcceptable.project.max_iterations = project.max_iterations;
+        bestAcceptable.project.search_starts = project.search_starts;
         return bestAcceptable;
       }
     }
-    checkFit(best!, `${stage} after 3 recovery attempts`);
-    if (nullFit) improvement(nullFit, best!, `${stage} after 3 recovery attempts`);
+    checkFit(best!, `${stage} after ${attempts.length - 1} recovery attempts`);
+    if (nullFit) improvement(nullFit, best!, `${stage} after ${attempts.length - 1} recovery attempts`);
     throw new Error(`${stage}: no reliable fit was found after bounded recovery. No simulated spectra were discarded.`);
   }
   return refit;
@@ -274,7 +294,7 @@ export function completeComparison(prepared: PreparedComparison, outcomes: Simul
   const verifiedStationary = Number(!simpler.converged) + Number(!larger.converged) + ordered.reduce((sum, o) => sum + o.verifiedStationary, 0);
   if (verifiedStationary) warnings.push(`${verifiedStationary} fits stopped with a numerical solver status but passed the independent bound-projected residual-gradient check (maximum normalized component ≤ 1e-6). Original termination codes are retained for observed fits.`);
   const recovered = fitAttempts.filter(a => a.attempts.length > 1).length;
-  if (recovered) warnings.push(`${recovered} fits needed automatic recovery on the same data, using simpler-model/residual-peak starts or bounded Levenberg–Marquardt continuation with up to 2,000 iterations per attempt. All attempts, algorithms, and termination codes are included in the report.`);
+  if (recovered) warnings.push(`${recovered} fits needed automatic recovery on the same data, using simpler-model/residual-peak starts, existing width-bound starts, bounded Levenberg–Marquardt continuation, or a deterministic multi-start search with up to 2,000 iterations per start. All attempts, algorithms, searches, and termination codes are included in the report.`);
   if (rankDeficient) warnings.push(`${rankDeficient} simulated pairs had rank-deficient parameters. This can occur when an added component vanishes; its symmetric parameter uncertainties are unavailable.`);
   if (bounded) warnings.push(`${bounded} simulated pairs reached parameter bounds.`);
   if (simpler.rank < simpler.free_parameters || larger.rank < larger.free_parameters) warnings.push('An observed fit is rank deficient; inspect parameter identifiability and residuals.');

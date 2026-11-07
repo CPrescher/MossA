@@ -5,6 +5,8 @@ description: Set a simple source response or calibrate a source from a known-wid
 
 Source profiles enter the **Full transmission integral** model. They describe the response convolved with absorber transmission. Thin-absorber fitting does not use these source settings.
 
+For the equations and convolution direction, read [the full transmission integral](/MossA/manual/foundations/transmission-integral/). The [SYNCmoss standards tutorial](/MossA/manual/tutorials/syncmoss/) includes an explicitly supplied asymmetric source; using that response is different from estimating a source from a singlet reference.
+
 ## Use a simple source
 
 In **Gen**, select **Full transmission integral**. Under **Source profile**, set the source FWHM in mm/s and, if appropriate, enable **Lorentzian-squared source**. The squared profile uses the original MossA width convention; do not assume its width parameter has the same interpretation as a Lorentzian's.

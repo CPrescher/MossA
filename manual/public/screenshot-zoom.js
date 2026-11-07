@@ -1,5 +1,5 @@
 // Keep interface screenshots readable without an external image service.
-const screenshots = document.querySelectorAll('.sl-markdown-content img');
+const screenshots = document.querySelectorAll('.sl-markdown-content .theme-screenshot, .sl-markdown-content img:not(.theme-screenshot img)');
 if (screenshots.length) {
   const dialog = document.createElement('dialog');
   dialog.className = 'screenshot-dialog';
@@ -21,19 +21,31 @@ if (screenshots.length) {
   dialog.append(heading, preview, description);
   document.body.append(dialog);
   dialog.addEventListener('click', event => { if (event.target === dialog) dialog.close(); });
-  for (const image of screenshots) {
+  let activeScreenshot;
+  const selectedImage = screenshot => screenshot.matches('img') ? screenshot : screenshot.querySelector(
+    document.documentElement.dataset.theme === 'dark' ? '.screenshot-dark' : '.screenshot-light'
+  );
+  const updatePreview = () => {
+    if (!activeScreenshot) return;
+    const image = selectedImage(activeScreenshot);
+    preview.src = image.currentSrc || image.src;
+    preview.alt = image.alt;
+    original.href = preview.src;
+    description.textContent = image.alt;
+  };
+  new MutationObserver(() => { if (dialog.open) updatePreview(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  for (const screenshot of screenshots) {
+    const image = selectedImage(screenshot);
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'screenshot-enlarge';
     button.title = 'Enlarge screenshot';
     button.setAttribute('aria-label', `Enlarge screenshot: ${image.alt}`);
-    image.before(button);
-    button.append(image);
+    screenshot.before(button);
+    button.append(screenshot);
     button.addEventListener('click', () => {
-      preview.src = image.currentSrc || image.src;
-      preview.alt = image.alt;
-      original.href = preview.src;
-      description.textContent = image.alt;
+      activeScreenshot = screenshot;
+      updatePreview();
       dialog.showModal();
       close.focus();
     });

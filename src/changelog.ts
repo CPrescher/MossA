@@ -3,7 +3,7 @@ export const changelog = [
   {
     version: '2.0.0-preview.16', date: '2026-11-06',
     changes: [
-      'Recover difficult simulated fits with residual-based added-component starts and an alternative bounded solver, preserving constraints and fit-quality checks.',
+      'Recover difficult simulated fits with residual-based added-component starts, width-bound starts, an alternative bounded solver, and an additional deterministic search, preserving constraints and fit-quality checks.',
       'Run model-comparison simulations across multiple CPU workers with Auto or a manual count. Seeded spectra and fit diagnostics remain unchanged; cancellation stops the whole pool.',
       'Comparison results now give a plain recommendation and explain each statistic beside its value. Detailed calculation and recovery logs can be expanded.',
       'Import single-spectrum SPEC MCA files directly, with channel-count checks and retained acquisition headers.',

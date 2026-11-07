@@ -52,4 +52,4 @@ Every requested fit pair must succeed under the app's numerical acceptance check
 
 Use **Export comparison report** to save the fitted observed models, observations and preparation, noise assumptions, seed, improvements, and diagnostics. Results remain in the dialog only until it closes. **Cancel simulation** or closing the dialog terminates its worker.
 
-This is a pairwise test under the chosen noise and model assumptions. It does not correct for searching many alternatives or propagate calibration, source, drift, or other systematic errors. The implementation and methodological references are described in the repository's [comparison notes](https://github.com/CPrescher/MossA/blob/mossa2/README.md#comparing-models-and-testing-an-additional-site).
+This is a pairwise test under the chosen noise and model assumptions. It does not correct for searching many alternatives or propagate calibration, source, drift, or other systematic errors. The implementation and methodological references are described in the repository's [comparison notes](https://github.com/CPrescher/MossA/blob/main/README.md#comparing-models-and-testing-an-additional-site).

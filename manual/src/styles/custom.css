@@ -32,6 +32,11 @@
   cursor: zoom-in;
 }
 .screenshot-enlarge img { display: block; margin: 0; width: 100%; height: auto; }
+.theme-screenshot { display: block; }
+.theme-screenshot img { margin: 0; width: 100%; height: auto; }
+.theme-screenshot .screenshot-dark { display: none; }
+:root[data-theme='dark'] .theme-screenshot .screenshot-light { display: none; }
+:root[data-theme='dark'] .theme-screenshot .screenshot-dark { display: block; }
 .screenshot-enlarge:focus-visible { outline: 3px solid var(--sl-color-accent); outline-offset: 4px; }
 .screenshot-dialog {
   width: min(96vw, 90rem);
@@ -57,4 +62,6 @@
   .main-pane { width: 100%; margin: 0; }
   .main-frame { padding: 0; }
   .screenshot-dialog { display: none !important; }
+  :root[data-theme] .theme-screenshot .screenshot-dark { display: none; }
+  :root[data-theme] .theme-screenshot .screenshot-light { display: block; }
 }

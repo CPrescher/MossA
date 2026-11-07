@@ -6,8 +6,11 @@ program, math outlines, searchable manual, manual fonts and screenshots, tutoria
 spectra and projects, and license notices. No local HTTP server, Node installation,
 Python, MATLAB, or internet connection is needed to run the installed app.
 
-The desktop is a preview. Platform installers are built by
-`.github/workflows/desktop.yml`; those build artifacts are not public releases.
+The desktop is a scientific preview. [GitHub Releases](https://github.com/CPrescher/MossA/releases)
+provide permanent user downloads. `.github/workflows/desktop.yml` builds and tests
+the platform packages; [RELEASING.md](RELEASING.md) describes the maintainer command
+that collects a complete release with a signed, notarized universal Mac app. CI
+artifacts from `develop` remain testing downloads.
 
 ## Build and run
 
