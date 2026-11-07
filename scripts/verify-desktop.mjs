@@ -14,9 +14,10 @@ async function walk(dir) {
 await walk(root);
 const required = ['index.html', 'build-info.json', 'LICENSE.txt', 'THIRD_PARTY_NOTICES.txt', 'DESKTOP_NOTICES.txt', 'MossA/manual/index.html', 'MossA/manual/pagefind/pagefind.js', 'MossA/manual/tutorial-data/synthetic-first-fit.mossa', 'MossA/manual/tutorial-data/freiburg/almandine.dat'];
 for (const file of required) await stat(resolve(root, file));
-if (!files.some(f => f.endsWith('.wasm'))) throw new Error('Fitting WASM is missing');
+if (files.some(f => /mossa_core.*\.wasm$/.test(f))) throw new Error('Desktop must use the native Rust fitting engine, not bundled fitting WASM');
 if (!files.some(f => f.endsWith('.woff2'))) throw new Error('Manual fonts are missing');
 const info = JSON.parse(await readFile(resolve(root, 'build-info.json'), 'utf8'));
+if (info.fittingBackend !== 'native-rust') throw new Error('Desktop numerical backend must be native Rust');
 if (info.channel !== 'desktop') throw new Error('Desktop must not use website update checks');
 const failures = [];
 let checked = 0;
@@ -35,4 +36,4 @@ for (const path of files.filter(f => /\.(html|css)$/.test(f))) {
   }
 }
 if (failures.length) throw new Error(`Desktop asset failures:\n${failures.join('\n')}`);
-console.log(`Desktop payload verified: ${files.length} files, ${checked} local asset references, bundled WASM, search, fonts, examples, and licenses.`);
+console.log(`Desktop payload verified: ${files.length} files, ${checked} local asset references, native Rust backend, bundled search, fonts, examples, and licenses.`);

@@ -6,6 +6,7 @@ export type BuildInfo = {
   builtAt: string | null;
   channel: string;
   dirty: boolean;
+  fittingBackend?: 'native-rust' | 'wasm';
 };
 
 declare const __MOSSA_BUILD__: BuildInfo;

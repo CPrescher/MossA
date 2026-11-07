@@ -1,7 +1,8 @@
 # MossA desktop
 
-The Tauri desktop app shares the React interface, Rust/WebAssembly worker,
-numerical constants, and `.mossa` file format with the browser app. It embeds the
+Starting with preview.17, the Tauri desktop app uses the native Rust fitting
+core. It shares the React interface, numerical models and constants, and `.mossa`
+file format with the browser app, which continues to run the WASM build in workers. It embeds the
 program, math outlines, searchable manual, manual fonts and screenshots, tutorial
 spectra and projects, and license notices. No local HTTP server, Node installation,
 Python, MATLAB, or internet connection is needed to run the installed app.
@@ -14,20 +15,19 @@ artifacts from `develop` remain testing downloads.
 
 ## Build and run
 
-Use the Node version from CI (26.12.1), Rust, `wasm32-unknown-unknown`, and the
+Use the Node version from CI (26.12.1), native Rust, and the
 [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```sh
 npm ci
 npm ci --prefix manual
-rustup target add wasm32-unknown-unknown
 npm run desktop:dev
 ```
 
 The macOS CLI wrapper prioritizes Apple’s system tools over Python shims, which
 can otherwise shadow the recursive `xattr` command used by the bundler.
 
-The development command builds the local manual and engine, then starts Vite on
+The development command builds the local manual and starts Vite on
 port 1420. After editing the manual, restart the command to rebuild its static
 copy. The browser development command remains `npm run dev`.
 
@@ -68,7 +68,17 @@ search indexes work without rewriting scientific source documents.
 - The version/changelog identifies the embedded desktop build. The desktop does
   not poll GitHub Pages or reload into a website update. Install a newer app to
   update; automatic updates are not configured.
-- No native fitting backend is introduced: both targets execute the same WASM.
+- Desktop calculations call the shared Rust library directly in background jobs.
+  Browser calculations continue to use WASM workers. Desktop does not require a
+  fitting WASM binary or a `wasm32` Rust target. The manual's Pagefind search may
+  still use its own search WASM, independently of numerical fitting.
+- Native progress uses Tauri channels. Cancellation reaches both local solvers
+  and every active comparison job; closing/reloading the main window also
+  cancels its native scopes. A comparison failure never yields a partial p-value.
+- Multistart candidates, simulation RNG, recovery attempts, acceptance rules,
+  result ordering, and diagnostics use shared execution-independent code.
+  Auto/manual comparison worker limits apply to concurrent native Rust jobs.
+  Exported comparison results identify `native-rust` and the worker count.
 
 ## Platform builds
 
@@ -169,3 +179,14 @@ the app's Undo button restoring the earlier file association, opening an existin
 project and saving back to it, and a read-only Save failure preserving the file.
 The generated original and copy were checked independently on disk. These runtime
 checks were on macOS; Windows/Linux receive native command tests and build checks.
+
+## Native/browser parity checks
+
+`npm test` checks the shared core, the browser WASM build, and interface behavior.
+`npm run test:native` builds both numerical targets and exercises the production
+native adapter/core/session registry through a headless transport. It checks
+progress, source calibration, multistart search, cancellation during later search
+starts, queued-work cancellation, Gaussian/Poisson comparisons with one and four
+workers, failed comparisons, and reopening a browser-fitted project without
+losing its saved fit or uncertainties. The desktop packaging check rejects fitting
+WASM assets and records `fittingBackend: native-rust` in its build metadata.

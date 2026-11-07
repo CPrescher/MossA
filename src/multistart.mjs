@@ -36,13 +36,13 @@ export function searchCandidate(project, index) {
   return p;
 }
 
-export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
+function* search(project, onProgress) {
   const count = project.search_starts ?? 1;
   if (!Number.isInteger(count) || count < 1 || count > 32) throw new Error('Search starts must be an integer from 1 to 32.');
-  if (count === 1) return fitLocal(project, onProgress);
+  if (count === 1) return yield { method: 'fit', project, progress: onProgress };
   // Fail on invalid user input before starting any search. Keep the original
   // trial first, ensuring exploration cannot worsen its objective.
-  evaluate(project);
+  yield { method: 'evaluate', project };
   let best = null, bestStart = 1, completed = 0, rejected = 0, failures = 0, totalIterations = 0;
   const objectives = [];
   const started = performance.now();
@@ -52,7 +52,7 @@ export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
       let valid = false;
       for (let retry = 0; retry < 12; retry++) {
         trial = searchCandidate(start % 3 === 0 ? project : best.project, start + retry * count);
-        try { evaluate(trial); valid = true; break; } catch { rejected++; }
+        try { yield { method: 'evaluate', project: trial }; valid = true; break; } catch { rejected++; }
       }
       if (!valid) continue;
     }
@@ -61,7 +61,7 @@ export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
       onProgress?.({ ...state, ...shown, iteration: totalIterations + state.iteration, elapsed_ms: performance.now() - started, search_start: start + 1, search_starts: count });
     };
     let result;
-    try { result = fitLocal(copy(trial), notify); }
+    try { result = yield { method: 'fit', project: copy(trial), progress: notify }; }
     catch (error) { if (!best) throw error; failures++; continue; }
     completed++; totalIterations += result.iterations;
     objectives.push(result.evaluation.objective);
@@ -73,4 +73,28 @@ export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
   best.warnings.push(`Search explored ${completed} starts; best result from start ${bestStart}. A global optimum is not guaranteed.`);
   if (failures || completed < count) best.warnings.push('Some search starts could not be completed; inspect the search diagnostics.');
   return best;
+}
+
+
+// Shared ordered search, driven synchronously by browser comparison workers or
+// asynchronously by native commands. Validation and recovery are identical.
+export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
+  const steps = search(project, onProgress); let state = steps.next();
+  while (!state.done) {
+    let value;
+    try { const step = state.value; value = step.method === 'evaluate' ? evaluate(step.project) : fitLocal(step.project, step.progress); }
+    catch (error) { state = steps.throw(error); continue; }
+    state = steps.next(value);
+  }
+  return state.value;
+}
+export async function fitMultiStartAsync(project, fitLocal, evaluate, onProgress) {
+  const steps = search(project, onProgress); let state = steps.next();
+  while (!state.done) {
+    let value;
+    try { const step = state.value; value = await (step.method === 'evaluate' ? evaluate(step.project) : fitLocal(step.project, step.progress)); }
+    catch (error) { state = steps.throw(error); continue; }
+    state = steps.next(value);
+  }
+  return state.value;
 }

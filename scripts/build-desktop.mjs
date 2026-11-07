@@ -10,8 +10,10 @@ function run(command, args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 const dev = process.argv.includes('--dev');
-run('npm', ['run', 'wasm']);
-if (!dev) run('npm', ['run', 'build:web']);
+if (!dev) {
+  run('npm', ['exec', '--', 'tsc', '--project', 'tsconfig.desktop.json']);
+  run('npm', ['exec', '--', 'vite', 'build']);
+}
 run('npm', ['run', 'build:manual']);
 const output = new URL('../dist-desktop/', import.meta.url);
 const target = new URL('MossA/manual/', output);

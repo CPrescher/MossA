@@ -1,6 +1,6 @@
 {
   "name": "mossa-browser",
-  "version": "2.0.0-preview.16",
+  "version": "2.0.0-preview.17",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -20,7 +20,8 @@
     "desktop:build": "node scripts/tauri.mjs build",
     "dev:desktop:web": "node scripts/build-desktop.mjs --dev",
     "build:desktop:web": "node scripts/build-desktop.mjs",
-    "verify:desktop": "node scripts/verify-desktop.mjs"
+    "verify:desktop": "node scripts/verify-desktop.mjs",
+    "test:native": "npm run wasm && node scripts/test-native.mjs"
   },
   "dependencies": {
     "@mathjax/mathjax-tex-font": "^4.1.3",

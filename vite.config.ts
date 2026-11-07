@@ -2,6 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 function git(...args: string[]) {
   try { return execFileSync('git', args, { encoding: 'utf8' }).trim(); }
@@ -15,6 +16,7 @@ const buildInfo = {
   builtAt: new Date().toISOString(),
   channel: process.env.MOSSA_DESKTOP === '1' ? 'desktop' : process.env.MOSSA_PREVIEW === '1' ? 'github-pages-preview' : process.env.GITHUB_ACTIONS === 'true' ? 'github-pages' : 'local',
   dirty: !!git('status', '--porcelain'),
+  fittingBackend: process.env.MOSSA_DESKTOP === '1' ? 'native-rust' : 'wasm',
 };
 
 export default defineConfig({
@@ -36,7 +38,13 @@ export default defineConfig({
   }],
   define: { __MOSSA_BUILD__: JSON.stringify(buildInfo) },
   // Use the same bundled TeX outlines as the label renderer; no second font family.
-  resolve: { alias: { '#default-font/svg/default.js': '@mathjax/mathjax-tex-font/js/svg/default.js' } },
+  resolve: { alias: {
+    '#default-font/svg/default.js': '@mathjax/mathjax-tex-font/js/svg/default.js',
+    ...(process.env.MOSSA_DESKTOP === '1' ? {
+      './engine': fileURLToPath(new URL('./src/native-engine.ts', import.meta.url)),
+      './comparison-client': fileURLToPath(new URL('./src/native-comparison.ts', import.meta.url)),
+    } : {}),
+  } },
   base: './',
   build: { outDir: process.env.MOSSA_DESKTOP === '1' ? 'dist-desktop' : 'dist' },
   server: {

@@ -1,6 +1,13 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-preview.17', date: '2026-11-07', changes: [
+      'Desktop calculations run directly in native Rust; the browser keeps the WASM build of the same fitting core.',
+      'Retain fit progress, cancellation, deterministic multistart search, and parallel model comparisons with complete diagnostics.',
+      'Desktop Save updates the current project file. Save As chooses a new file; Open and Undo/Redo retain the appropriate file association.',
+    ],
+  },
+  {
     version: '2.0.0-preview.16', date: '2026-11-06',
     changes: [
       'Recover difficult simulated fits with residual-based added-component starts, width-bound starts, an alternative bounded solver, and an additional deterministic search, preserving constraints and fit-quality checks.',

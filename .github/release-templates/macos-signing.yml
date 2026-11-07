@@ -36,9 +36,9 @@ jobs:
           cache-dependency-path: |
             mossa/package-lock.json
             mossa/manual/package-lock.json
-      - name: Set up Rust and WebAssembly
+      - name: Set up native Rust
         run: |
-          rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown --target aarch64-apple-darwin --target x86_64-apple-darwin
+          rustup toolchain install 1.99.1 --profile minimal --target aarch64-apple-darwin --target x86_64-apple-darwin
           rustup default 1.99.1
       - name: Cache MossA build dependencies
         uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5

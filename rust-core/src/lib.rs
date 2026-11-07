@@ -1,8 +1,8 @@
 //! Ported MossA line profiles and browser/native fitting API.
 //! See reference/MossA and PORTING.md for provenance and intentional differences.
 use basin::{
-    CostFunction, DenseMatrix, Executor, Jacobian, Observe, ObserverMode, Residual, State,
-    TrustRegionReflective, BoundedLevenbergMarquardt,
+    BoundedLevenbergMarquardt, CostFunction, DenseMatrix, Executor, Jacobian, Observe,
+    ObserverMode, Residual, State, TrustRegionReflective,
 };
 use nalgebra::{DMatrix, DVector};
 use rustfft::{num_complex::Complex, FftPlanner};
@@ -10,7 +10,28 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, f64::consts::PI, sync::OnceLock};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod native;
 mod xvbf;
+#[inline]
+fn cancellation_requested() -> bool {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        native::canceled()
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        false
+    }
+}
+#[inline]
+fn check_cancellation() -> Result<(), String> {
+    if cancellation_requested() {
+        Err("Calculation canceled.".into())
+    } else {
+        Ok(())
+    }
+}
 pub use xvbf::{Component as DistributionComponent, Xvbf};
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -726,6 +747,9 @@ impl Prepared {
         let m = self.project.spectrum.x.len();
         let mut j = DMatrix::zeros(m, n);
         for k in 0..n {
+            if cancellation_requested() {
+                break;
+            }
             let h = 6e-6 * x[k].abs().max(1.);
             let mut a = x.to_vec();
             let mut b = x.to_vec();
@@ -839,6 +863,7 @@ impl CostFunction for Prepared {
     type Output = f64;
     type Error = String;
     fn cost(&self, x: &Vec<f64>) -> Result<f64, String> {
+        check_cancellation()?;
         let scale = self.solver_scale();
         Ok(0.5
             * self
@@ -853,6 +878,7 @@ impl Residual for Prepared {
     type Output = Vec<f64>;
     type Error = String;
     fn residual(&self, x: &Vec<f64>) -> Result<Vec<f64>, String> {
+        check_cancellation()?;
         let scale = self.solver_scale();
         let r: Vec<_> = self.residuals(x).iter().map(|r| r / scale).collect();
         if r.iter().any(|v| !v.is_finite()) {
@@ -865,7 +891,9 @@ impl Residual for Prepared {
 impl Jacobian for Prepared {
     type Jacobian = DenseMatrix;
     fn jacobian(&self, x: &Vec<f64>) -> Result<DenseMatrix, String> {
+        check_cancellation()?;
         let j = self.derivative(x);
+        check_cancellation()?;
         if j.iter().any(|v| !v.is_finite()) {
             return Err(
                 "Non-finite numerical derivative; check parameter scales and bounds.".into(),
@@ -1057,10 +1085,23 @@ fn fit_prepared_with_solver(
         let solver = BoundedLevenbergMarquardt::new()
             .with_absolute_scaled_gradient_tolerance(1e-8)
             .with_relative_cost_change_tolerance(1e-10);
-        let result = Executor::from_start(m.clone(), solver, m.initial.clone())
+        let executor = Executor::from_start(m.clone(), solver, m.initial.clone())
             .max_iter(p.max_iterations as u64)
-            .run()
-            .map_err(|e| format!("Bounded LM: {e:?}"))?;
+            .observe_with(
+                ProgressObserver {
+                    model: m.clone(),
+                    callback,
+                    started: Instant::now(),
+                    last: None,
+                },
+                ObserverMode::Always,
+            );
+        #[cfg(not(target_arch = "wasm32"))]
+        let executor = match native::cancellation() {
+            Some(token) => executor.with_cancellation_token(token),
+            None => executor,
+        };
+        let result = executor.run().map_err(|e| format!("Bounded LM: {e:?}"))?;
         (
             result.param().clone(),
             result.state.iter(),
@@ -1071,7 +1112,7 @@ fn fit_prepared_with_solver(
         let solver = TrustRegionReflective::new()
             .with_absolute_scaled_gradient_tolerance(1e-8)
             .with_relative_cost_change_tolerance(1e-10);
-        let result = Executor::from_start(m.clone(), solver, m.initial.clone())
+        let executor = Executor::from_start(m.clone(), solver, m.initial.clone())
             .max_iter(p.max_iterations as u64)
             .observe_with(
                 ProgressObserver {
@@ -1081,9 +1122,13 @@ fn fit_prepared_with_solver(
                     last: None,
                 },
                 ObserverMode::Always,
-            )
-            .run()
-            .map_err(|e| format!("Solver: {e:?}"))?;
+            );
+        #[cfg(not(target_arch = "wasm32"))]
+        let executor = match native::cancellation() {
+            Some(token) => executor.with_cancellation_token(token),
+            None => executor,
+        };
+        let result = executor.run().map_err(|e| format!("Solver: {e:?}"))?;
         (
             result.param().clone(),
             result.state.iter(),
@@ -1091,6 +1136,7 @@ fn fit_prepared_with_solver(
             format!("{:?}", result.report.code()),
         )
     };
+    check_cancellation()?;
     if !converged {
         warnings.push("Solver stopped without satisfying its convergence criterion; inspect this fit before using the results.".into());
     }
@@ -1104,6 +1150,7 @@ fn fit_prepared_with_solver(
     let mut stationarity = 0_f64;
     if !x.is_empty() {
         let j = m.derivative(&x);
+        check_cancellation()?;
         let residuals = DVector::from_vec(m.residuals(&x));
         let residual_norm = residuals.norm();
         for k in 0..x.len() {

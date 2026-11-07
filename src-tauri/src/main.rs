@@ -5,6 +5,7 @@ use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_opener::OpenerExt;
 
+mod native_engine;
 mod project_files;
 
 const BRIDGE: &str = include_str!("../desktop-bridge.js");
@@ -119,6 +120,7 @@ fn local_navigation(url: &url::Url) -> bool {
 fn main() {
     tauri::Builder::default()
         .manage(project_files::ProjectFiles::default())
+        .manage(native_engine::NativeEngine::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_opener::Builder::new()
@@ -127,18 +129,31 @@ fn main() {
         )
         .invoke_handler(tauri::generate_handler![
             save_file,
+            native_engine::native_compute_start,
+            native_engine::native_compute_cancel,
+            native_engine::native_compute,
             project_files::open_project_file,
             project_files::save_project_file,
             focus_main,
             open_document,
             open_external
         ])
+        .on_window_event(|window, event| {
+            if window.label() == "main" && matches!(event, tauri::WindowEvent::Destroyed) {
+                window.state::<native_engine::NativeEngine>().cancel_all();
+            }
+        })
         .setup(|app| {
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .title("MossA 2 — Mössbauer analysis")
                 .inner_size(1440.0, 940.0)
                 .min_inner_size(960.0, 640.0)
                 .initialization_script(BRIDGE)
+                .on_page_load(|window, payload| {
+                    if matches!(payload.event(), tauri::webview::PageLoadEvent::Started) {
+                        window.state::<native_engine::NativeEngine>().cancel_all();
+                    }
+                })
                 .on_navigation(local_navigation)
                 .on_new_window(|_, _| tauri::webview::NewWindowResponse::Deny)
                 .build()?;

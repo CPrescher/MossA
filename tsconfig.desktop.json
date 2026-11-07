@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": ["src/worker.ts", "src/comparison-worker.ts", "src/derivative-worker.ts", "src/parallel-fit.ts"]
+}

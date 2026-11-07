@@ -1,4 +1,43 @@
-# Desktop preview validation — 2026-11-06
+# Desktop validation
+
+## Native Rust backend — preview.17 (2026-11-07)
+
+The desktop target calls the shared Rust `rlib` through Tauri commands. The
+browser retains WASM workers. Model equations, constants, bounds, acceptance
+checks, search candidates, comparison RNG, and recovery rules are shared.
+
+Local automated checks passed: 17 core Rust tests, 35 JavaScript tests, 187
+TypeScript/DOM tests, 8 desktop Rust tests, and 6 native/browser integration tests.
+The integration tests execute the production native core and session registry,
+including source calibration, multistart progress, cancellation during a later
+search start, queued-work cancellation, failed comparisons, and complete
+Gaussian/Poisson comparisons with one and four workers. The native serial and
+parallel reports match after removing worker metadata; checked native/WASM
+objectives agree within the test tolerances. A browser-fitted portable project
+reopens with its saved fit and uncertainties using native evaluation.
+
+The complete desktop payload built with `src/wasm` absent, and its verifier
+confirmed no fitting WASM binary. The payload contains 253 files and 350 local
+asset references; the manual builds 21 pages and checks 1,308 local links. Pagefind
+search has its own bundled WASM and is independent of the fitting engine.
+
+An isolated release-mode macOS app (`MossA Native Validation`, with separate app
+storage) was exercised through its actual Tauri IPC and native file dialogs.
+The synthetic iron mixture converged in eight iterations. A 4,096-channel,
+32-start synthetic fit published live start/iteration progress and canceled
+without replacing the previous project. A four-worker comparison completed;
+a second 4,999-spectrum run canceled with no simulation p-value. A completed
+99-spectrum report was exported through native Save As and independently checked
+for 99 outcomes, complete diagnostics, `fittingBackend: native-rust`, and
+`execution: { workers: 4, backend: native-rust }`.
+
+These checks qualify the tested implementations and cases. They do not establish
+universal optimization equivalence or experimental model accuracy. Native GUI
+checks here are macOS only; Windows/Linux are covered by the platform build matrix
+and native command tests. Published preview.16 installers retain their original
+WASM backend; this change is for preview.17 and later builds.
+
+## Historical WASM desktop preview — 2026-11-06
 
 Built locally on Apple Silicon, macOS 26.6.2, using Node 26.12.1, Rust 1.99.1,
 Tauri 2.12.5, and Tauri CLI/API 2.12.4. Application version:
@@ -6,7 +45,7 @@ Tauri 2.12.5, and Tauri CLI/API 2.12.4. Application version:
 `6c821460f752c6b2d00fc8c6285cc1acb949f4b4` with `dirty: true`: this is a build of
 the current modified workspace, not a tagged release.
 
-## Automated checks
+### Automated checks
 
 - Shared scientific and interface suite: 14 Rust, 28 JavaScript, and 155
   TypeScript/React tests passed.
@@ -22,7 +61,7 @@ the current modified workspace, not a tagged release.
   preview signature; `lipo -archs` reports `arm64`.
 - Final DMG passed `hdiutil verify`.
 
-## Native macOS smoke checks
+### Native macOS smoke checks
 
 The packaged app launched from `MossA.app`, serving its embedded `tauri://localhost`
 assets without a development or calculation server. The synthetic iron mixture
@@ -42,7 +81,7 @@ tests establish local asset use and successful native workflows; they do not
 constitute a physical network-disconnection test or qualification of older
 macOS releases.
 
-## Remaining distribution checks
+### Remaining distribution checks
 
 Windows and Linux build jobs are configured but have not been executed in this
 local macOS session. Their installer/runtime checks remain pending the first CI
@@ -51,7 +90,7 @@ signed and have not been notarized. Public distribution still needs the
 platform signing/release steps described in `DESKTOP.md`. No tag or public
 release was created.
 
-## Signed distribution and cross-platform CI — 2026-11-07
+### Signed distribution and cross-platform CI — 2026-11-07
 
 This follow-up supersedes the pending signing and platform-build checks above.
 

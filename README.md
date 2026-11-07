@@ -2,7 +2,7 @@
 
 **[Open MossA 2 in your browser](https://cprescher.github.io/MossA/)** — no installation or MATLAB license needed. Spectra and fitting remain on your device. Local autosave belongs to the browser used to open the app; Save project exports a portable backup.
 
-React/TypeScript interface with a Rust/WebAssembly fitting core. All spectrum calculations run on the user's device in a Web Worker. The production build is a static website; it needs no calculation server, Python, or MATLAB.
+React/TypeScript interface with a shared Rust fitting core. Browser calculations run locally as WASM in Web Workers; the Tauri desktop app calls the Rust core natively in background jobs. The production build is a static website; it needs no calculation server, Python, or MATLAB.
 
 **[Download the desktop app](https://github.com/CPrescher/MossA/releases)** for offline use on macOS, Windows, or Linux. The current 2.0 series is a scientific preview.
 
@@ -222,6 +222,6 @@ dist/                   Prebuilt static application
 scripts/serve.mjs        Dependency-free local static server
 ```
 
-The core is also an `rlib`, so a later Tauri application can use either the same WASM frontend or call the same Rust library natively. No Tauri wrapper is included yet.
+The Tauri app links the core as an `rlib` and uses native Rust jobs for fitting, evaluation, source calibration, and parallel comparisons. The browser keeps WASM workers. Both targets share multistart candidates, comparison RNG/recovery rules, and portable projects. `npm run test:native` checks backend parity and cancellation; see [DESKTOP.md](DESKTOP.md).
 
 In full-transmission mode, site overlays show absorber profiles scaled together for display using the original MossA convention. They are not additive transmission components; the fitted transmission model and residuals are unchanged.

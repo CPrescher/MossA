@@ -1,11 +1,8 @@
 import type { ComparisonOptions, ComparisonProgress, ComparisonResult, SimulationOutcome } from './comparison';
 import type { Project } from './types';
 
-export function comparisonWorkerCount(requested = 0, hardwareConcurrency = typeof navigator === 'undefined' ? 2 : navigator.hardwareConcurrency) {
-  if (!Number.isInteger(requested) || requested < 0 || requested > 16) throw new Error('Choose Auto or 1–16 parallel workers.');
-  const available = Number.isFinite(hardwareConcurrency) ? Math.max(1, Math.floor(hardwareConcurrency) - 1) : 1;
-  return requested || Math.min(8, available);
-}
+import { comparisonWorkerCount } from './comparison-workers';
+export { comparisonWorkerCount } from './comparison-workers';
 
 export function startComparison(simpler: Project, larger: Project, options: ComparisonOptions, onProgress: (p: ComparisonProgress) => void) {
   const count = comparisonWorkerCount(options.workers), workers = new Set<Worker>();

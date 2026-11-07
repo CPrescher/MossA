@@ -9,7 +9,7 @@ export type ComparisonResult = {
   simpler: FitResult; larger: FitResult; improvement: number; fStatistic: number | null;
   exceedances: number; pValue: number; monteCarloInterval: [number, number];
   noiseStd: number | null; improvements: number[]; warnings: string[];
-  execution?: { workers: number };
+  execution?: { workers: number; backend?: 'native-rust' | 'wasm' };
   diagnostics: { simpler: FitDiagnostic; larger: FitDiagnostic }[];
   fitAttempts?: { stage: string; attempts: (FitDiagnostic & { start: string; iterationLimit: number; algorithm?: 'trf' | 'bounded-lm'; search?: FitResult['search'] })[] }[];
 };
@@ -188,8 +188,33 @@ export type SimulationOutcome = {
 };
 type LocalFit = (p: Project, algorithm?: 'trf' | 'bounded-lm') => FitResult;
 type Progress = (p: ComparisonProgress) => void;
-function createRefitter(options: ComparisonOptions, fit: LocalFit, notify: Progress, fitAttempts: NonNullable<ComparisonResult['fitAttempts']>) {
-  function refit(project: Project, stage: string, completed: number, nullFit?: FitResult) {
+type NumericalStep = { method: 'fit'; project: Project; algorithm?: 'trf' | 'bounded-lm' } | { method: 'evaluate'; project: Project };
+type NumericalSteps<T> = Generator<NumericalStep, T, FitResult | Evaluation>;
+type AsyncFit = (p: Project, algorithm?: 'trf' | 'bounded-lm') => Promise<FitResult>;
+type AsyncEvaluate = (p: Project) => Promise<Evaluation>;
+function drive<T>(steps: NumericalSteps<T>, fit: LocalFit, evaluate: (p: Project) => Evaluation): T {
+  let state = steps.next();
+  while (!state.done) {
+    let value: FitResult | Evaluation;
+    try { const step = state.value; value = step.method === 'fit' ? fit(step.project, step.algorithm) : evaluate(step.project); }
+    catch (error) { state = steps.throw(error); continue; }
+    state = steps.next(value);
+  }
+  return state.value;
+}
+async function driveAsync<T>(steps: NumericalSteps<T>, fit: AsyncFit, evaluate: AsyncEvaluate): Promise<T> {
+  let state = steps.next();
+  while (!state.done) {
+    let value: FitResult | Evaluation;
+    try { const step = state.value; value = await (step.method === 'fit' ? fit(step.project, step.algorithm) : evaluate(step.project)); }
+    catch (error) { state = steps.throw(error); continue; }
+    state = steps.next(value);
+  }
+  return state.value;
+}
+
+function createRefitter(options: ComparisonOptions, notify: Progress, fitAttempts: NonNullable<ComparisonResult['fitAttempts']>) {
+  function* refit(project: Project, stage: string, completed: number, nullFit?: FitResult): NumericalSteps<FitResult> {
     const attempts: NonNullable<ComparisonResult['fitAttempts']>[number]['attempts'] = [];
     fitAttempts.push({ stage, attempts });
     let best: FitResult | null = null, bestAcceptable: FitResult | null = null;
@@ -209,7 +234,7 @@ function createRefitter(options: ComparisonOptions, fit: LocalFit, notify: Progr
       candidate.max_iterations = iterationLimit;
       if (attempt) notify({ phase: `${stage}: recovery ${attempt}`, completed, total: options.simulations });
       const algorithm = attempt >= 2 && attempt !== 5 && !(attempt === 2 && nullFit) ? 'bounded-lm' : 'trf';
-      const fitted = fit(candidate, algorithm);
+      const fitted = (yield { method: 'fit', project: candidate, algorithm }) as FitResult;
       attempts.push({ ...diagnostic(fitted), start: attempt === 0 ? 'supplied model start' : attempt === 1 && nullFit ? 'simpler-fit start, 5% added area' : attempt === 2 && nullFit ? 'simpler-fit start, residual peaks for added singlets/doublets' : attempt === 4 ? 'best attempt, near-bound free widths started at existing lower bounds' : attempt === 5 ? 'supplied model start with at least five deterministic starting models' : 'continue best attempt', iterationLimit, algorithm, ...(fitted.search ? { search: structuredClone(fitted.search) } : {}) });
       if (!best || fitted.evaluation.objective < best.evaluation.objective) best = fitted;
       if (sufficient(fitted) && (!bestAcceptable || fitted.evaluation.objective < bestAcceptable.evaluation.objective)) bestAcceptable = fitted;
@@ -227,8 +252,7 @@ function createRefitter(options: ComparisonOptions, fit: LocalFit, notify: Progr
   }
   return refit;
 }
-export function prepareComparison(a: Project, b: Project, options: ComparisonOptions, fit: LocalFit,
-  evaluate: (p: Project) => Evaluation, notify: Progress = () => {}): PreparedComparison {
+function* prepareComparisonSteps(a: Project, b: Project, options: ComparisonOptions, notify: Progress): NumericalSteps<PreparedComparison> {
   const issue = nestingIssue(a, b) ?? noiseIssue(a, options);
   if (issue) throw new Error(issue);
   if (!Number.isInteger(options.simulations) || options.simulations < 99 || options.simulations > 9999) throw new Error('Choose 99–9,999 simulations.');
@@ -236,11 +260,11 @@ export function prepareComparison(a: Project, b: Project, options: ComparisonOpt
   if (!['poisson', 'gaussian'].includes(options.noise)) throw new Error('Choose a supported noise model.');
   if (options.workers !== undefined && (!Number.isInteger(options.workers) || options.workers < 0 || options.workers > 16)) throw new Error('Choose Auto or 1–16 parallel workers.');
   const fitAttempts: NonNullable<ComparisonResult['fitAttempts']> = [];
-  const refit = createRefitter(options, fit, notify, fitAttempts);
+  const refit = createRefitter(options, notify, fitAttempts);
   notify({ phase: 'Fitting observed simpler model', completed: 0, total: options.simulations });
-  const simpler = refit(a, 'Observed simpler model', 0); checkFit(simpler, 'Observed simpler model');
+  const simpler = yield* refit(a, 'Observed simpler model', 0); checkFit(simpler, 'Observed simpler model');
   notify({ phase: 'Fitting observed larger model', completed: 0, total: options.simulations });
-  const larger = refit(b, 'Observed larger model', 0, simpler); checkFit(larger, 'Observed larger model');
+  const larger = yield* refit(b, 'Observed larger model', 0, simpler); checkFit(larger, 'Observed larger model');
   if (larger.free_parameters <= simpler.free_parameters) throw new Error('The larger model must have more independent free parameters.');
   const observed = improvement(simpler, larger, 'Observed models');
   // Independently check the null embedding in the actual numerical core.
@@ -248,7 +272,7 @@ export function prepareComparison(a: Project, b: Project, options: ComparisonOpt
   embedded.background = structuredClone(simpler.project.background);
   embedded.sites.splice(0, simpler.project.sites.length, ...structuredClone(simpler.project.sites));
   embedded.sites.slice(simpler.project.sites.length).forEach(site => { site.params.intensity.value = 0; });
-  const nullCurve = evaluate(embedded).y;
+  const nullCurve = ((yield { method: 'evaluate', project: embedded }) as Evaluation).y;
   if (nullCurve.some((v, i) => Math.abs(v - simpler.evaluation.y[i]) > 1e-8 * Math.max(1, Math.abs(v)))) throw new Error('The larger model could not reproduce the simpler model with added intensities set to zero.');
   const std = options.noise === 'gaussian' ? Math.sqrt(simpler.evaluation.sse / simpler.dof) : null;
   if (std !== null && (!(std > 0) || !Number.isFinite(std))) throw new Error('The simpler fit must have a positive finite residual std for Gaussian simulations.');
@@ -262,22 +286,35 @@ export function comparisonGenerator(prepared: PreparedComparison) {
     index: index++, y: simulateSpectrum(prepared.simpler.evaluation.y, prepared.options, prepared.noiseStd, random),
   };
 }
-export function fitComparisonSimulation(prepared: PreparedComparison, index: number, y: number[], fit: LocalFit,
-  notify: Progress = () => {}): SimulationOutcome {
+function* simulationSteps(prepared: PreparedComparison, index: number, y: number[], notify: Progress): NumericalSteps<SimulationOutcome> {
   const { simpler, larger, options } = prepared;
   if (!Number.isInteger(index) || index < 0 || index >= options.simulations || y.length !== simpler.project.spectrum.y.length || y.some(v => !Number.isFinite(v))) throw new Error('Invalid simulated spectrum.');
   const stage = `Simulation ${index + 1}`, fitAttempts: NonNullable<ComparisonResult['fitAttempts']> = [];
-  const refit = createRefitter(options, fit, notify, fitAttempts);
+  const refit = createRefitter(options, notify, fitAttempts);
   notify({ phase: `${stage}: simpler model`, completed: index, total: options.simulations });
   if (simpler.project.weighting === 'counts' && y.some(v => v === 0)) throw new Error(`${stage}: Poisson sampling produced zero counts, which 1 / observed counts weighting cannot fit. Use unweighted fitting for both models. No zero counts are replaced or simulations discarded.`);
   const data = { x: simpler.project.spectrum.x, y };
-  const sf = refit({ ...structuredClone(simpler.project), spectrum: data }, `${stage}, simpler model`, index); checkFit(sf, `${stage}, simpler model`);
+  const sf = yield* refit({ ...structuredClone(simpler.project), spectrum: data }, `${stage}, simpler model`, index); checkFit(sf, `${stage}, simpler model`);
   notify({ phase: `${stage}: larger model`, completed: index, total: options.simulations });
-  const lf = refit({ ...structuredClone(larger.project), spectrum: data }, `${stage}, larger model`, index, sf); checkFit(lf, `${stage}, larger model`);
+  const lf = yield* refit({ ...structuredClone(larger.project), spectrum: data }, `${stage}, larger model`, index, sf); checkFit(lf, `${stage}, larger model`);
   return { index, improvement: improvement(sf, lf, stage), diagnostic: { simpler: diagnostic(sf), larger: diagnostic(lf) }, fitAttempts,
     verifiedStationary: Number(!sf.converged) + Number(!lf.converged),
     rankDeficient: sf.rank < sf.free_parameters || lf.rank < lf.free_parameters,
     bounded: [...sf.warnings, ...lf.warnings].some(w => /at a bound/.test(w)) };
+}
+// Both backends run the same recovery/acceptance state machine.
+export function prepareComparison(a: Project, b: Project, options: ComparisonOptions, fit: LocalFit, evaluate: (p: Project) => Evaluation, notify: Progress = () => {}): PreparedComparison {
+  return drive(prepareComparisonSteps(a, b, options, notify), fit, evaluate);
+}
+export function prepareComparisonAsync(a: Project, b: Project, options: ComparisonOptions, fit: AsyncFit, evaluate: AsyncEvaluate, notify: Progress = () => {}) {
+  return driveAsync(prepareComparisonSteps(a, b, options, notify), fit, evaluate);
+}
+export function fitComparisonSimulation(prepared: PreparedComparison, index: number, y: number[], fit: LocalFit,
+  notify: Progress = () => {}): SimulationOutcome {
+  return drive(simulationSteps(prepared, index, y, notify), fit, () => { throw new Error('Unexpected evaluation'); });
+}
+export function fitComparisonSimulationAsync(prepared: PreparedComparison, index: number, y: number[], fit: AsyncFit, notify: Progress = () => {}) {
+  return driveAsync(simulationSteps(prepared, index, y, notify), fit, async () => { throw new Error('Unexpected evaluation'); });
 }
 export function completeComparison(prepared: PreparedComparison, outcomes: SimulationOutcome[]): ComparisonResult {
   const { simpler, larger, options, improvement: observed, noiseStd } = prepared;
