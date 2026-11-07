@@ -295,6 +295,21 @@ references on either site. Relative replay URLs keep the animation within its
 own manual, and the preview link processor supports data-source attributes.
 No application source, desktop release workflow, or version tag is changed.
 
+## Visible manual link in app header (2026-11-07)
+
+The app header now includes a labelled Manual link beside Help. It opens the
+bundled manual in a separate tab, retaining the current analysis. Its relative
+`./manual/` URL follows the release, develop-preview, and offline desktop base.
+The visible label remains at narrow widths; the book icon is omitted below
+480 pixels. Light and dark themes have distinct bordered styles and retain the
+existing keyboard-focus outline.
+
+The three desktop routing/export regressions and the TypeScript/Vite build pass.
+Browser inspection confirms the header link at 1,280 and 390 pixels, no horizontal
+page overflow at 390 pixels, and keyboard activation opens the local manual in
+another tab. The viewport override was reset. Local screenshots are retained in
+`test-results/manual-link-qa/` in the shared working checkout.
+
 ## F-test and added-site teaching chapter (2026-11-07)
 
 The new foundations chapter explains nested models, independent parameter counts,
