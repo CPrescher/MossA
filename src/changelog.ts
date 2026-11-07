@@ -5,7 +5,8 @@ export const changelog = [
     changes: [
       'Recover difficult simulated fits with residual-based added-component starts, width-bound starts, an alternative bounded solver, and an additional deterministic search, preserving constraints and fit-quality checks.',
       'Run model-comparison simulations across multiple CPU workers with Auto or a manual count. Seeded spectra and fit diagnostics remain unchanged; cancellation stops the whole pool.',
-      'Comparison results now give a plain recommendation and explain each statistic beside its value. Detailed calculation and recovery logs can be expanded.',
+      'Comparison results explain statistical improvement without automatically recommending another physical site. Parameter uncertainties, component overlap, residual-noise checks, and a second noise-sensitivity comparison identify reasons for caution; both results and diagnostic rules can be exported.',
+      'Automatically check Gaussian noise sensitivity when Poisson residual checks raise caution. Keep both results visible and retain the Poisson result if the second check is canceled, fails, or is unavailable.',
       'Import single-spectrum SPEC MCA files directly, with channel-count checks and retained acquisition headers.',
       'Recognize the five-column SMS reference layout and show which velocity/count columns are fitted.',
       'Reverse calibrated velocities in Gen. The direction is saved per spectrum, applies to all its models, and survives recalibration and Undo/Redo.',
