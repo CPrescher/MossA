@@ -37,3 +37,5 @@
 .comparison-checks ul{padding-left:17px;margin:12px 0}.comparison-checks li{font-size:11px;line-height:1.6}.comparison-checks li+li{margin-top:15px}.comparison-checks li p{margin:5px 0 0}
 .comparison-added-site+.comparison-added-site{margin-top:20px}.comparison-result table{width:100%;border-collapse:collapse;font-size:10px;margin:12px 0}.comparison-result td,.comparison-result th{padding:7px 4px;border-bottom:1px solid var(--border);text-align:right;font-variant-numeric:tabular-nums}.comparison-result th:first-child{text-align:left}.comparison-result th small{font-size:9px;font-weight:400;opacity:.8}
 .comparison-noise-classification{display:block;margin-top:4px;font-size:9px;font-weight:400;opacity:.85}
+
+.comparison-dialog .comparison-help{margin:0 0 12px;font-weight:600}
