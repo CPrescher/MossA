@@ -6,8 +6,11 @@ import { acceptableFit, nestingIssue, noiseIssue, type ComparisonOptions, type C
 import { startComparison, comparisonWorkerCount } from './comparison-client';
 import { buildInfo } from './version';
 import { niceTicks, formatTick } from './axes.mjs';
+import { assessComparison, automaticNoiseSensitivityTriggers } from './comparison-assessment';
+import { ComparisonAssessmentPanel, ComparisonVerdict, NoiseSensitivityResults } from './ComparisonAssessment';
 
 const number = (v: number | null | undefined) => v == null ? '—' : Number(v.toPrecision(5)).toLocaleString('en-US', { maximumSignificantDigits: 5 });
+type NoiseCheck = { origin:'automatic'|'manual'; status:'running'|'complete'|'canceled'|'failed'|'unavailable'; triggerCodes:string[]; reason?:string };
 
 export function ComparisonPlot({ x, y, curves, names }: { x: number[]; y: number[]; curves: Evaluation[]; names: string[] }) {
   const svg = useRef<SVGSVGElement>(null), [size, setSize] = useState({ width: 810, height: 415 });
@@ -63,6 +66,8 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
     ...(spectrum.velocityReversed ? { doubledLastChannel: options.noise === 'poisson' && doubledTurnaround } : {}) };
   const [preview, setPreview] = useState<Evaluation[] | null>(null), [previewError, setPreviewError] = useState('');
   const [result, setResult] = useState<ComparisonResult | null>(null), [error, setError] = useState('');
+  const [alternative, setAlternative] = useState<ComparisonResult | null>(null), [checkingNoise,setCheckingNoise] = useState(false), [noiseError,setNoiseError] = useState('');
+  const [noiseCheck,setNoiseCheck] = useState<NoiseCheck|null>(null);
   const [progress, setProgress] = useState<ComparisonProgress | null>(null);
   const task = useRef<ReturnType<typeof startComparison> | null>(null), generation = useRef(0);
   useEffect(() => { dialog.current?.showModal(); return () => { generation.current++; task.current?.cancel(); }; }, []);
@@ -71,25 +76,71 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
     void Promise.all([evaluate(a), evaluate(b)]).then(values => { if (current) setPreview(values); }).catch(e => { if (current) setPreviewError(String(e)); });
     return () => { current = false; };
   }, [a, b, evaluate]);
-  function changeOptions(patch: Partial<ComparisonOptions>) { setOptions(o => ({ ...o, ...patch })); setResult(null); setError(''); }
-  function selectModel(value: string, simpler: boolean) { (simpler ? setSimplerId : setLargerId)(value); setResult(null); setError(''); }
+  function clearResult() { setResult(null); setAlternative(null); setError(''); setNoiseError(''); setNoiseCheck(null); }
+  function changeOptions(patch: Partial<ComparisonOptions>) { setOptions(o => ({ ...o, ...patch })); clearResult(); }
+  function selectModel(value: string, simpler: boolean) { (simpler ? setSimplerId : setLargerId)(value); clearResult(); }
   const issue = simplerId === largerId ? 'Choose two different models.' : nestingIssue(a, b) ?? noiseIssue(a, effectiveOptions);
   const validOptions = Number.isInteger(options.seed) && options.seed >= 0 && options.seed <= 4294967295;
-  async function simulate() {
-    if (task.current || issue || !validOptions) return;
-    const token = ++generation.current; setResult(null); setError(''); setProgress({ phase: 'Starting comparison', completed: 0, total: options.simulations });
-    try {
-      const calculation = run(a, b, effectiveOptions, value => { if (token === generation.current) setProgress(value); }); task.current = calculation;
-      const value = await calculation.promise;
-      if (token === generation.current) setResult(value);
-    } catch (e) { if (token === generation.current) setError(e instanceof Error ? e.message : String(e)); }
-    finally { if (token === generation.current) { task.current = null; setProgress(null); } }
+  function alternativeOptionsFor(base:ComparisonOptions):ComparisonOptions {
+    const noise = base.noise === 'poisson' ? 'gaussian' : 'poisson';
+    return { ...base,noise,doubledFirstChannel:noise === 'poisson' && doubledTurnaround && !spectrum.velocityReversed,
+      doubledLastChannel:noise === 'poisson' && doubledTurnaround && !!spectrum.velocityReversed };
   }
-  function cancel() { generation.current++; task.current?.cancel(); task.current = null; setProgress(null); setResult(null); setError('Simulation canceled. No simulation p-value was computed.'); }
+  const alternativeOptions = alternativeOptionsFor(result?.options ?? effectiveOptions), alternativeNoise = alternativeOptions.noise;
+  const alternativeIssue = noiseIssue(a,alternativeOptions);
+  const assessment = useMemo(() => result ? assessComparison(result,alternative) : null,[result,alternative]);
+  async function simulate(sensitivity = false) {
+    if (task.current || issue || !validOptions || (sensitivity && (!result || alternativeIssue))) return;
+    const chosenOptions = sensitivity ? alternativeOptions : effectiveOptions;
+    const token = ++generation.current;
+    let inSensitivity = sensitivity;
+    let calculationSequence = 0;
+    if (sensitivity) { setAlternative(null); setNoiseError(''); setCheckingNoise(true); setNoiseCheck({origin:'manual',status:'running',triggerCodes:[]}); }
+    else clearResult();
+    setProgress({ phase: sensitivity ? 'Checking the alternative noise assumption' : 'Starting comparison', completed: 0, total: chosenOptions.simulations });
+    async function calculate(calculationOptions:ComparisonOptions) {
+      const sequence = ++calculationSequence, secondary = inSensitivity;
+      const calculation = run(a,b,calculationOptions,value => {
+        if (token === generation.current && sequence === calculationSequence) setProgress({ ...value,phase:secondary ? `${calculationOptions.noise} sensitivity · ${value.phase}` : value.phase });
+      });
+      task.current = calculation;
+      return calculation.promise;
+    }
+    try {
+      const value = await calculate(chosenOptions);
+      if (token !== generation.current) return;
+      if (sensitivity) { setAlternative(value); setNoiseCheck(check => check ? {...check,status:'complete'} : check); }
+      else {
+        setResult(value);
+        const triggers = automaticNoiseSensitivityTriggers(value);
+        if (triggers.length) {
+          const gaussianOptions = alternativeOptionsFor(value.options), unavailable = noiseIssue(a,gaussianOptions);
+          const automatic:NoiseCheck = {origin:'automatic',status:unavailable ? 'unavailable' : 'running',triggerCodes:triggers.map(flag => flag.code),...(unavailable ? {reason:unavailable} : {})};
+          setNoiseCheck(automatic);
+          if (unavailable) return;
+          inSensitivity = true; setCheckingNoise(true);
+          setProgress({phase:'Automatically checking Gaussian noise sensitivity',completed:0,total:gaussianOptions.simulations});
+          const checked = await calculate(gaussianOptions);
+          if (token === generation.current) { setAlternative(checked); setNoiseCheck({...automatic,status:'complete'}); }
+        }
+      }
+    } catch (e) {
+      if (token === generation.current) {
+        (inSensitivity ? setNoiseError : setError)(e instanceof Error ? e.message : String(e));
+        if (inSensitivity) setNoiseCheck(check => check ? {...check,status:'failed'} : check);
+      }
+    }
+    finally { if (token === generation.current) { task.current = null; setProgress(null); setCheckingNoise(false); } }
+  }
+  function cancel() { generation.current++; task.current?.cancel(); task.current = null; setProgress(null);
+    if (checkingNoise) { setCheckingNoise(false); setAlternative(null); setNoiseCheck(check => check ? {...check,status:'canceled'} : check); setNoiseError('Noise sensitivity check canceled. The original comparison is retained.'); }
+    else { setResult(null); setAlternative(null); setError('Simulation canceled. No simulation p-value was computed.'); }
+  }
   function exportReport() {
     if (!result) return;
     const report = { application: 'MossA 2', build: buildInfo, createdAt: new Date().toISOString(), spectrum: spectrum.name, models: { simpler: simple.name, larger: large.name },
-      preprocessing: { calibration: spectrum.cal, raw: spectrum.raw, velocity_reversed: !!spectrum.velocityReversed, import_info: spectrum.importInfo }, result };
+      preprocessing: { calibration: spectrum.cal, raw: spectrum.raw, velocity_reversed: !!spectrum.velocityReversed, import_info: spectrum.importInfo }, result,
+      interpretation:assessment, ...(alternative ? { noiseSensitivity:alternative } : {}), ...(noiseCheck ? { noiseSensitivityStatus:noiseCheck } : {}) };
     void saveText('mossa-model-comparison.json', JSON.stringify(report, null, 2) + '\n', 'application/json').catch(e => setError(String(e)));
   }
   const fits = result ? [result.simpler, result.larger] : null;
@@ -117,28 +168,37 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
           <label className="stack-label comparison-workers">CPU workers<select aria-label="CPU workers" value={options.workers ?? 0} onChange={e => changeOptions({ workers: Number(e.target.value) })}><option value="0">Auto · {comparisonWorkerCount()} worker{comparisonWorkerCount() === 1 ? '' : 's'}</option>{[1, 2, 4, 8, 16].filter(n => n <= Math.max(1, (typeof navigator === 'undefined' ? 2 : navigator.hardwareConcurrency || 2) - 1)).map(n => <option key={n} value={n}>{n === 1 ? '1 · Single worker' : `${n} · Parallel workers`}</option>)}</select></label>
         </fieldset>
         <p className="comparison-note">{options.noise === 'poisson' ? 'Use actual, unnormalized integer counts. Counts are sampled from the simpler fitted curve, then each synthetic spectrum supplies its own count weights.' : 'Assumes independent Gaussian noise with a common std estimated from the simpler fit as √(SSE / residual dof). Use unweighted fitting.'}{doubledTurnaround && options.noise === 'poisson' ? ' The doubled self-paired turnaround channel is simulated as twice a Poisson count.' : ''} Calibration and source settings are held fixed; their uncertainty and correlated noise are not simulated.</p>
+        {options.noise === 'poisson' && <p className="comparison-note">If the completed Poisson fit flags excess scatter or correlated residuals, an eligible Gaussian sensitivity check starts automatically with the same simulation count and seed. You can cancel it and keep the Poisson result.</p>}
         {issue && <p className="comparison-notice" role="status">Simulation unavailable: {issue}</p>}
         {!validOptions && <p role="alert">Enter an integer random seed between 0 and 4,294,967,295.</p>}
         <div className="comparison-run"><button className="primary" disabled={!!issue || !validOptions || !!progress || !!previewError} onClick={() => void simulate()}>Run simulation test</button>{progress && <button onClick={cancel}>Cancel simulation</button>}</div>
         {progress && <div role="status" aria-live="polite"><p>{progress.phase} · {progress.completed}/{progress.total} spectra</p><progress aria-label="Simulation progress" max={progress.total} value={progress.completed}/></div>}
         {error && <p className="comparison-notice" role="alert">{error}</p>}
-        {result && <div className="comparison-result" role="status"><h3>{result.monteCarloInterval[0] <= .05 && result.monteCarloInterval[1] >= .05 ? 'The result is borderline; run more simulations' : result.pValue < .05 ? `Prefer the ${b.sites.length}-site model` : `No clear support for adding ${b.sites.length - a.sites.length === 1 ? 'the extra site' : 'the extra sites'}`}</h3>
-          <p className="comparison-verdict">{result.monteCarloInterval[0] <= .05 && result.monteCarloInterval[1] >= .05 ? 'The simulation is not precise enough to make a clear decision at the 5% threshold.' : result.pValue < .05 ? `The data support using ${b.sites.length} sites instead of ${a.sites.length}, under the selected noise assumptions. Check that the additional fitted parameters make physical sense.` : `The simulation does not clearly justify the extra complexity. The ${a.sites.length}-site model is the simpler choice.`}</p>
+        {result && assessment && <div className="comparison-result" role="status" data-caution={assessment.flags.length > 0}><ComparisonVerdict assessment={assessment}/>
           <p>{result.simpler.evaluation.objective > 0 && `The extra ${b.sites.length - a.sites.length === 1 ? 'site reduced' : 'sites reduced'} the squared fitting error by ${(100 * result.improvement / result.simpler.evaluation.objective).toFixed(1)}%. `}{result.exceedances === 0 ? `None of the ${result.options.simulations} noise-only spectra showed an improvement this large.` : `${result.exceedances} of ${result.options.simulations} noise-only spectra showed an improvement at least this large.`}</p>
+          <div className="comparison-sensitivity-action"><button disabled={!!progress || !!alternativeIssue} onClick={() => void simulate(true)}>Check {alternativeNoise === 'gaussian' ? 'Gaussian' : 'Poisson'} noise sensitivity</button>
+            {noiseCheck?.origin === 'automatic' && <p role="status" className="comparison-auto-noise">{noiseCheck.status === 'running' ? 'Poisson residual checks raised caution. Gaussian noise sensitivity is running automatically; the Poisson result is retained.' : noiseCheck.status === 'complete' ? 'Gaussian noise sensitivity ran automatically because Poisson residual checks raised caution. Both results are retained below.' : noiseCheck.status === 'unavailable' ? `Poisson residual checks raised caution, but automatic Gaussian sensitivity is unavailable: ${noiseCheck.reason} The Poisson result is retained.` : noiseCheck.status === 'canceled' ? 'The automatic Gaussian check was canceled. The Poisson result is retained; you can retry the check.' : 'The automatic Gaussian check failed. The Poisson result is retained; no second p-value was produced.'}</p>}
+            {checkingNoise && <><p role="status">Checking {alternativeNoise} noise · {progress?.completed ?? 0}/{result.options.simulations} spectra. The original result is retained.</p><button onClick={cancel}>Cancel noise check</button></>}
+            {alternativeIssue && <p className="comparison-note">Alternative noise check unavailable: {alternativeIssue}</p>}
+            {noiseError && <p role="alert">{noiseError}</p>}
+            <p className="comparison-note">Runs the same number of simulations and seed with the other noise assumption. Both results are retained; this check does not identify which noise model is correct.</p>
+          </div>
+          {alternative && <NoiseSensitivityResults result={result} alternative={alternative}/>}
           <dl className="comparison-key-statistics">
             <div><dt>Simulation p-value</dt><dd>{number(result.pValue)}<span className="comparison-stat-explanation">{result.pValue < .05 ? `An improvement this large would be unusual if ${a.sites.length} sites and the selected noise model were sufficient.` : `An improvement this large is not unusual enough to rule out ${a.sites.length} sites plus the selected noise.`} This is not the probability that either model is correct.</span></dd></div>
-            <div><dt>95% Monte Carlo interval</dt><dd>{number(result.monteCarloInterval[0])}–{number(result.monteCarloInterval[1])}<span className="comparison-stat-explanation">Uncertainty from using only {result.options.simulations} simulated spectra. {result.monteCarloInterval[1] < .05 ? 'The whole interval is below 0.05, supporting the larger model at the 5% threshold.' : result.monteCarloInterval[0] > .05 ? 'The interval is above 0.05, so the test does not clearly support the larger model.' : 'The interval crosses 0.05; more simulations are needed for a clear decision.'}</span></dd></div>
+            <div><dt>95% Monte Carlo interval</dt><dd>{number(result.monteCarloInterval[0])}–{number(result.monteCarloInterval[1])}<span className="comparison-stat-explanation">Uncertainty from using only {result.options.simulations} simulated spectra. {result.monteCarloInterval[1] < .05 ? 'The whole interval is below the 0.05 reference threshold. This does not establish parameter identifiability or validate the noise assumptions.' : result.monteCarloInterval[0] > .05 ? 'The interval is above 0.05, so statistical support for improvement is not clear.' : 'The interval crosses 0.05. More simulations refine this uncertainty; they cannot resolve model or noise inadequacy.'}</span></dd></div>
             <div><dt>Observed objective improvement</dt><dd>{number(result.improvement)}<span className="comparison-stat-explanation">Decrease in {a.weighting === 'counts' ? 'weighted ' : ''}squared fitting error. {result.simpler.evaluation.objective > 0 && `This is a ${(100 * result.improvement / result.simpler.evaluation.objective).toFixed(1)}% reduction compared with the ${a.sites.length}-site fit.`} The simulations test whether the extra flexibility earns this improvement.</span></dd></div>
             <div><dt>Simulated improvements ≥ observed</dt><dd>{result.exceedances} / {result.options.simulations}<span className="comparison-stat-explanation">Spectra generated from the {a.sites.length}-site model whose improvement matched or exceeded the measured improvement. Zero matches does not mean zero chance.</span></dd></div>
-            <div><dt>F statistic · descriptive only</dt><dd>{number(result.fStatistic)}<span className="comparison-stat-explanation">Fit improvement per extra free parameter, relative to the remaining fitting error. Shown for reference; the decision uses the simulation p-value.</span></dd></div>
+            <div><dt>F statistic · descriptive only</dt><dd>{number(result.fStatistic)}<span className="comparison-stat-explanation">Fit improvement per extra free parameter, relative to the remaining fitting error. Shown for reference; interpret the simulated evidence alongside noise adequacy and parameter uncertainties.</span></dd></div>
           </dl>
+          <ComparisonAssessmentPanel result={result} assessment={assessment} alternative={alternative} checkingNoise={checkingNoise}/>
           <details className="comparison-statistical-details"><summary>Calculation and recovery details</summary>
           {result.noiseStd !== null && <p>Simulated Gaussian std: {number(result.noiseStd)} in the spectrum’s intensity units.</p>}
           <p>The p-value is (exceedances + 1) / (simulations + 1), so it is never reported as zero. The interval describes simulation sampling uncertainty. A p-value is not the probability that a component is real. No conventional F-distribution p-value is used for added components.</p>
-          {result.execution && <p>Calculated with {result.execution.workers} CPU worker{result.execution.workers === 1 ? '' : 's'}.</p>}{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details><button onClick={exportReport}>Export comparison report</button><p className="comparison-note">Export to keep the result, models, and complete simulation details. The project’s models are unchanged.</p>
+          {result.execution && <p>Calculated with {result.execution.workers} CPU worker{result.execution.workers === 1 ? '' : 's'}.</p>}{result.warnings.map((w, i) => <p key={i}>{w}</p>)}</details><button disabled={!!progress} onClick={exportReport}>Export comparison report</button><p className="comparison-note">Export to keep the result, uncertainties, diagnostic rules, and both completed noise checks. The project’s models are unchanged.</p>
         </div>}
       </section>
-      <details><summary>Statistical method</summary><p>This is a plug-in parametric bootstrap of the decrease in the fitting objective. Added component intensities can vanish, so the ordinary F-test reference distribution is unreliable. Recovery tries a simpler-model start, an added-component start based on unexplained residual peaks, and bounded Levenberg–Marquardt continuation, using at most three retries per fit with budgets up to 400, 1,000, and 2,000 iterations (or the configured limit if higher), with the original starting-model search settings. Every attempt is included in the report. All requested simulations must complete successfully; pairs that fail convergence and the independent bound-projected gradient check invalidate the run. This pairwise test does not correct for trying many different model alternatives.</p><p><a href="https://arxiv.org/abs/astro-ph/0201547" target="_blank" rel="noreferrer">Protassov et al. (2002), Statistics, Handle with Care</a></p></details>
+      <details><summary>Statistical method</summary><p>This is a plug-in parametric bootstrap of the decrease in the fitting objective. Added component intensities can vanish, so the ordinary F-test reference distribution is unreliable. Recovery tries a simpler-model start, an added-component start based on unexplained residual peaks, and bounded Levenberg–Marquardt continuation, and can try existing width bounds as free starting values and an expanded deterministic search when needed. Each start uses at most 2,000 iterations; recovery settings and every search are recorded. Every attempt is included in the report. All requested simulations must complete successfully; pairs that fail convergence and the independent bound-projected gradient check invalidate the run. This pairwise test does not correct for trying many different model alternatives.</p><p><a href="https://arxiv.org/abs/astro-ph/0201547" target="_blank" rel="noreferrer">Protassov et al. (2002), Statistics, Handle with Care</a></p></details>
     </div></div>
   </dialog>;
 }

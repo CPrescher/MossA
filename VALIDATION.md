@@ -1,5 +1,23 @@
 # Validation — November 7, 2026
 
+## Automatic noise sensitivity after Poisson residual cautions
+
+A completed Poisson comparison now automatically starts one Gaussian sensitivity comparison when the larger-model residual diagnostics flag excess scatter or lag-one correlation. Scheduling uses the existing diagnostic screens, independently of the p-value, component overlap, or local uncertainty flags. The second run preserves the selected models, constraints, residual weighting, simulation count, seed, and worker setting. Poisson-specific doubled-turnaround flags are disabled for the Gaussian approximation. If the existing weighting is incompatible with Gaussian noise, the UI explains the limitation and retains the Poisson result without modifying settings.
+
+The original Poisson result remains visible while the second run is pending. Both completed noise results are shown together near the top of the results section. Automatic/manual origin, trigger codes, and complete/canceled/failed/unavailable status are included in exported reports. A canceled or failed second check cannot replace the original result, create a partial second p-value, or restart itself on rerender. Gaussian comparisons do not trigger automatic Poisson runs. Per-calculation progress guards also reject late primary progress after the secondary run has started; the existing generation guard handles cancellation and dialog teardown.
+
+Focused regressions passed 21 assessment/dialog tests, including automatic completion/cancellation/failure, unsupported count weighting, reversed folded turnaround handling, unchanged input models, parameter/worker preservation, progress isolation, exactly-once scheduling, export metadata, and p-value-independent triggers. The full TypeScript/DOM suite passed all 180 tests; the production web build and whitespace checks passed. An isolated Chromium saved-result preview confirmed that one click on the primary simulation action automatically displayed the actual augite Poisson and Gaussian reports together, with an automatic-run explanation and both Monte Carlo classifications. The preview replayed saved numerical results; it did not rerun the 999-spectrum computations. These checks qualify scheduling, rendering, and interpretation behavior; the numerical bootstrap and acceptance rules are unchanged.
+
+## Cautious comparison interpretation and noise sensitivity
+
+The comparison UI now reports statistical evidence separately from physical site identification and never recommends an additional site solely because p < 0.05. A pure interpretation module screens added-component local intensity/fraction and width uncertainties, missing uncertainties, observed rank deficiency, near-bound parameters, widths narrower than two velocity-channel spacings, overlap with simpler-model component profiles, changes in retained fractions, larger-model excess Poisson scatter, and lag-one residual correlation. The screening thresholds and formulas are exported as interpretation rules and descriptions. These are approximate diagnostic heuristics, not independent significance tests, detector-resolution measurements, or automatic physical assignments. Excess scatter in the simpler model alone does not raise the noise-inadequacy flag when the larger model resolves it.
+
+For the saved augite 999-pair reports, automated interpretation reproduces the specific cautions: added relative intensity 5.51% ± 5.21 percentage points; normalized profile overlap 0.983 with the earlier third contribution; retained fraction change from 8.61% to 1.67%; larger-model residual variance 1.19× the Poisson expectation; and residual RMS improvement only 3.50%. The alternate 999-pair Gaussian run estimated std 1,868.3963 from the simpler residuals and returned 43 exceedances, p=0.044, and Monte Carlo interval [0.03211092, 0.05747598]. Its interval spans 0.05, unlike the Poisson interval, so the paired interpretation adds a noise-sensitivity caution. This is an alternative homoscedastic noise assumption, including equal variance at turnaround channels, not evidence that Gaussian noise is the true process; estimated residual noise may also include missing signal or model inadequacy.
+
+The new noise-sensitivity action keeps the first completed result while running the other supported noise assumption with the same simulation count, seed, and model constraints. Cancellation, late messages, or failure of the second test cannot replace the original result or produce a partial second p-value. Exported reports include the original complete result, interpretation and rules, and the second result only when complete. Uncertainties are labeled approximate local std, missing uncertainty is distinguished from fixed parameters, and all original simulation statistics remain visible.
+
+Regressions cover the exact interpretation formulas, weak/absent uncertainties, redistribution, both doubled turnaround directions, residual-noise screening, correlation, count-weighted objective versus RMS, bounds/sampling warnings, nonsignificant results, sensitivity classification, cancellation/failure retention, and exported diagnostics. The full TypeScript/DOM suite passed 173 tests, the JavaScript suite passed 33 tests, and the production web build and whitespace checks passed. The UI was visually checked in an isolated Chromium saved-result preview using both actual augite reports, without changing the user's project or rerunning those numerical simulations. It showed **Extra component needs caution**, the specific warnings and parameter table, and both noise results. Preview/replay evidence qualifies rendering and UI behavior; the earlier native runs provide the numerical simulation evidence.
+
 ## Completed 999-pair three-versus-four-site comparison
 
 The saved `augite.dat` three- and four-site models completed all 999 Poisson bootstrap pairs with seed 7812, the doubled first folded channel, and eight fitting workers. Original thin-absorber models, unweighted residuals, bounds, links, fixed parameters, and initial 200-iteration/one-start settings were retained. The observed objectives were 848,289,825.5596 and 789,923,906.4127: a decrease of 58,365,919.1469 (6.8804%). Seventeen of 999 simulated improvements matched or exceeded this decrease, giving the corrected p-value 0.018 and Wilson Monte Carlo interval [0.01065137, 0.02708287]. The descriptive F statistic was 4.41481. The complete interval lies below 0.05, supporting the four-site model under these noise/model assumptions without establishing the physical identity of its added site.
@@ -276,3 +294,70 @@ no KaTeX errors in the new chapter, and no reserved classroom paths or textual
 references on either site. Relative replay URLs keep the animation within its
 own manual, and the preview link processor supports data-source attributes.
 No application source, desktop release workflow, or version tag is changed.
+
+## F-test and added-site teaching chapter (2026-11-07)
+
+The new foundations chapter explains nested models, independent parameter counts,
+SSE and residual degrees of freedom, the extra-sum-of-squares F formula, and the
+regular linear-Gaussian setting for its exact reference distribution. It explains
+boundary intensities and unidentified shape parameters, and distinguishes the
+classical F tail from the current app's parametric-bootstrap objective-gain tail.
+Primary evidence and the audited implementation locations are in `manual/RESEARCH.md`.
+No app inference code was changed for this documentation work.
+
+An interactive arithmetic control and a pausable bootstrap replay use local assets
+and the manual theme. Three original synthetic fixed-shape examples use actual
+production-WASM fits: absent extra line p = 0.28, weak line p = 0.04 (Monte Carlo
+interval crosses 0.05), and clear line p = 0.005. Each retains all 199 simulated
+fit pairs, observed and simulated warnings, full numerical reports, and a portable
+project. All six observed model fits survived reopening. The replay data are saved
+results, not a second fitting implementation or an analysis of user data.
+
+Four new lesson tests pass for the arithmetic, histogram tail accounting, actual
+replay data/results and case resets, reduced-motion completion, and fetch-failure
+fallback. All 23 targeted comparison, dialog, and worker-pool regressions pass.
+The combined Pages build passes its TypeScript/Vite and manual checks, including
+1,408 internal links across 22 generated pages. Generated output checks verify
+both custom components, local replay assets, exact project download bytes, two
+new screenshot theme pairs, and no KaTeX errors in the new chapter.
+
+Actual-browser checks verify single stepping, play/pause, final histograms for all
+three cases, the F calculator buttons and keyboard slider, Light/Dark themes,
+search for F-test, and theme-specific full-size screenshot previews. Repeating
+the absent and weak comparisons in the real app gives the exact same exceedance
+counts, p-values, and intervals as the saved lesson reports; maximum simulated
+gain difference is below 6e-12 from refitting saved starts. The two completed
+results have separately captured light and dark screenshots with build provenance
+in the capture ledger. Local checks and previews are under
+`test-results/comparison-tutorial/`.
+
+The browser's requested 390 × 844 viewport override did not change its actual
+1,280-pixel viewport in this session, so a narrow-screen visual check is not
+claimed for this addition; the override was reset. Reduced motion was checked in
+the DOM tests, not through an emulated browser media preference. The local manual
+preview remains available on port 4176 for trying the animation. No publishing,
+commit, or push was performed.
+
+## Classroom exercises excluded from manual (2026-11-07)
+
+At the instructor's request, the augite/omphacite chapter, navigation and cross-links,
+raw measurements, dedicated foil, worked solutions, and combined three-sample
+project were removed from the manual build sources. The public course-data
+script now exports only almandine. Regeneration completes all four almandine
+model stages and verifies their saved fit bindings on reopening. Its two original
+input hashes still match the retained provenance record.
+
+Workspace, raw-count-import, and folding illustrations now use a real almandine-only
+project, captured separately in light and dark mode. The capture ledger and
+captions were updated. Removed manuscript/data/image copies and the previous
+full exercise generator are backed up under ignored
+`test-results/reserved-class-exercises/`, outside public and build sources.
+The three original classroom measurements in Dropbox retain their exact SHA-256
+hashes. Original handouts and course materials were not edited.
+
+The revised manual builds 21 pages and passes 1,308 local-link checks. It was
+reassembled into the existing app Pages artifact without rebuilding or changing
+app code. Both `manual/dist/` and `dist/manual/` were scanned for retired chapter,
+asset and data paths and textual references; none remain. Both contain an
+almandine-only downloadable project with four model alternatives. The change
+remains local and has not been committed, pushed, or deployed.
