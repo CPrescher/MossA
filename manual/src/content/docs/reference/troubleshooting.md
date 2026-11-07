@@ -11,7 +11,7 @@ Check that the file contains one count column, two velocity/count columns, a rec
 
 For raw channels, check maximum velocity, drive type, center shift, folding state, and the preset selected for imports. A two-column file retains its supplied axis. Selecting a preset previews it; choose **Apply to this spectrum** to change the current raw-count spectrum. Inspect a reference fit before applying its scale.
 
-Also inspect **Gen → Velocity direction → Reverse velocity axis**. The SMS sample needs reversal after calibration. Reversal is a saved property of that spectrum and remains applied after recalibration; toggling it again restores the other direction and invalidates obsolete fits.
+Also inspect **General → Velocity direction → Reverse velocity axis**. The SMS sample needs reversal after calibration. Reversal is a saved property of that spectrum and remains applied after recalibration; toggling it again restores the other direction and invalidates obsolete fits.
 
 ## Folding looks asymmetric
 
@@ -27,7 +27,7 @@ Read Status and Fit details. Inspect the starting positions, widths, background,
 
 ## Errors are missing
 
-**Fit for errors** means the current model needs fitting. **Fixed** parameters have no fitted symmetric uncertainty. **± —** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
+**Fit to estimate std** means the current model needs fitting. **Fixed** parameters have no fitted symmetric uncertainty. **(—)** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
 
 ## An intensity percentage is undefined or has zero std
 
@@ -47,7 +47,11 @@ Autosave is local to the browser, device, and app address. Open a downloaded `.m
 
 ## I cannot find spectra or fitting options
 
-Use the project and options sidebar icons. A fresh session starts with the project sidebar collapsed. Individual panes scroll separately; drag their dividers to give a list or editor more room. The results table also has a resizable height.
+Use the project and options sidebar icons on a wide screen. A fresh session starts with the project sidebar collapsed. On a laptop, **Sites** and **Fitting options** share an editor; select the heading for the controls you need. Tablets also provide a **Spectrum** view. Individual panes scroll separately; drag their dividers to give a list or editor more room. The results table also has a resizable height. See [the workspace tour](/MossA/manual/getting-started/workspace/) for screenshots of each layout.
+
+## Where are folding and calibration?
+
+Open **Fitting options → General → Folding & calibration**, the first section in General. The **Fit options** tab contains solver settings. For a new velocity calibration, use + (**Add calibration preset**) → **From reference file…**. For a raw sample with folding enabled, use **Inspect this spectrum’s folding…**. Already folded channels should not be folded again, and two-column velocity/count files keep their supplied axis. Follow [folding and velocity calibration](/MossA/manual/guides/folding-and-calibration/) for the complete workflow.
 
 ## The app reports an update
 

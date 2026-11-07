@@ -19,7 +19,7 @@ export function snapshotVersion(snapshot: Snapshot): 1 | 2 | 3 {
   if (snapshot.project.sites.some(s=>s.xvbf) || snapshot.project.source_gaussians || snapshot.cal.sourceReference?.gaussians) return 2;
   return [snapshot.project.nuclear_constants, snapshot.cal.nuclear_constants, snapshot.cal.reference?.settings.nuclear_constants].some(usesModernNuclearConstants) ? 2 : 1;
 }
-export const defaultLayout: Layout = { resultsHeight: 200, sitesHeight: 104, tab: 'Gen', optionsOpen: false, projectCollapsed: true, optionsCollapsed: false, projectSplit: .55 };
+export const defaultLayout: Layout = { resultsHeight: 160, sitesHeight: 104, tab: 'Gen', optionsOpen: false, projectCollapsed: true, optionsCollapsed: false, projectSplit: .55 };
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 export function validCalibration(value: unknown): value is Calibration {
@@ -46,7 +46,7 @@ export function decodeSession(text: string, allowEmptySpectrum = false): Session
   const saved = JSON.parse(text), s = saved?.snapshot as Snapshot, p = s?.project;
   const empty = allowEmptySpectrum && p?.spectrum?.x?.length === 0 && p?.spectrum?.y?.length === 0 && p?.sites?.length === 0 && s.raw === null && saved.fit == null && s.fit == null && s.fitElapsed == null && saved.elapsed == null;
   if (![1, 2, 3].includes(saved?.version) || !p || !Array.isArray(p.spectrum?.x) || !Array.isArray(p.spectrum?.y) || (!empty && p.spectrum.x.length < 8) || p.spectrum.x.length > 20000 || p.spectrum.x.length !== p.spectrum.y.length || !p.spectrum.x.every(finite) || !p.spectrum.y.every(finite) || p.spectrum.x.some((x,i,a) => i > 0 && x <= a[i-1])) throw new Error('Invalid saved spectrum.');
-  if (!Array.isArray(p.sites) || p.sites.length > 16 || !p.sites.every(site => typeof site.name === 'string' && ['Singlet','Doublet','Sextet'].includes(site.kind) && ['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].includes(site.profile) && ['cs','fwhm','intensity','qs','bhf','a12','a13','mix'].every(k => parameterOK(site.params?.[k]))) || !Array.isArray(p.background) || p.background.length < 1 || p.background.length > 4 || !p.background.every(parameterOK) || !['thin','transmission'].includes(p.mode) || !['unweighted','counts'].includes(p.weighting) || !finite(p.source_fwhm) || typeof p.source_squared !== 'boolean' || !finite(p.max_iterations)) throw new Error('Invalid saved model.');
+  if (!Array.isArray(p.sites) || p.sites.length > 16 || !p.sites.every(site => typeof site.name === 'string' && (site.color === undefined || (typeof site.color === 'string' && /^#[0-9a-f]{6}$/i.test(site.color))) && ['Singlet','Doublet','Sextet'].includes(site.kind) && ['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].includes(site.profile) && ['cs','fwhm','intensity','qs','bhf','a12','a13','mix'].every(k => parameterOK(site.params?.[k]))) || !Array.isArray(p.background) || p.background.length < 1 || p.background.length > 4 || !p.background.every(parameterOK) || !['thin','transmission'].includes(p.mode) || !['unweighted','counts'].includes(p.weighting) || !finite(p.source_fwhm) || typeof p.source_squared !== 'boolean' || !finite(p.max_iterations)) throw new Error('Invalid saved model.');
   if (p.source_gaussians !== undefined && !validGaussianSource(p.source_gaussians)) throw new Error('Invalid saved Gaussian source profile.');
   if (p.search_starts !== undefined && (!Number.isInteger(p.search_starts) || p.search_starts < 1 || p.search_starts > 32)) throw new Error('Invalid saved search starts.');
   if (p.nuclear_constants !== undefined && !validNuclearConstants(p.nuclear_constants)) throw new Error('Invalid saved nuclear constants.');
@@ -66,7 +66,7 @@ export function decodeSession(text: string, allowEmptySpectrum = false): Session
   if (s.cal.sourceReference && !validSourceReference(s.cal.sourceReference)) throw new Error('Invalid saved source reference.');
   s.selected = Number.isInteger(s.selected) ? Math.max(0,Math.min(p.sites.length-1,s.selected)) : 0;
   const l = saved.layout ?? {};
-  const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(196,Math.min(2000,l.resultsHeight)) : 200, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true,
+  const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(152,Math.min(2000,l.resultsHeight)) : 160, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true,
     projectCollapsed: l.projectCollapsed !== false, optionsCollapsed: l.optionsCollapsed === true, projectSplit: finite(l.projectSplit) ? Math.max(.2, Math.min(.8, l.projectSplit)) : .55 };
   const fit = decodeFitSummary(saved.fit, p.sites.length);
   return { version: saved.version, snapshot: s, layout, fit, elapsed: finite(saved.elapsed) ? saved.elapsed : null };

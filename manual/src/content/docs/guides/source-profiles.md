@@ -9,11 +9,11 @@ For the equations and convolution direction, read [the full transmission integra
 
 ## Use a simple source
 
-In **Gen**, select **Full transmission integral**. Under **Source profile**, set the source FWHM in mm/s and, if appropriate, enable **Lorentzian-squared source**. The squared profile uses the original MossA width convention; do not assume its width parameter has the same interpretation as a Lorentzian's.
+In **General**, select **Full transmission integral**. Under **Source profile**, set the source FWHM in mm/s and, if appropriate, enable **Lorentzian-squared source**. The squared profile uses the original MossA width convention; do not assume its width parameter has the same interpretation as a Lorentzian's.
 
 ## Calibrate from a singlet reference
 
-Choose **Gen → Source profile → Calibrate source…**.
+Choose **General → Source profile → Calibrate source…**.
 
 1. Load a suitable singlet reference, or use the current spectrum if it is the reference.
 2. Set its known intrinsic Lorentzian absorber FWHM. The default is 0.097 mm/s; replace it when your reference requires another value.

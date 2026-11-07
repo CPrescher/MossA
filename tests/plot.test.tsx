@@ -18,19 +18,19 @@ async function mount(picking:any=null, highlightedSite:number|null=null, withEva
  const event=async(type:string,x:number,y:number,button=0)=>act(async()=>{const e=new dom.window.MouseEvent(type,{bubbles:true,cancelable:true,clientX:x,clientY:y,button});Object.defineProperty(e,'pointerId',{value:1});svg.dispatchEvent(e);});
  const range=()=>svg.getAttribute('data-view-x')!.split(',').map(Number);
  const drag=async(a:number[],b:number[],button=0)=>{await event('pointerdown',a[0],a[1],button);await event('pointermove',b[0],b[1],button);await event('pointerup',b[0],b[1],button);};
- return{svg,event,range,drag,picked,highlight,canceled:()=>canceled,close:async()=>act(async()=>root.unmount())};}
+ return{project,evaluation,svg,event,range,drag,picked,highlight,canceled:()=>canceled,close:async()=>act(async()=>root.unmount())};}
 test('left rectangle zooms both axes; right drag pans; right click restores the previous zoom',async()=>{const t=await mount();try{
  const originalY=t.svg.getAttribute('data-view-y');assert.deepEqual(t.range(),[-10,10]);await t.drag([200,80],[650,300]);const zoomed=t.range();assert.ok(zoomed[1]-zoomed[0]<20);assert.notEqual(t.svg.getAttribute('data-view-y'),originalY);
  const yy=t.svg.getAttribute('data-view-y');await t.drag([400,180],[450,210],2);const pan=t.range();assert.ok(pan[0]<zoomed[0]);assert.ok(Math.abs((pan[1]-pan[0])-(zoomed[1]-zoomed[0]))<1e-10);assert.notEqual(t.svg.getAttribute('data-view-y'),yy);
  await t.event('pointerdown',400,180,2);await t.event('pointerup',400,180,2);await act(()=>new Promise(r=>setTimeout(r,310)));assert.deepEqual(t.range(),[-10,10]);
 }finally{await t.close();}});
-test('mouse coordinates sit at the far left on the velocity label baseline and follow the current view',async()=>{
+test('mouse coordinates appear inside the plot on hover and follow the current view',async()=>{
  const t=await mount();try{
-  const readout=container.querySelector('.plot-coordinates')!;
-  assert.equal(readout.parentElement,t.svg);
-  assert.equal(readout.getAttribute('x'),'0');
-  assert.equal(readout.getAttribute('y'),t.svg.querySelector('.velocity-axis-label')!.getAttribute('y'));
-  assert.equal(t.svg.querySelector('.section-label'),null);
+  const readout=container.querySelector('.plot-coordinate-values')!;
+  assert.equal(readout.closest('svg'),t.svg);
+  const badge=readout.parentElement!;assert.equal(badge.getAttribute('aria-hidden'),'true');
+  assert.notEqual(readout.getAttribute('y'),t.svg.querySelector('.velocity-axis-label')!.getAttribute('y'));
+  assert.equal(t.svg.querySelector('.residual-axis-label')?.textContent,'Residual');
   assert.equal(container.querySelector('.cursor-velocity')!.textContent,'—');
   const check=async(x:number,y:number)=>{
    await t.event('pointermove',x,y);
@@ -42,15 +42,15 @@ test('mouse coordinates sit at the far left on the velocity label baseline and f
    const counts=hi-(y-top)/height*(hi-lo);
    assert.equal(readout.querySelector('.cursor-velocity')!.textContent,vx.toFixed(3));
    assert.equal(readout.querySelector('.cursor-counts')!.textContent,counts.toLocaleString('en-US',{maximumSignificantDigits:6}));
-   assert.equal(t.svg.querySelector('.cursor-label'),null);
+   assert.equal(t.svg.querySelector('.cursor-label'),null);assert.equal(badge.getAttribute('aria-hidden'),'false');
   };
   await check(400,180);await t.drag([200,80],[650,300]);await check(550,250);
-  await t.event('pointermove',10,10);assert.equal(readout.querySelector('.cursor-counts')!.textContent,'—');
+  await t.event('pointermove',10,10);assert.equal(readout.querySelector('.cursor-counts')!.textContent,'—');assert.equal(badge.getAttribute('aria-hidden'),'true');
  }finally{await t.close();}
 });
 test('residual hover shows velocity and signed residual coordinates, including after zoom',async()=>{
  const t=await mount(null,null,true);try{
-  const readout=container.querySelector('.plot-coordinates')!;
+  const readout=container.querySelector('.plot-coordinate-values')!;
   const check=async(fraction:number)=>{
    const clip=t.svg.querySelector('#residual-clip rect')!;
    const left=Number(clip.getAttribute('x')),top=Number(clip.getAttribute('y'));
@@ -59,7 +59,7 @@ test('residual hover shows velocity and signed residual coordinates, including a
    await t.event('pointermove',left+width*.3,top+height*fraction);
    assert.equal(readout.querySelector('.cursor-velocity')!.textContent,(t.range()[0]+.3*(t.range()[1]-t.range()[0])).toFixed(3));
    assert.equal(readout.querySelector('.cursor-residual')!.textContent,(hi-fraction*(hi-lo)).toLocaleString('en-US',{maximumSignificantDigits:6}));
-   assert.ok(readout.textContent!.includes('Residual:'));
+   assert.ok(container.querySelector('.plot-coordinate-labels')!.textContent!.includes('Residual'));
    assert.equal(readout.querySelector('.cursor-counts'),null);
   };
   await check(.25);await check(.75);
@@ -164,12 +164,13 @@ test('picking accepts clicks while rectangle zoom, pan, wheel, and right-click n
  await act(async()=>{t.svg.dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));});assert.equal(t.canceled(),1);
 }finally{await t.close();}});
 test('site curves have equal weight except during temporary highlighting; residuals stay points',async()=>{const t=await mount(null,null,true);try{
- assert.equal(t.svg.querySelector('.total-model-curve')?.getAttribute('stroke'),'#171c20');assert.equal(t.svg.querySelectorAll('.residual-point').length,512);assert.equal(t.svg.querySelectorAll('g[clip-path="url(#residual-clip)"] path').length,0);
+ assert.equal(t.svg.querySelector('.total-model-curve')?.getAttribute('stroke'),'#9b410b');assert.equal(t.svg.querySelectorAll('.residual-point').length,512);assert.equal(t.svg.querySelectorAll('g[clip-path="url(#residual-clip)"] path').length,0);
+ assert.equal(t.svg.querySelector('.total-model-curve')?.getAttribute('stroke-dasharray'),null);assert.ok([...t.svg.querySelectorAll('.site-component-curve')].every(curve=>curve.getAttribute('stroke-dasharray')==='7 3'));
  const curves=()=>[...t.svg.querySelectorAll('path[data-site-index]')];
  const normal=curves().map(curve=>[curve.getAttribute('data-site-index'),curve.getAttribute('stroke-width'),curve.getAttribute('opacity')]);
  assert.equal(normal.length,demo().sites.length);assert.equal(new Set(normal.map(([,width,opacity])=>`${width}/${opacity}`)).size,1);assert.equal(t.svg.querySelector('.highlighted-site-curve'),null);
  await t.highlight(1);
- const active=t.svg.querySelector('.highlighted-site-curve')!;assert.equal(active.getAttribute('data-site-index'),'1');assert.equal(active.nextElementSibling,null);
+ const active=t.svg.querySelector('.highlighted-site-curve')!;assert.equal(active.getAttribute('data-site-index'),'1');assert.equal(active.nextElementSibling?.getAttribute('class'),'observed-data');assert.equal(active.nextElementSibling?.nextElementSibling?.getAttribute('class'),'total-model-curve');assert.equal(active.parentElement?.lastElementChild?.getAttribute('class'),'total-model-curve');
  assert.ok(Number(active.lastElementChild!.getAttribute('stroke-width'))>Number(t.svg.querySelector('path[data-site-index="0"]')!.getAttribute('stroke-width')));
  await t.highlight(null);assert.equal(t.svg.querySelector('.highlighted-site-curve'),null);assert.deepEqual(curves().map(curve=>[curve.getAttribute('data-site-index'),curve.getAttribute('stroke-width'),curve.getAttribute('opacity')]),normal);
 }finally{await t.close();}});
@@ -220,4 +221,81 @@ test('automatic limits follow site visibility and highlighting, while manual Y z
   await toggle();assert.equal(t.svg.getAttribute('data-view-y'),manual);
   await t.highlight(null);assert.equal(t.svg.getAttribute('data-view-y'),manual);
  }finally{await t.close();}
+});
+
+test('keyboard graph navigation zooms, pans each axis, restores history and resets without capturing modifiers',async()=>{
+ const t=await mount();try{
+  const key=async(key:string,ctrlKey=false)=>{const event=new dom.window.KeyboardEvent('keydown',{key,ctrlKey,bubbles:true,cancelable:true});await act(async()=>{t.svg.dispatchEvent(event);});return event;};
+  const initialY=t.svg.getAttribute('data-view-y');
+  assert.equal((await key('+')).defaultPrevented,true);const zoom=t.range();assert.ok(zoom[1]-zoom[0]<20);
+  await key('ArrowRight');assert.ok(t.range()[0]>zoom[0]);
+  await key('Backspace');assert.deepEqual(t.range(),zoom);
+  await key('ArrowUp');assert.notEqual(t.svg.getAttribute('data-view-y'),initialY);
+  await key('0');assert.deepEqual(t.range(),[-10,10]);assert.equal(t.svg.getAttribute('data-view-y'),initialY);
+  assert.equal((await key('+',true)).defaultPrevented,false);assert.deepEqual(t.range(),[-10,10]);
+ }finally{await t.close();}
+});
+
+test('Ctrl and Command primary drags pan without a Pan button or a visible instruction row',async()=>{
+ const t=await mount();try{assert.equal(container.querySelector('[aria-label="Pan graph"]'),null);assert.equal(container.querySelector('.plot-shortcuts'),null);for(const modifier of ['ctrlKey','metaKey']){const before=t.range();for(const[type,x,y] of [['pointerdown',400,180],['pointermove',450,210],['pointerup',450,210]] as const){await act(async()=>{const e=new dom.window.MouseEvent(type,{clientX:x,clientY:y,button:0,bubbles:true,cancelable:true,[modifier]:true});Object.defineProperty(e,'pointerId',{value:1});t.svg.dispatchEvent(e);});}const after=t.range();assert.ok(after[0]<before[0]);assert.ok(Math.abs((after[1]-after[0])-(before[1]-before[0]))<1e-10);}}finally{await t.close();}
+});
+
+test('graph placement renders a draft component before that site exists in the saved model',async()=>{
+ const t=await mount({stage:1,kind:'Doublet'},2,true,'thin',(_p,e)=>{e.components.push(e.components[0].map((v:number)=>v/2));});try{assert.ok(container.querySelector('.highlighted-site-curve[data-site-index="2"]'));assert.ok(container.querySelector('.highlighted-site-curve path:last-child')!.getAttribute('stroke'));}finally{await t.close();}
+});
+
+test('graph definition has an on-screen cancel action for touch and portrait layouts',async()=>{
+ const t=await mount({stage:0,kind:'Doublet'});try{const cancel=container.querySelector<HTMLButtonElement>('[aria-label="Cancel site definition"]')!;assert.ok(cancel);await act(async()=>cancel.click());assert.equal(t.canceled(),1);}finally{await t.close();}
+});
+
+test('the readout avoids observed absorption minima when lower open space is available',async()=>{
+ const t=await mount(null,null,true,'thin',(p,e)=>{p.spectrum.y=p.spectrum.x.map((x:number)=>Math.abs(x+8)<.7?0:1000);e.y=[...p.spectrum.y];e.background=p.spectrum.x.map(()=>1000);});try{await t.event('pointermove',800,180);const box=t.svg.querySelector('.plot-coordinate-badge rect')!;const left=Number(box.getAttribute('x')),top=Number(box.getAttribute('y')),right=left+Number(box.getAttribute('width')),bottom=top+Number(box.getAttribute('height'));const hidden=[...t.svg.querySelectorAll('circle.observed-point')].filter(el=>{const x=Number(el.getAttribute('cx')),y=Number(el.getAttribute('cy'));return x>=left&&x<=right&&y>=top&&y<=bottom;});assert.equal(hidden.length,0);}finally{await t.close();}
+});
+
+
+test('site fills default off, preserve scientific values and view, and follow Sites visibility',async()=>{
+ const t=await mount(null,null,true,'thin',(p,e)=>{e.components=[p.spectrum.x.map(()=>10),p.spectrum.x.map(()=>50)];});
+ const click=async(element:Element)=>act(async()=>element.dispatchEvent(new dom.window.MouseEvent('click',{bubbles:true})));
+ try{
+  const fill=container.querySelector<HTMLInputElement>('[aria-label="Fill sites"]')!,sites=[...container.querySelectorAll<HTMLInputElement>('.plot-legend input')].find(e=>e!==fill)!;
+  const before=structuredClone({project:t.project,evaluation:t.evaluation}),model=t.svg.querySelector('.total-model-curve')!.getAttribute('d'),range=t.range();
+  assert.equal(fill.checked,false);assert.equal(t.svg.querySelectorAll('.site-fill').length,0);
+  await click(fill);assert.equal(fill.checked,true);
+  const fills=[...t.svg.querySelectorAll('.site-fill')];assert.deepEqual(fills.map(e=>e.getAttribute('data-site-index')),['1','0']);assert.ok(fills.every(e=>e.getAttribute('d')!.endsWith('Z')));
+  assert.equal(t.svg.querySelector('.total-model-curve')!.getAttribute('d'),model);assert.deepEqual(t.range(),range);assert.deepEqual({project:t.project,evaluation:t.evaluation},before);
+  await click(sites);assert.equal(fill.disabled,true);assert.equal(fill.checked,true);assert.equal(t.svg.querySelectorAll('.site-fill').length,0);
+  await click(sites);assert.equal(fill.disabled,false);assert.equal(t.svg.querySelectorAll('.site-fill').length,2);
+  await click(fill);assert.equal(t.svg.querySelectorAll('.site-fill').length,0);
+ }finally{await t.close();}
+});
+
+test('coordinate readout holds its corner across the plot and moves only after sustained overlap',async()=>{
+ const timers=new Map<number,{callback:()=>void;delay:number}>();let serial=0;
+ const set=window.setTimeout,clear=window.clearTimeout;
+ window.setTimeout=((callback:()=>void,delay:number)=>{const id=++serial;timers.set(id,{callback,delay});return id;}) as typeof window.setTimeout;
+ window.clearTimeout=id=>{timers.delete(id);};
+ const t=await mount();
+ try{
+  await t.event('pointermove',400,180);const box=()=>t.svg.querySelector('.plot-coordinate-badge rect')!,initial=box().getAttribute('x');
+  await t.event('pointermove',700,180);assert.equal(box().getAttribute('x'),initial);assert.equal(timers.size,0);
+  const x=Number(initial)+30,y=Number(box().getAttribute('y'))+15;
+  await t.event('pointermove',x,y);assert.equal(box().getAttribute('x'),initial);assert.equal(timers.size,1);assert.equal([...timers.values()][0].delay,600);
+  await t.event('pointermove',400,180);assert.equal(timers.size,0,'brief overlap is canceled');
+  await t.event('pointermove',x,y);const pending=[...timers.values()][0];timers.clear();await act(async()=>pending.callback());assert.notEqual(box().getAttribute('x'),initial);
+  await t.event('pointermove',Number(box().getAttribute('x'))+30,y);assert.ok([...timers.values()][0].delay>=1700,'new corner has a minimum hold before another move');
+  const clip=t.svg.querySelector('#spectrum-clip rect')!,left=Number(clip.getAttribute('x')),width=Number(clip.getAttribute('width'));
+  const expected=t.range()[0]+(Number(box().getAttribute('x'))+30-left)/width*(t.range()[1]-t.range()[0]);assert.equal(t.svg.querySelector('.cursor-velocity')!.textContent,expected.toFixed(3),'values remain live during the hold');
+ }finally{await t.close();window.setTimeout=set;window.clearTimeout=clear;}
+});
+
+test('overlapping badge positions on a narrow plot never start an endless corner-switch timer',async()=>{
+ const oldResize=globalThis.ResizeObserver;
+ class NarrowResize{callback:any;constructor(callback:any){this.callback=callback;}observe(){this.callback([{contentRect:{width:330,height:565}}]);}disconnect(){}}
+ Object.assign(globalThis,{ResizeObserver:NarrowResize});const timers=new Map<number,()=>void>();let serial=0;const set=window.setTimeout,clear=window.clearTimeout;window.setTimeout=((callback:()=>void)=>{timers.set(++serial,callback);return serial;}) as typeof window.setTimeout;window.clearTimeout=id=>{timers.delete(id);};
+ const t=await mount();try{
+  await t.event('pointermove',200,180);const rect=t.svg.querySelector('.plot-coordinate-badge rect')!,x=rect.getAttribute('x'),y=Number(rect.getAttribute('y'))+15;
+  await t.event('pointermove',200,y);assert.equal(timers.size,0,'both candidate boxes cover this pointer; moving would not help');assert.equal(rect.getAttribute('x'),x);
+  const left=Number(t.svg.querySelector('#spectrum-clip rect')!.getAttribute('x'))+8;const edge=Number(x)===left?Number(x)+1:Number(x)+Number(rect.getAttribute('width'))-1;
+  await t.event('pointermove',edge,y);assert.equal(timers.size,1,'partial overlap can move once when the alternative is clear');const callback=[...timers.values()][0];timers.clear();await act(async()=>callback());assert.notEqual(rect.getAttribute('x'),x);assert.equal(timers.size,0,'the box does not flip back under a stationary pointer');
+ }finally{await t.close();window.setTimeout=set;window.clearTimeout=clear;Object.assign(globalThis,{ResizeObserver:oldResize});}
 });

@@ -82,7 +82,7 @@ export function SourceCalibrationDialog({ project, filename, cal, spectrumImport
       if (!best) throw new Error(failure || 'Source fit failed.');
       if (importInfo) best.reference.importInfo = importInfo;
       setResult(best); setView({ project: best.fit.project, evaluation: best.fit.evaluation });
-      setProgress(`Converged · ${best.fit.iterations} iterations · RMS ${number(best.reference.rms, 3)} counts`);
+      setProgress(`Converged · ${best.fit.iterations} ${best.fit.iterations === 1 ? 'iteration' : 'iterations'} · RMS ${number(best.reference.rms, 3)} counts`);
     } catch (e) { if (id === token.current) { setError(String(e)); setProgress(''); } }
     finally { if (id === token.current) setBusy(false); }
   }

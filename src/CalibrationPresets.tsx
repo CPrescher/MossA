@@ -88,7 +88,7 @@ export function CalibrationPresetsPanel({ cal, raw, hasSpectrum = true, disabled
       </div>
       <button className="calibration-preset-icon" aria-label="Manage calibration presets" onClick={() => setManaging(true)}>⋯</button>
     </div>
-    <label className="check-label calibration-import-default"><input type="checkbox" aria-label="Use preset for new imports" checked={selectedId === defaultId} disabled={selectedId === defaultId || !selected} onChange={() => { if (selected) onChange({ calibrationPresets: presets, importCalibrationPresetId: selected.id }); }}/>Use for new imports</label>
+    <label className="check-label calibration-import-default" title={selectedId === defaultId ? 'Already the default for new raw-count imports' : 'Use this preset for future raw-count imports'}><input type="checkbox" aria-label="Use preset for new imports" checked={selectedId === defaultId} disabled={selectedId === defaultId || !selected} onChange={() => { if (selected) onChange({ calibrationPresets: presets, importCalibrationPresetId: selected.id }); }}/>Use for new imports</label>
     <div className="calibration-preset-summary"><div><span>Max. velocity</span><strong>{displayNumber(preview.max)} <small>mm/s</small></strong></div><div><span>Standard CS</span><strong>{displayNumber(preview.shift)} <small>mm/s</small></strong></div></div>
     <p className="calibration-preset-reference" title={preview.reference?.name}>{preview.reference ? `α-Fe · ${preview.reference.name}` : 'Manually defined scale'}</p>
     <button className="full-width calibration-preset-edit" onClick={() => openEditor(selected ?? null, selected ? 'edit' : 'copy')}>{selected ? 'Edit preset…' : 'Save as preset…'}</button>

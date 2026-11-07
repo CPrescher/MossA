@@ -22,7 +22,7 @@ Save any existing project before starting. You can begin with **New project**, o
 
 ## 1. Calibrate the velocity scale
 
-1. Open **Gen → Folding & calibration → + → From reference file…**.
+1. Open **General → Folding & calibration → + → From reference file…**.
 2. In the preset editor, open the reference calibration if it is not already visible, then load `almandine-iron-foil.dat`.
 3. Select the **linear** drive; leave sinusoidal drive off.
 4. Enable **Fold reference channels**. Disable **Automatic fold center** and enter **256.5**, following this practical's specified manual-folding workflow.
@@ -38,7 +38,7 @@ With the current browser implementation, the 33 T reference assumption, modern m
 
 ## 2. Load the sample
 
-Use **Add spectra** to import `almandine.dat`. Confirm that the intended preset is the import default and that manual folding remains enabled at **256.5**. In **Gen**, choose **Thin absorber** and a **Constant** background. In **Opt**, use **Unweighted** residuals.
+Use **Add spectra** to import `almandine.dat`. Confirm that the intended preset is the import default and that manual folding remains enabled at **256.5**. In **General**, choose **Thin absorber** and a **Constant** background. In **Fit options**, use **Unweighted** residuals.
 
 The dominant absorption pair has a center near 1.3 mm/s and a splitting near 3.5 mm/s. These are starting estimates from this example, not constraints that should replace an inspection of the graph.
 
@@ -63,7 +63,7 @@ The lower-CS component is the candidate ferric component in the teaching interpr
 
 ## 5. Allow a linear background
 
-Duplicate the two-doublet model, choose **Gen → Background → Order 1**, and fit again. Both background coefficients should be checked if you intend to refine them. Name this model **2 doublets · linear background**.
+Duplicate the two-doublet model, choose **General → Background → Order 1**, and fit again. Both background coefficients should be checked if you intend to refine them. Name this model **2 doublets · linear background**.
 
 ![Almandine with two Lorentzian doublets and a linear background; the results table includes fitted site percentages and uncertainties.](../../../assets/screenshots/almandine-two-doublets.png)
 
@@ -95,6 +95,6 @@ For a doublet, A12 is the **first-line area fraction**, not an unconstrained rat
 
 ## Save and continue
 
-Save the whole project, export parameters, and prepare a figure with **Export graph**. The original tutorial's MATLAB report and Save Sites controls are replaced here by the browser's project, CSV, SVG, and PNG exports.
+Save the whole project, export parameters, and prepare a figure with **Export → Figure**. The original tutorial's MATLAB report and Save Sites controls are replaced here by the browser's project, CSV, SVG, PNG, EPS, and PDF exports.
 
 Continue with [comparing models](/MossA/manual/guides/comparing-models/) to learn how to assess added components.

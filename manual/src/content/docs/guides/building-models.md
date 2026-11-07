@@ -5,16 +5,18 @@ description: Define sites, choose profiles, constrain parameters, and refine a s
 
 Start with a model that expresses a plausible interpretation of the spectrum. Additional sites and free parameters should answer a specific question about unresolved structure or a physical hypothesis.
 
+For raw data, first check **Fitting options → General → Folding & calibration**. Preparing the velocity axis and folding precedes choosing the sample model. See [folding and velocity calibration](/MossA/manual/guides/folding-and-calibration/). On smaller screens, choose **Fitting options** above the editor to reach General.
+
 ## Choose the spectrum model
 
-Under **Gen → Spectrum model**, choose:
+Under **General → Spectrum model**, choose:
 
 - **Thin absorber:** a polynomial background minus the sum of absorption profiles.
 - **Full transmission integral:** a source-convolved transmission model with a nonlinear absorber response.
 
 The modes use different raw intensity units. Switching mode rescales current intensities as approximate starting estimates and requires a new fit. Full-transmission source settings are described in [source profiles](/MossA/manual/guides/source-profiles/).
 
-Under **Gen → Background**, select a constant or polynomial of order 1–3. Checked background coefficients vary during fitting. A background-only model with no sites can also be evaluated and fitted.
+Under **General → Background**, select a constant or polynomial of order 1–3. Checked background coefficients vary during fitting. A background-only model with no sites can also be evaluated and fitted.
 
 ## Add a site on the graph
 
@@ -28,7 +30,7 @@ The moving preview helps you estimate the starting values. Escape or **Cancel** 
 
 **Redefine** repeats this workflow for the selected site while retaining its name, profile, fit flags, bounds, and links. Linked parameters continue following their sources; inconsistent bounds are rejected.
 
-Available site types are **Singlet**, **Doublet**, and **Sextet**. Profiles are **Lorentzian**, **Gaussian**, **PseudoVoigt**, and **LorSquared**. Use the site's gear to inspect type and profile settings. The duplicate icon beside Redefine copies the selected site. The app supports up to 16 sites.
+Available site types are **Singlet**, **Doublet**, and **Sextet**. Profiles are **Lorentzian**, **Gaussian**, **PseudoVoigt**, and **LorSquared**. Open **Site settings** to inspect type and profile settings. The duplicate icon beside Redefine copies the selected site. The app supports up to 16 sites. Up to four sites appear in a vertical list with a draggable divider below it; longer lists use a compact Site selector. The larger color swatch opens a color picker. Site colors are saved with the project and retained through fitting, and appear in the spectrum, results, and initial figure-export settings. Color changes preserve completed fit results.
 
 ## Understand the parameters
 
@@ -45,11 +47,25 @@ Available site types are **Singlet**, **Doublet**, and **Sextet**. Profiles are 
 
 For a magnetic sextet, QS enters the retained magnetic-line shift convention; it should not be interpreted using the nonmagnetic doublet formula. Distribution widths and Lorentzian-squared widths also need their specific conventions. See [the numerical reference](/MossA/manual/reference/conventions-and-validation/).
 
-Site names are labels. You can enter names such as `Fe$^{2+}$` or `$\alpha$-Fe`; the name editor previews supported mathematical notation.
+## Site names and mathematical notation
+
+Site names are labels; they do not change the fit or assign a chemical species. Select a site using its visible name button (arrow keys also switch sites), then edit **Site name** above its parameters. Press Enter or click away to apply; Escape cancels the edit. Press Delete while a site button is focused to remove that site; Undo restores it.
+
+Use `$…$` for mathematical notation inside a name. For example:
+
+| Enter | Display |
+| --- | --- |
+| `Fe$^{2+}$` | Fe²⁺ |
+| `Fe$^{3+}$` | Fe³⁺ |
+| `$\alpha$-Fe` | α-Fe |
+| `High-spin Fe$^{2+}$` | High-spin Fe²⁺ |
+| `$d_{x^2-y^2}$` | A mathematical orbital label |
+
+Supported commands and braced scripts can also be entered directly. Names render in the site buttons, results, and exported figures; the name field retains the editable source notation. Invalid notation shows an explanation and falls back to literal text. Plain text and Unicode names such as `α-Fe` also work. Project files and parameter CSV exports retain the original name source.
 
 ## Fix, bound, or link a parameter
 
-A checked fit box lets a parameter vary. Uncheck it to hold the value fixed. In **Bnds**, enter lower and upper limits; an empty bound means no user limit, subject to the model's physical restrictions.
+A checked fit box lets a parameter vary. Uncheck it to hold the value fixed. In **Bounds**, enter lower and upper limits; an empty bound means no user limit, subject to the model's physical restrictions.
 
 For a proportional link, select a target in the current site, choose a source parameter and factor, then choose **Apply link**:
 
@@ -65,7 +81,7 @@ The target follows its source instead of being optimized independently. Target b
 
 ## Choose fitting options
 
-Under **Opt**, set residual weighting, starting-model search, and the iteration limit.
+Under **Fit options**, set residual weighting, starting-model search, and the iteration limit.
 
 - **Unweighted** minimizes the sum of squared observed-minus-model residuals.
 - **1 / observed counts** minimizes squared residuals divided by the observations. Every observation must be strictly positive.

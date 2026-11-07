@@ -84,7 +84,7 @@ export function ModelNavigation({ workspace, disabled, onSelect, onDuplicate, on
         if (next !== null) { e.preventDefault(); onSelect(spectrum.models[next].id); (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus(); }
       }}><span><FitDot model={m}/><strong>{m.name}</strong></span><small className={m.fit ? 'model-has-fit' : ''}>{!m.fit ? '—' : m.fit.converged && !m.fit.warnings.length ? 'fit' : 'review'}</small></button>)}
     </div>
-    {onCompare && <div className="model-compare-actions"><button className="compare-models-button" disabled={disabled || spectrum.models.length < 2} title={spectrum.models.length < 2 ? 'Duplicate or create a second model to compare alternatives' : 'Compare fits and test additional components with simulated spectra'} onClick={onCompare}>Compare models</button></div>}
+    {onCompare && <div className="model-compare-actions"><button className="compare-models-button" disabled={disabled || spectrum.models.length < 2} title={spectrum.models.length < 2 ? 'Duplicate or create a second model to compare alternatives' : 'Compare fits and test additional components with simulated spectra'} onClick={onCompare}>Compare models</button>{spectrum.models.length < 2 && <p className="compare-availability">Add a second model to compare alternatives.</p>}</div>}
     {context && contextModel && !disabled && <ModelContextMenu target={context} model={contextModel} canDuplicate={!limitReached} canRemove={spectrum.models.length > 1} onClose={() => setContext(null)} onAction={(action, id) => { setContext(null); if (action === 'duplicate') onDuplicate(id); else if (action === 'rename') onRename(id); else onRemove(id); }}/>}
   </div>;
 }

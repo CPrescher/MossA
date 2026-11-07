@@ -13,17 +13,19 @@ const number = (v: number | null | undefined) => v == null ? '—' : Number(v.to
 type NoiseCheck = { origin:'automatic'|'manual'; status:'running'|'complete'|'canceled'|'failed'|'unavailable'; triggerCodes:string[]; reason?:string };
 
 export function ComparisonPlot({ x, y, curves, names }: { x: number[]; y: number[]; curves: Evaluation[]; names: string[] }) {
-  const svg = useRef<SVGSVGElement>(null), [size, setSize] = useState({ width: 810, height: 415 });
+  const svg = useRef<SVGSVGElement>(null), [size, setSize] = useState({ width: 810, height: 415, text:16 });
   useEffect(() => {
     if (!svg.current || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(([entry]) => {
       const width = Math.round(entry.contentRect.width), height = Math.round(entry.contentRect.height);
-      if (width > 0 && height > 0) setSize(old => old.width === width && old.height === height ? old : { width, height });
+      if (width > 0 && height > 0) setSize({ width, height, text:Number.parseFloat(window.getComputedStyle(svg.current!).fontSize) || 16 });
     });
     observer.observe(svg.current); return () => observer.disconnect();
   }, []);
   const { width, height } = size;
-  const left = 82, right = width - 24, top = 20, bottom = top + (height - 88) * .68, rtop = bottom + 24, rbottom = height - 44;
+  const scale = size.text / 16;
+  const left = 100 * scale, right = width - 24 * scale, top = 32 * scale, rbottom = height - 50 * scale;
+  const rtop = rbottom - Math.max(65 * scale, (height - 100 * scale) * .25), bottom = rtop - 40 * scale;
   let lo = Infinity, hi = -Infinity, rm = 1;
   y.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); });
   curves.forEach(c => { c.y.forEach(v => { lo = Math.min(lo, v); hi = Math.max(hi, v); }); c.residual.forEach(v => { rm = Math.max(rm, Math.abs(v)); }); });
@@ -44,7 +46,7 @@ export function ComparisonPlot({ x, y, curves, names }: { x: number[]; y: number
     <path className="axis" d={`M${left},${top}V${bottom}H${right}M${left},${rtop}V${rbottom}H${right}`} fill="none"/>
     <line x1={left} x2={right} y1={pr(0)} y2={pr(0)} className="comparison-zero" strokeDasharray="3 3"/>
     {rt.values.map(v => <text className="tick" key={v} x={left - 8} y={pr(v) + 4} textAnchor="end">{formatTick(v, rt.step)}</text>)}
-    <text className="axis-label" transform={`translate(16 ${(top + bottom) / 2}) rotate(-90)`} textAnchor="middle">Counts / intensity</text><text className="axis-label" transform={`translate(16 ${(rtop + rbottom) / 2}) rotate(-90)`} textAnchor="middle">Data − model</text><text className="axis-label" x={(left + right) / 2} y={height - 7} textAnchor="middle">Velocity (mm/s)</text>
+    <text className="axis-label" x={left} y={top - 10 * scale}>Counts / intensity</text><text className="axis-label" x={left} y={rtop - 10 * scale}>Data − model</text><text className="axis-label" x={(left + right) / 2} y={height - 7} textAnchor="middle">Velocity (mm/s)</text>
   </svg><div className="comparison-legend"><span>● Observations</span>{names.map((name, i) => <span key={i} style={{ color: colors[i] }}>{i ? '┄' : '━'} {name}</span>)}</div></div>;
 }
 
@@ -159,9 +161,9 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
       })}</tbody></table></div>
       {a.weighting !== b.weighting && <p className="comparison-note">Objectives use different weightings and cannot be compared numerically.</p>}
       {fits?.map((fit, i) => fit.warnings.length > 0 && <details key={i}><summary>{i ? large.name : simple.name}: observed fit warnings</summary>{fit.warnings.map((w, j) => <p key={j}>{w}</p>)}</details>)}
-      </div><div className="comparison-controls"><section className="comparison-test"><h3>Does the additional component improve the fit beyond noise?</h3>
+      </div><div className="comparison-controls" role="region" aria-label="Comparison settings" tabIndex={0}><p className="comparison-scroll-note">Scroll for simulation settings and details ↓</p><section className="comparison-test"><h3>Does the additional component improve the fit beyond noise?</h3>
         <p className="comparison-help"><a href="./manual/foundations/model-comparison/" target="_blank" rel="noreferrer">F-test explained, with an interactive example ↗</a></p>
-        <p>Simulate spectra from the fitted simpler model, refit both models to every spectrum, and compare their improvement with the measured improvement. Bounds, links, and fixed values are preserved. Stalled fits automatically retry on the same spectrum with a simpler-model start and additional iterations.</p>
+        <p className="comparison-description">Simulate spectra from the fitted simpler model, refit both models to every spectrum, and compare their improvement with the measured improvement. Bounds, links, and fixed values are preserved. Stalled fits automatically retry on the same spectrum with a simpler-model start and additional iterations.</p>
         <fieldset className="comparison-settings bare" disabled={!!progress}>
           <label className="stack-label">Measurement noise<select aria-label="Measurement noise" value={options.noise} onChange={e => changeOptions({ noise: e.target.value as ComparisonOptions['noise'] })}><option value="poisson">Poisson · raw counting statistics</option><option value="gaussian">Gaussian · common residual std</option></select></label>
           <label className="stack-label">Simulated spectra<select aria-label="Simulated spectra" value={options.simulations} onChange={e => changeOptions({ simulations: Number(e.target.value) })}>{[99, 199, 999, 4999].map(n => <option key={n} value={n}>{n.toLocaleString('en-US')}</option>)}</select></label>
@@ -172,7 +174,7 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
         {options.noise === 'poisson' && <p className="comparison-note">If the completed Poisson fit flags excess scatter or correlated residuals, an eligible Gaussian sensitivity check starts automatically with the same simulation count and seed. You can cancel it and keep the Poisson result.</p>}
         {issue && <p className="comparison-notice" role="status">Simulation unavailable: {issue}</p>}
         {!validOptions && <p role="alert">Enter an integer random seed between 0 and 4,294,967,295.</p>}
-        <div className="comparison-run"><button className="primary" disabled={!!issue || !validOptions || !!progress || !!previewError} onClick={() => void simulate()}>Run simulation test</button>{progress && <button onClick={cancel}>Cancel simulation</button>}</div>
+
         {progress && <div role="status" aria-live="polite"><p>{progress.phase} · {progress.completed}/{progress.total} spectra</p><progress aria-label="Simulation progress" max={progress.total} value={progress.completed}/></div>}
         {error && <p className="comparison-notice" role="alert">{error}</p>}
         {result && assessment && <div className="comparison-result" role="status" data-caution={assessment.flags.length > 0}><ComparisonVerdict assessment={assessment}/>
@@ -201,5 +203,6 @@ export function CompareModelsDialog({ spectrum, activeModelId, evaluate, onClose
       </section>
       <details><summary>Statistical method</summary><p>This is a plug-in parametric bootstrap of the decrease in the fitting objective. Added component intensities can vanish, so the ordinary F-test reference distribution is unreliable. Recovery tries a simpler-model start, an added-component start based on unexplained residual peaks, and bounded Levenberg–Marquardt continuation, and can try existing width bounds as free starting values and an expanded deterministic search when needed. Each start uses at most 2,000 iterations; recovery settings and every search are recorded. Every attempt is included in the report. All requested simulations must complete successfully; pairs that fail convergence and the independent bound-projected gradient check invalidate the run. This pairwise test does not correct for trying many different model alternatives.</p><p><a href="https://arxiv.org/abs/astro-ph/0201547" target="_blank" rel="noreferrer">Protassov et al. (2002), Statistics, Handle with Care</a></p></details>
     </div></div>
+    <footer className="comparison-actions"><p>{issue ? `Simulation unavailable: ${issue}` : !validOptions ? 'Check the simulation count and random seed.' : progress ? `${progress.phase} · ${progress.completed}/${progress.total}` : 'Review the models and simulation settings, then run the test.'}</p><div className="comparison-run"><button className="primary" disabled={!!issue || !validOptions || !!progress || !!previewError} onClick={() => void simulate()}>Run simulation test</button>{progress && <button onClick={cancel}>Cancel simulation</button>}</div></footer>
   </dialog>;
 }

@@ -30,6 +30,7 @@ fn project(kind: &str, shape: &str) -> Project {
         },
         sites: vec![Site {
             name: "Test".into(),
+            color: None,
             kind: kind.into(),
             profile: shape.into(),
             params,
@@ -477,4 +478,15 @@ fn xvbf_simplex_enforces_physical_bounds_and_fixed_weights_on_all_trials() {
                 .all(|v| v.is_finite()));
         }
     }
+}
+
+#[test]
+fn site_color_survives_fitting_without_changing_the_scientific_model() {
+    let mut p = project("Doublet", "Lorentzian");
+    let plain = fit(&p).unwrap();
+    p.sites[0].color = Some("#6633aa".into());
+    let colored = fit(&p).unwrap();
+    assert_eq!(colored.project.sites[0].color.as_deref(), Some("#6633aa"));
+    assert_eq!(colored.evaluation.y, plain.evaluation.y);
+    assert_eq!(colored.errors, plain.errors);
 }

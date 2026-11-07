@@ -2,7 +2,7 @@ import type { NuclearConstants } from './nuclear-constants.mjs';
 export type Parameter = { value: number; fit: boolean; min: number | null; max: number | null; link?: { target: string; factor: number } | null };
 export type DistributionComponent = { center: Parameter; width: Parameter; weight: Parameter };
 export type Xvbf = { delta: Parameter; cs: DistributionComponent[]; qs: DistributionComponent[] };
-export type Site = { name: string; kind: 'Singlet' | 'Doublet' | 'Sextet'; profile: 'Lorentzian' | 'Gaussian' | 'PseudoVoigt' | 'LorSquared'; params: Record<string, Parameter>; xvbf?: Xvbf };
+export type Site = { name: string; color?: string; kind: 'Singlet' | 'Doublet' | 'Sextet'; profile: 'Lorentzian' | 'Gaussian' | 'PseudoVoigt' | 'LorSquared'; params: Record<string, Parameter>; xvbf?: Xvbf };
 export type SourceGaussian = { center: number; fwhm: number; weight: number };
 export type Project = { spectrum: { x: number[]; y: number[] }; sites: Site[]; background: Parameter[]; mode: 'thin' | 'transmission'; source_fwhm: number; source_squared: boolean; source_gaussians?: SourceGaussian[]; weighting: 'unweighted' | 'counts'; max_iterations: number; nuclear_constants?: NuclearConstants; search_starts?: number };
 export type Evaluation = { parameters: Record<string, number>; y: number[]; background: number[]; components: number[][]; residual: number[]; sse: number; objective: number };
@@ -18,3 +18,5 @@ export function parameter(value: number, fit = true, min: number | null = null, 
 export function newSite(index: number, kind: Site['kind'] = 'Doublet'): Site {
   return { name: `Site ${index + 1}`, kind, profile: 'Lorentzian', params: { cs: parameter(0, true, -10, 10), fwhm: parameter(.35, true, .01, 3), intensity: parameter(400, true, 0), qs: parameter(1, kind !== 'Sextet', -10, 10), bhf: parameter(33, true, 0, 60), a12: parameter(kind === 'Doublet' ? .5 : 1.5, false, kind === 'Doublet' ? 0 : .001, kind === 'Doublet' ? 1 : null), a13: parameter(3, false, .001), mix: parameter(.5, true, 0, 1) } };
 }
+
+export function siteColor(site: Site | undefined, index: number) { return site?.color && /^#[0-9a-f]{6}$/i.test(site.color) ? site.color : colors[index % colors.length]; }

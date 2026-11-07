@@ -1,20 +1,24 @@
+import {safeFilenamePart} from './export-filename';
+import { siteDisplayCurves } from './site-display';
 import { saveBlob } from './file-save';
-import { colors, type Project, type Evaluation } from './types';
+import { colors, siteColor, type Project, type Evaluation } from './types';
 import { formatTick } from './axes.mjs';
 import { layoutLabel, svgLabelLine } from './scientific-label';
 import { figureTicks, legendSpace, type FigureRect } from './figure-layout';
+import {formatResult,intensityFractions} from './results';
 
 export type FigureSite = { index: number; name: string; color: string; visible: boolean };
 export type FigureOptions = {
-  width: number; height: number; title: string; style: 'filled' | 'lines';
+  width: number; height: number; title: string; style: 'filled' | 'transparent' | 'lines'; fillOpacity:number;
   order: 'depth' | 'custom'; residual: 'above' | 'below' | 'none';
   sign: 'data-model' | 'model-data'; legend: 'auto' | 'above' | 'below' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none';
   legendDataFit: boolean;
+  legendFractions: boolean;
   range: [number, number] | null; sites: FigureSite[];
 };
 export function defaultFigureOptions(project: Project): FigureOptions {
-  return { width: 180, height: 120, title: '', style: 'filled', order: 'depth', residual: 'below', sign: 'data-model', legend: 'auto', legendDataFit: false, range: null,
-    sites: project.sites.map((s, index) => ({ index, name: s.name, color: colors[index % colors.length], visible: true })) };
+  return { width: 180, height: 120, title: '', style: 'filled', fillOpacity:.22, order: 'depth', residual: 'below', sign: 'data-model', legend: 'auto', legendDataFit: false,legendFractions:false,range: null,
+    sites: project.sites.map((s, index) => ({ index, name: s.name, color: siteColor(s,index), visible: true })) };
 }
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]!));
 const n = (v: number) => Number(v.toFixed(3));
@@ -33,38 +37,38 @@ function wrap(text: string, width: number): string[] {
 /** A standalone, white-page figure. Preview and downloads use these exact SVG bytes. */
 export function renderFigure(project: Project, evaluation: Evaluation, options: FigureOptions, fitted: boolean): string {
   if (!Number.isFinite(options.width) || !Number.isFinite(options.height) || options.width < 70 || options.width > 300 || options.height < 60 || options.height > 300) throw new Error('Use a width of 70–300 mm and a height of 60–300 mm.');
+  if(!Number.isFinite(options.fillOpacity)||options.fillOpacity<0||options.fillOpacity>1)throw new Error('Use a transparency from 0 to 100%.');
   const W = options.width * 4, H = options.height * 4, xs = project.spectrum.x, ys = project.spectrum.y;
   const range = options.range ?? [xs[0], xs.at(-1)!];
   if (!range.every(Number.isFinite) || range[1] <= range[0]) throw new Error('Choose an increasing velocity range.');
   const indices = xs.map((x, i) => x >= range[0] && x <= range[1] ? i : -1).filter(i => i >= 0);
   if (indices.length < 2) throw new Error('The selected range needs at least two data points.');
-  let scale = 1;
-  if (project.mode === 'transmission') {
-    let maximum = 0, minimum = Infinity;
-    for (let i = 0; i < xs.length; i++) { maximum = Math.max(maximum, evaluation.components.reduce((sum, c) => sum + c[i], 0)); minimum = Math.min(minimum, ys[i]); }
-    scale = maximum > 0 ? .8 * Math.max(0, project.background[0].value - minimum) / maximum : 0;
-  }
+  const {scale,curves}=siteDisplayCurves(project,evaluation);
   const sites = options.sites.filter(s => s.visible && evaluation.components[s.index]).map(s => {
-    const curve = evaluation.components[s.index].map((v, i) => evaluation.background[i] - v * scale);
+    const curve = curves[s.index];
     let depth = 0; for (const i of indices) depth = Math.max(depth, evaluation.background[i] - curve[i]);
     return { ...s, curve, depth };
   });
   if (options.order === 'depth') sites.sort((a, b) => b.depth - a.depth || a.index - b.index);
-  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site' })) ];
+  const fractions=intensityFractions(project,evaluation,null);
+  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data',annotation:'' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model',annotation:'' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site',annotation:options.legendFractions?` · ${fractions[s.index].value==null?'—':(fractions[s.index].value!>0&&fractions[s.index].value!<.1?formatResult(fractions[s.index].value!,2):fractions[s.index].value!.toFixed(1))}%`:'' })) ];
   const inside = options.legend === 'auto' || /^(top|bottom)-(left|right)$/.test(options.legend);
   const horizontalLegend = options.legend === 'above' || options.legend === 'below';
   const legendWidth = options.legend === 'right' ? Math.min(180, W * .29) : 0;
   const insideWidth = Math.max(100, Math.min(220, (W - 100) * .4));
   const columns = W >= 600 ? 3 : 2, cellWidth = (W - 36 - (columns - 1) * 24) / columns;
-  const legendLines = legendItems.map(item => layoutLabel(item.name, (inside ? insideWidth : options.legend === 'right' ? legendWidth : cellWidth) - 32));
-  const legendHeights = legendLines.map(lines => lines.reduce((height, line) => height + Math.max(15, line.ascent + line.descent + 3), 0));
-  const rowHeights: number[] = [];
+  const legendLines = legendItems.map(item => layoutLabel(item.name, (inside ? insideWidth : options.legend === 'right' ? legendWidth : cellWidth) - 32,11,item.annotation));
+  const lineHeights=legendLines.map(lines=>lines.map(line=>Math.max(15,line.ascent+line.descent+3)));
+  const legendHeights = lineHeights.map(lines=>lines.reduce((sum,height)=>sum+height,0));
+  const rowHeights: number[] = [],rowFirstHeights:number[]=[];
   if (horizontalLegend) for (let i = 0; i < legendItems.length; i += columns) {
-    const ascent = Math.max(...legendLines.slice(i, i + columns).map(lines => lines[0].ascent));
-    rowHeights.push(Math.max(...legendHeights.slice(i, i + columns).map((height, j) => height + ascent - legendLines[i + j][0].ascent)) + 9);
+    const firstHeight=Math.max(...lineHeights.slice(i,i+columns).map(lines=>lines[0]));
+    rowFirstHeights.push(firstHeight);
+    rowHeights.push(Math.max(...legendHeights.slice(i,i+columns).map((height,j)=>height+firstHeight-lineHeights[i+j][0]))+9);
   }
   const legendHeight = rowHeights.reduce((sum, h) => sum + h, 0);
-  const noteLines = project.mode === 'transmission' && sites.length ? wrap('Sites: display-scaled absorber profiles; not additive transmission components.', W - 36) : [];
+  const fractionBasis=options.legendFractions&&options.legend!=='none'&&sites.length ? `Legend percentages: ${project.mode==='transmission'?'absorber ':''}intensity fractions of all model sites, including hidden sites${!fitted?' (unfitted starting parameters)':''}.${project.mode==='transmission'?' Not phase abundances.':''}` : '';
+  const noteLines = [project.mode === 'transmission' && sites.length ? 'Sites: display-scaled absorber profiles; not additive transmission components.' : '',fractionBasis].filter(Boolean).flatMap(note=>wrap(note,W-36));
   const noteHeight = noteLines.length ? noteLines.length * 12 + 16 : 0;
   const titleLines = options.title ? wrap(options.title, W - 130 - legendWidth) : [];
   const titleBottom = titleLines.length ? 26 + titleLines.length * 18 : 20;
@@ -122,7 +126,7 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       for (let k = 1; k < curveIndices.length; k++) {
         const a = curveIndices[k - 1], b = curveIndices[k], x1 = px(xs[a]), x2 = px(xs[b]);
         for (const curve of curves) segment(x1, py(curve[a]), x2, py(curve[b]));
-        if (options.style === 'filled') for (const site of sites) {
+        if (options.style !== 'lines') for (const site of sites) {
           const y1 = Math.min(py(site.curve[a]), py(site.curve[b]), py(evaluation.background[a]), py(evaluation.background[b]));
           const y2 = Math.max(py(site.curve[a]), py(site.curve[b]), py(evaluation.background[a]), py(evaluation.background[b]));
           segment(x1, y1, x2, y2);
@@ -137,12 +141,17 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       legendRect = { x: options.legend.endsWith('right') ? R - width - 12 : L + 12, y: options.legend.startsWith('top') ? mainTop + 12 : mainBottom - height - 12, width, height };
     }
   }
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${options.width}mm" height="${options.height}mm" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="figure-title figure-description"><title id="figure-title">${escape(options.title || 'Mössbauer spectrum')}</title><desc id="figure-description">${escape(`${fitted ? 'Fitted spectrum' : 'Unfitted model'}. ${options.residual === 'none' ? 'Residual hidden.' : `Residual: ${options.sign === 'data-model' ? 'data minus model' : 'model minus data'}, offset ${options.residual} the spectrum on the same intensity scale. The reference line marks zero residual.`} ${project.mode === 'transmission' ? 'Site overlays are display-scaled absorber profiles, not additive transmission components.' : 'Sites filled to the evaluated background.'}`)}</desc><metadata>${escape(JSON.stringify({ application: 'MossA 2', fitted, mode: project.mode, componentScale: scale, residualOffset: options.residual === 'none' ? null : residualOffset, options }))}</metadata><rect width="${W}" height="${H}" fill="white"/><g font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#30343a" color="#30343a" stroke-linejoin="round"><defs><clipPath id="figure-main"><rect x="${L}" y="${mainTop}" width="${R - L}" height="${mainBottom - mainTop}"/></clipPath></defs>`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${options.width}mm" height="${options.height}mm" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="figure-title figure-description"><title id="figure-title">${escape(options.title || 'Mössbauer spectrum')}</title><desc id="figure-description">${escape(`${fitted ? 'Fitted spectrum' : 'Unfitted model'}. ${options.residual === 'none' ? 'Residual hidden.' : `Residual: ${options.sign === 'data-model' ? 'data minus model' : 'model minus data'}, offset ${options.residual} the spectrum on the same intensity scale. The reference line marks zero residual.`} ${project.mode === 'transmission' ? 'Site overlays are display-scaled absorber profiles, not additive transmission components.' : 'Sites filled to the evaluated background.'}`)}</desc><metadata>${escape(JSON.stringify({ application: 'MossA 2', fitted, mode: project.mode, componentScale: scale, residualOffset: options.residual === 'none' ? null : residualOffset, fractionBasis: fractionBasis || null, options }))}</metadata><rect width="${W}" height="${H}" fill="white"/><g font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#30343a" color="#30343a" stroke-linejoin="round"><defs><clipPath id="figure-main"><rect x="${L}" y="${mainTop}" width="${R - L}" height="${mainBottom - mainTop}"/></clipPath></defs>`;
   titleLines.forEach((title, i) => { svg += text((L + R) / 2, 23 + i * 18, title, 'data-figure-title="true" text-anchor="middle" font-size="14" font-weight="600"'); });
   svg += `<g clip-path="url(#figure-main)">`;
   for (const s of sites) {
     const color = /^#[0-9a-f]{6}$/i.test(s.color) ? s.color : '#168a87';
-    svg += `<path data-site-index="${s.index}" d="${options.style === 'filled' ? area(s.curve) : path(s.curve)}" fill="${options.style === 'filled' ? color : 'none'}" stroke="${color}" stroke-width="1.1"/>`;
+    if(options.style!=='lines') svg += `<path data-site-fill="${s.index}" d="${area(s.curve)}" fill="${color}" fill-opacity="${options.style==='transparent'?options.fillOpacity:1}"/>`;
+  }
+  // Draw every outline after the fills so overlapping areas cannot erase it.
+  for(const s of sites){
+    const color=/^#[0-9a-f]{6}$/i.test(s.color)?s.color:'#168a87';
+    svg += `<path data-site-index="${s.index}" d="${path(s.curve)}" fill="none" stroke="${color}" stroke-width="1.1"/>`;
   }
   svg += `<path d="${path(evaluation.background)}" fill="none" stroke="#aab1b7" stroke-dasharray="4 4" stroke-width=".7"/><path data-curve="model" d="${path(evaluation.y)}" fill="none" stroke="#202124" stroke-width="1.5"/>`;
   for (const i of indices) svg += `<circle data-point="observed" cx="${n(px(xs[i]))}" cy="${n(py(ys[i]))}" r="1.1" fill="#222222"/>`;
@@ -170,17 +179,17 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       const x = legendRect?.x ?? (options.legend === 'right' ? R + 22 : horizontalStart + columnWidths.slice(0, i % columns).reduce((sum, w) => sum + w + 24, 0));
       const color = /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : '#168a87';
       const vertical = inside || options.legend === 'right';
-      const rowStart = vertical ? i : Math.floor(i / columns) * columns;
-      const ascent = Math.max(...legendLines.slice(rowStart, vertical ? i + 1 : rowStart + columns).map(lines => lines[0].ascent));
-      const baseline = y + ascent;
-      svg += item.type === 'data' ? `<circle cx="${x + 7}" cy="${baseline - 4}" r="1.6" fill="${color}"/>` : item.type === 'site' && options.style === 'filled' ? `<rect x="${x}" y="${baseline - 11}" width="15" height="10" fill="${color}"/>` : line(x, baseline - 4, x + 15, baseline - 4, `stroke="${color}" stroke-width="1.7"`);
-      let lineY = baseline;
-      svg += `<g data-scientific-label="true" role="img" aria-label="${escape(item.name)}">`;
+      const firstHeight=vertical?lineHeights[i][0]:rowFirstHeights[Math.floor(i/columns)],center=y+firstHeight/2;
+      svg += `<g data-legend-item="${i}" data-marker-center="${n(center)}">`;
+      svg += item.type === 'data' ? `<circle data-legend-marker="true" cx="${x + 7}" cy="${n(center)}" r="1.6" fill="${color}"/>` : item.type === 'site' && options.style !== 'lines' ? `<rect data-legend-marker="true" x="${x}" y="${n(center-5)}" width="15" height="10" fill="${color}" fill-opacity="${options.style==='transparent'?options.fillOpacity:1}" stroke="${color}" stroke-width="1.1"/>` : line(x,center,x+15,center,`data-legend-marker="true" stroke="${color}" stroke-width="1.7"`);
+      let lineTop=y;
+      svg += `<g data-scientific-label="true" role="img" aria-label="${escape(item.name+item.annotation)}">`;
       legendLines[i].forEach((label, j) => {
-        if (j) lineY += Math.max(15, legendLines[i][j - 1].descent + label.ascent + 3);
+        const height=j===0?firstHeight:lineHeights[i][j],lineY=lineTop+(height-label.ascent-label.descent)/2+label.ascent;
         svg += svgLabelLine(label, x + 23, lineY);
+        lineTop+=height;
       });
-      svg += '</g>';
+      svg += '</g></g>';
       if (vertical) y += legendHeights[i] + 9;
       else if (i % columns === columns - 1) y += rowHeights[Math.floor(i / columns)];
     });
@@ -190,7 +199,7 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
   return svg + '</g></svg>';
 }
 
-export function figureFilename(name: string): string { return (name.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '_').replace(/\.(dat|txt|csv|mossa|json)$/i, '').trim() || 'mossa-spectrum') + '-figure'; }
+export function figureFilename(name: string): string { return (safeFilenamePart(name) || 'mossa-spectrum') + '-figure'; }
 export const saveFigureBlob = saveBlob;
 
 /** Canvas defaults to 96 dpi. Write the selected physical resolution into PNG metadata. */

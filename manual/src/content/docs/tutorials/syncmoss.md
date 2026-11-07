@@ -46,7 +46,7 @@ Open the **CMS starting project**. It supplies one Lorentzian sextet, a constant
 
 Starting values are CS = 0 mm/s, BHF = 32.94 T, width = 0.30 mm/s, raw intensity = 60,000, and background = 271,000 counts. Fit CS, BHF, width, intensity, and background. Hold QS = 0, A12 = 1.5, and A13 = 3 fixed. Bounds are CS −0.5 to 0.5 mm/s, BHF 25 to 36 T, width 0.05 to 1 mm/s, nonnegative intensity, and background 200,000 to 350,000 counts.
 
-In **Opt**, use **1 / observed counts**, **1 · Current model**, and at most **1,000 iterations**. Choose **Fit spectrum** and inspect the residuals and fit status.
+In **Fit options**, use **1 / observed counts**, **1 · Current model**, and at most **1,000 iterations**. Choose **Fit spectrum** and inspect the residuals and fit status.
 
 ![New MossA Lorentzian sextet fit to the measured CMS standard, with residuals and empirical line parameters.](../../../assets/screenshots/syncmoss-cms-lorentzian.jpg)
 
@@ -110,7 +110,7 @@ The scalar random-powder model does not establish general polarization, texture,
 
 ## 7. Deliberately replace the source
 
-Duplicate the fitted SMS model. In **Gen → Source profile**, choose **Use simple source**, enable **Lorentzian-squared source**, and enter **0.200 mm/s**. Keep the absorber width fixed and refit the same four parameters.
+Duplicate the fitted SMS model. In **General → Source profile**, choose **Use simple source**, enable **Lorentzian-squared source**, and enter **0.200 mm/s**. Keep the absorber width fixed and refit the same four parameters.
 
 ![Fixed-width squared-source control on the same measured SMS observations, retaining the same scalar sextet assumptions.](../../../assets/screenshots/syncmoss-sms-squared.jpg)
 
@@ -128,7 +128,7 @@ Open the **complete worked project** to switch between the two spectra and all f
 
 *The original source parameters and license are retained in project provenance and companion downloads. No duplicate CMS measurement is added for Calibration.dat.*
 
-Use **Save project**, **Export parameters**, and **Export graph** to retain the analysis. Keep the downloaded `provenance.json` and `UPSTREAM_LICENSE.txt` alongside any resaved project so its original attribution and acquisition headers stay available. In the figure studio, keep the residuals and identify the fitted source/model in the caption.
+Use **Save project**, **Export parameters**, and **Export → Figure** to retain the analysis. Keep the downloaded `provenance.json` and `UPSTREAM_LICENSE.txt` alongside any resaved project so its original attribution and acquisition headers stay available. In the figure studio, keep the residuals and identify the fitted source/model in the caption.
 
 ![Figure studio for the measured SMS standard, with the fitted transmission curve and residuals prepared for export.](../../../assets/screenshots/syncmoss-export.jpg)
 

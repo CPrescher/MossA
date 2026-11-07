@@ -5,7 +5,7 @@ export function FitDetails({ children, warningCount = 0 }: { children: ReactNode
   const [automatic, setAutomatic] = useState(false), [manual, setManual] = useState(false);
   const open = automatic || manual;
   useLayoutEffect(() => {
-    const panel = root.current?.closest('.left-panel'), editor = panel?.querySelector('.site-editor');
+    const panel = root.current?.closest('.left-panel') ?? root.current?.closest('.workspace')?.querySelector('.left-panel'), editor = panel?.querySelector('.site-editor');
     if (!panel || !editor || !body.current) return;
     const measure = () => {
       const content = editor.firstElementChild;

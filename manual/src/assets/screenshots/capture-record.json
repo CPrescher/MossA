@@ -828,5 +828,161 @@
         "sha256": "e576086bf4a17c1d06331f7241f18eee1a2968bb15e4c8f3bb42a944c3ad30d5"
       }
     ]
+  },
+  "workspaceRefresh": {
+    "capturedAt": "2026-11-07T21:18:14.504Z",
+    "source": "Current local checkout at http://127.0.0.1:5181; actual Chromium screenshots in both themes",
+    "records": [
+      {
+        "name": "workspace-wide",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/workspace-wide.png",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "first-fit",
+        "theme": "light",
+        "file": "manual/src/assets/first-fit.png",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "workspace-laptop",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/workspace-laptop.png",
+        "viewport": {
+          "width": 1180,
+          "height": 800
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "workspace-tablet",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/workspace-tablet.png",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/importing-raw-counts.jpg",
+        "spectrum": "Redistributable Freiburg almandine raw channels",
+        "state": "New raw import; folding diagnostic button visible; not fitted"
+      },
+      {
+        "name": "workspace-wide",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/workspace-wide.jpg",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "first-fit",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/first-fit.jpg",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "workspace-laptop",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/workspace-laptop.jpg",
+        "viewport": {
+          "width": 1180,
+          "height": 800
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "workspace-tablet",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/workspace-tablet.jpg",
+        "viewport": {
+          "width": 820,
+          "height": 1180
+        },
+        "spectrum": "Built-in synthetic iron mixture",
+        "state": "Completed fit; General selected; Folding & calibration first",
+        "headings": [
+          "Folding & calibration",
+          "General",
+          "Background",
+          "Velocity direction"
+        ]
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/importing-raw-counts.jpg",
+        "spectrum": "Redistributable Freiburg almandine raw channels",
+        "state": "New raw import; folding diagnostic button visible; not fitted"
+      }
+    ]
   }
 }

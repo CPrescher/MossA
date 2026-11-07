@@ -1,3 +1,4 @@
+import {decodeFigureSettings,type StoredFigureSettings} from './figure-settings';
 import { useMemo, useRef } from 'react';
 import { useSnapshotHistory } from './history';
 import { decodeSession, defaultLayout, snapshotVersion, type Calibration, type FitSummary, type Snapshot } from './session';
@@ -11,6 +12,7 @@ export type ModelEntry = {
   id: string; name: string; project: Omit<Project, 'spectrum'>;
   selected: number; fit: FitSummary | null; fitElapsed: number | null;
   sourceReference?: Calibration['sourceReference'];
+  figureExport?: StoredFigureSettings;
 };
 export type SpectrumEntry = {
   id: string; name: string; spectrum: Project['spectrum']; raw: number[] | null;
@@ -151,7 +153,8 @@ export function decodeWorkspace(value: unknown): Workspace {
       const snapshot = modelSnapshot(s, m);
       const decoded = decodeSession(JSON.stringify({ version: snapshotVersion(snapshot), snapshot, layout: defaultLayout, fit: m.fit, elapsed: m.fitElapsed }), true);
       const { spectrum: _data, ...project } = decoded.snapshot.project;
-      return { id: m.id, name: m.name, project, selected: decoded.snapshot.selected, fit: decoded.fit, fitElapsed: decoded.fit ? decoded.elapsed : null,
+      const figureExport=decodeFigureSettings(m.figureExport,decoded.snapshot.project);
+      return { id: m.id, name: m.name, project, ...(figureExport?{figureExport}:{}), selected: decoded.snapshot.selected, fit: decoded.fit, fitElapsed: decoded.fit ? decoded.elapsed : null,
         ...(decoded.snapshot.cal.sourceReference ? { sourceReference: decoded.snapshot.cal.sourceReference } : {}) };
     });
     if (!models.some(m => m.id === s.activeModelId)) throw new Error('Invalid selected model.');
@@ -184,4 +187,11 @@ export function useWorkspaceHistory(initial: () => Workspace) {
     set: (snapshot: Snapshot, record = true) => setWorkspace(updateActiveSnapshot(collection.present, snapshot), record),
     setWorkspace,
   };
+}
+
+/** Appearance changes preserve the scientific model and completed fit by identity. */
+export function updateFigureSettings(workspace:Workspace,modelId:string,figureExport:StoredFigureSettings):Workspace {
+ const model=workspace.spectra.flatMap(s=>s.models).find(m=>m.id===modelId);
+ if(!model||JSON.stringify(model.figureExport)===JSON.stringify(figureExport))return workspace;
+ return {...workspace,spectra:workspace.spectra.map(s=>s.models.some(m=>m.id===modelId)?{...s,models:s.models.map(m=>m.id===modelId?{...m,figureExport}:m)}:s)};
 }

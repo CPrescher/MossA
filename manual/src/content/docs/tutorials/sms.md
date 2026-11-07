@@ -25,7 +25,7 @@ All four downloads retain the original filenames and bytes. Hashes, format selec
 ## 1. Calibrate the sinusoidal velocity scale
 
 1. Save your existing project and start a tutorial project.
-2. Open **Gen → Folding & calibration → + → From reference file…**.
+2. Open **General → Folding & calibration → + → From reference file…**.
 3. Load `Iron foil calibration.txt` in the velocity-reference dialog.
 4. Enable **Sinusoidal drive**, **Fold reference channels**, and **Automatic fold center**.
 5. Set the initial maximum velocity to **8 mm/s**, as specified in the original tutorial.
@@ -59,7 +59,7 @@ The reference files retain their supplied velocity values. The raw-channel sinus
 
 ## 3. Calibrate the source before the experiment
 
-Under **Gen**, choose **Full transmission integral**, then open **Source profile → Calibrate source…**. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
+Under **General**, choose **Full transmission integral**, then open **Source profile → Calibrate source…**. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
 
 1. Choose **Open source reference** and select `singleLineBefore.dat`, or choose **Use current spectrum** if that standard is already selected.
 2. Set **Known absorber FWHM** to **0.215 mm/s**, the reference-width assumption specified in the source tutorial.
@@ -88,7 +88,7 @@ $$
 \approx 0.43598\ \mathrm{mm/s}.
 $$
 
-This reproduces the tutorial's quoted value of about **0.436 mm/s**. Enter that mean under **Gen → Source profile → FWHM (mm/s)** and retain **Lorentzian-squared source** for the sample model. The mean is held fixed in subsequent sample fits; the reported sample std does not propagate source drift, absorber-reference uncertainty, or uncertainty in this mean.
+This reproduces the tutorial's quoted value of about **0.436 mm/s**. Enter that mean under **General → Source profile → FWHM (mm/s)** and retain **Lorentzian-squared source** for the sample model. The mean is held fixed in subsequent sample fits; the reported sample std does not propagate source drift, absorber-reference uncertainty, or uncertainty in this mean.
 
 The individual widths are not automatically averaged by the app. Record both values and enter the mean explicitly. [Dedicated source-calibration results](/MossA/manual/tutorial-data/sms/source-calibrations.json) retain the two source fits separately.
 
@@ -96,7 +96,7 @@ The individual widths are not automatically averaged by the app. Record both val
 
 Use **Add spectra** and select `Fe7C3_01GPa.mca`. The import dialog now accepts `.mca` files. For this supported SPEC layout, MossA reads the single `@A` block, joins continued count rows in acquisition order, and verifies that their number matches `#@CHANN`. The sample contains **1,024** counts and folds to **512** points.
 
-The original header is retained under **Gen → Velocity direction → Import details**, including its conflicting internal filename. `#@CALIB` is preserved as acquisition metadata; it is not interpreted as a Mössbauer velocity calibration. Truncated files, extra counts, invalid values, and multiple count blocks are rejected.
+The original header is retained under **General → Velocity direction → Import details**, including its conflicting internal filename. `#@CALIB` is preserved as acquisition metadata; it is not interpreted as a Mössbauer velocity calibration. Truncated files, extra counts, invalid values, and multiple count blocks are rejected.
 
 ![The original SMS MCA file imported without conversion, with the detected format and preserved acquisition header available in Import details.](../../../assets/screenshots/sms-mca-import.png)
 
@@ -106,7 +106,7 @@ If you loaded the sample before setting the import default, choose the SMS prese
 
 ## 6. Reverse this sample's velocity axis
 
-The original tutorial calls for **Flip Signs** because the sample measurement used a reversed velocity direction. In MossA 2, enable **Gen → Velocity direction → Reverse velocity axis** for the selected sample.
+The original tutorial calls for **Flip Signs** because the sample measurement used a reversed velocity direction. In MossA 2, enable **General → Velocity direction → Reverse velocity axis** for the selected sample.
 
 ![SMS sample after enabling Reverse velocity axis, with the applied direction shown beside its calibration and retained raw-count information.](../../../assets/screenshots/sms-reversed-axis.png)
 
@@ -149,7 +149,7 @@ The source tutorial uses a three-iron-site structural interpretation of Fe₇C�
 
 ## 9. Link intensities in the ratio 3:3:1
 
-The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Bnds → Parameter links**, define the targets explicitly:
+The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Bounds → Parameter links**, define the targets explicitly:
 
 | Selected target | Source | Factor |
 | --- | --- | --- |
@@ -162,7 +162,7 @@ For each target, select **Intensity**, choose the source **1 · Fe site 1 · Int
 
 *Linked targets are not independent optimization coordinates. The constraint applies to absorber-intensity parameters, not the visible areas of transmission overlays.*
 
-Choose **Gen → Background → Order 2** and refit. In this constrained model the intensity fractions are **42.857%, 42.857%, and 14.286%** by construction. Their fixed-ratio std may be zero within the model; that is not an independent determination of site occupancy. Equating spectral intensity ratios to populations also requires physical assumptions about the relevant recoil-free fractions and model adequacy.
+Choose **General → Background → Order 2** and refit. In this constrained model the intensity fractions are **42.857%, 42.857%, and 14.286%** by construction. Their fixed-ratio std may be zero within the model; that is not an independent determination of site occupancy. Equating spectral intensity ratios to populations also requires physical assumptions about the relevant recoil-free fractions and model adequacy.
 
 ## 10. Explore the sextet line ratios
 

@@ -8,7 +8,7 @@ import '@mathjax/src/js/input/tex/ams/AmsConfiguration.js';
 
 export const escapeLabel = (value: string) => value.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]!));
 type MathPart = { kind: 'math'; source: string; svg: string; width: number; ascent: number; descent: number };
-export type LabelPart = { kind: 'text'; source: string } | MathPart;
+export type LabelPart = { kind: 'text'; source: string; nowrap?: boolean } | MathPart;
 export type ScientificLabel = { parts: LabelPart[]; error?: string };
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
@@ -67,21 +67,22 @@ for (const [letters, widths] of [
   ['abcdefghijklmnopqrstuvwxyz', [556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500]],
   ['0123456789', Array(10).fill(556)],
 ] as [string, number[]][]) [...letters].forEach((letter, i) => { advances[letter] = widths[i]; });
-Object.assign(advances, { ' ': 278, '.': 278, ',': 278, ':': 278, ';': 278, '-': 333, '·': 278, '+': 584, '(': 333, ')': 333, '/': 278, '!': 278, "'": 191 });
-const textWidth = (text: string, fontSize: number) => [...text].reduce((sum, char) => sum + (advances[char] ?? 600), 0) * fontSize / 1000;
+Object.assign(advances, { ' ': 278, '.': 278, ',': 278, ':': 278, ';': 278, '-': 333, '·': 278, '%':889, '—':1000, '–':556, '<':584, '≤':584, '²':333, '³':333, '⁺':584, 'α':578, 'β':556, 'γ':500, 'δ':556, 'θ':556, 'λ':500, 'μ':556, 'σ':617, 'ω':722, 'é':556, 'ö':556, 'ü':556, '+': 584, '(': 333, ')': 333, '/': 278, '!': 278, "'": 191 });
+export const textWidth = (text: string, fontSize: number) => [...text].reduce((sum, char) => sum + (advances[char] ?? 600), 0) * fontSize / 1000;
 
 export type LabelLine = { parts: { part: LabelPart; width: number; scale: number }[]; width: number; ascent: number; descent: number };
 /** Wrap text while keeping each math expression intact. Dimensions are SVG units. */
-export function layoutLabel(source: string, maxWidth: number, fontSize = 11): LabelLine[] {
+export function layoutLabel(source: string, maxWidth: number, fontSize = 11,appendText=''): LabelLine[] {
   const lines: LabelLine[] = [];
   const fresh = (): LabelLine => ({ parts: [], width: 0, ascent: fontSize * .85, descent: fontSize * .25 });
   let line = fresh();
   const push = () => { lines.push(line); line = fresh(); };
-  const atoms = scientificLabel(source).parts.flatMap<LabelPart>(part => part.kind === 'math' ? [part] : part.source.split(/(\s+)/).filter(Boolean).map(source => ({ kind: 'text' as const, source })));
+  const parts:LabelPart[]=[...scientificLabel(source).parts,...(appendText?[{kind:'text' as const,source:appendText,nowrap:true}]:[])];
+  const atoms = parts.flatMap<LabelPart>(part => part.kind === 'math'||part.nowrap ? [part] : part.source.split(/(\s+)/).filter(Boolean).map(source => ({ kind: 'text' as const, source })));
   const whitespace = (part: LabelPart) => part.kind === 'text' && /^\s+$/.test(part.source);
   const groups: LabelPart[][] = [];
   for (const atom of atoms) {
-    if (!groups.length || whitespace(atom) || whitespace(groups.at(-1)![0])) groups.push([atom]);
+    if (!groups.length || (atom.kind==='text'&&atom.nowrap) || whitespace(atom) || whitespace(groups.at(-1)![0])) groups.push([atom]);
     else groups.at(-1)!.push(atom);
   }
   for (const group of groups) {
@@ -96,7 +97,8 @@ export function layoutLabel(source: string, maxWidth: number, fontSize = 11): La
       }
       do {
         let chars = 0, measured = 0;
-        if (atom.kind === 'text') for (const char of rest) {
+        if (atom.kind === 'text'&&atom.nowrap) chars=rest.length;
+        else if (atom.kind === 'text') for (const char of rest) {
           const next = textWidth(char, fontSize);
           if (chars && measured + next > maxWidth) break;
           measured += next; chars += char.length;

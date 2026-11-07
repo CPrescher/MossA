@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from 'react';
 import { FitDot } from './ProjectNavigation';
 import { activeSpectrum, type Workspace } from './workspace';
 import { SidebarIcon } from './SidebarIcon';
@@ -24,7 +24,7 @@ export function ProjectSplit({ ratio, onChange, spectra, models }: { ratio: numb
     observer.observe(node); return () => observer.disconnect();
   }, []);
   const value = clampProjectSplit(ratio, height), limits = projectSplitLimits(height);
-  return <div ref={ref} className="project-split" style={{ gridTemplateRows: `minmax(0, ${value}fr) 8px minmax(0, ${1 - value}fr)` }}>
+  return <div ref={ref} className="project-split" style={{ '--spectra-share':`${value}fr`, '--models-share':`${1-value}fr` } as CSSProperties}>
     {spectra}
     <div className="project-splitter" role="separator" aria-label="Resize spectra and models" aria-orientation="horizontal" aria-valuemin={Math.round(limits.min * 100)} aria-valuemax={Math.round(limits.max * 100)} aria-valuenow={Math.round(value * 100)} aria-valuetext={`${Math.round(value * 100)}% spectra, ${Math.round((1 - value) * 100)}% models`} tabIndex={0} title="Drag to resize spectra and models; double-click to reset"
       onPointerDown={e => { if (e.button !== 0) return; e.preventDefault(); const measured = ref.current!.getBoundingClientRect().height || height; drag.current = { y: e.clientY, ratio: value, height: measured }; e.currentTarget.setPointerCapture(e.pointerId); }}
@@ -46,7 +46,7 @@ export function ProjectSidebar({ workspace, disabled, collapsed, ratio, onCollap
   renamingSpectrumId?: string; onCommitName?: (name: string) => void; onCancelName?: () => void;
 }) {
   const current = activeSpectrum(workspace), [query, setQuery] = useState('');
-  const spectra = workspace.spectra.filter(s => s.spectrum.x.length);
+  const spectra = workspace.spectra.filter(s => s.spectrum.x.length), modelCount = spectra.reduce((n, s) => n + s.models.length, 0);
   useEffect(() => { if (!spectra.length) setQuery(''); }, [workspace]);
   const list = useRef<HTMLDivElement>(null);
   useEffect(() => { list.current?.querySelector('[aria-current=true]')?.scrollIntoView?.({ block: 'nearest' }); }, [workspace.activeSpectrumId, collapsed]);
@@ -59,16 +59,16 @@ export function ProjectSidebar({ workspace, disabled, collapsed, ratio, onCollap
       {onSave && <button disabled={disabled || saveDisabled} aria-label="Save project" title="Save project" onClick={onSave}><FileActionIcon action="save"/></button>}
       {onSaveAs && <button disabled={disabled || saveDisabled} aria-label="Save project as" title="Save project as… (⌘/Ctrl+Shift+S)" onClick={onSaveAs}><FileActionIcon action="save-as"/></button>}
     </nav></div>
-    {collapsed && <span className="project-rail-count" title={`${spectra.length} spectra`}>{spectra.length}</span>}
+    {collapsed && <span className="project-rail-count" title={`${spectra.length} ${spectra.length === 1 ? 'spectrum' : 'spectra'}`}><span aria-hidden="true">{spectra.length}</span><span className="visually-hidden">{spectra.length} {spectra.length===1?'spectrum':'spectra'}</span></span>}
     <div id="project-browser-content" className="project-sidebar-content" hidden={collapsed}>
       <div className="project-search"><input type="search" aria-label="Find spectrum" placeholder="Find a spectrum…" value={query} onChange={e => setQuery(e.target.value)}/></div>
-      <ProjectSplit ratio={ratio} onChange={onRatio} spectra={<section className="project-spectra-pane" aria-label="Spectra"><div className="project-list-heading"><h2>Spectra <span className="count">{spectra.length}</span></h2><div className="project-list-actions"><button disabled={disabled} aria-label="Add spectra" title="Add one or more spectra" onClick={onImport}>＋</button><button disabled={disabled || !spectra.length} aria-label="Remove spectrum" title="Remove selected spectrum; Undo restores it" onClick={onRemove}>−</button></div></div>
-        <div className="project-spectra-list" ref={list}>{filtered.map(({ spectrum: s, index }) => renamingSpectrumId === s.id ? <div key={s.id} className="spectrum-row name-editing" aria-current={s.id === current.id}><span className="spectrum-row-number">{String(index + 1).padStart(2, '0')}</span><InlineNameEditor name={s.name} label="Spectrum name" rowId={`spectrum-${s.id}`} onCommit={name => onCommitName?.(name)} onCancel={() => onCancelName?.()}/></div> : <button key={s.id} id={`spectrum-${s.id}`} className="spectrum-row" aria-current={s.id === current.id} disabled={disabled} title={`${s.name} · ${s.spectrum.x.length} points · ${s.models.length} models`} onClick={() => onSelect(s.id)} onDoubleClick={() => onRename('spectrum')} onKeyDown={e => {
+      <ProjectSplit ratio={ratio} onChange={onRatio} spectra={<section className="project-spectra-pane" aria-label="Spectra"><div className="project-list-heading"><h2>Spectra <span className="count"><span aria-hidden="true">{spectra.length}</span><span className="visually-hidden">{spectra.length} {spectra.length===1?'spectrum':'spectra'}</span></span></h2><div className="project-list-actions"><button disabled={disabled} aria-label="Add spectra" title="Add one or more spectra" onClick={onImport}>＋</button><button disabled={disabled || !spectra.length} aria-label="Remove spectrum" title="Remove selected spectrum; Undo restores it" onClick={onRemove}>−</button></div></div>
+        <div className="project-spectra-list" ref={list}>{filtered.map(({ spectrum: s, index }) => renamingSpectrumId === s.id ? <div key={s.id} className="spectrum-row name-editing" aria-current={s.id === current.id}><span className="spectrum-row-number">{String(index + 1).padStart(2, '0')}</span><InlineNameEditor name={s.name} label="Spectrum name" rowId={`spectrum-${s.id}`} onCommit={name => onCommitName?.(name)} onCancel={() => onCancelName?.()}/></div> : <button key={s.id} id={`spectrum-${s.id}`} className="spectrum-row" aria-current={s.id === current.id} disabled={disabled} title={`${s.name} · ${s.spectrum.x.length} points · ${s.models.length} ${s.models.length === 1 ? 'model' : 'models'}`} onClick={() => onSelect(s.id)} onDoubleClick={() => onRename('spectrum')} onKeyDown={e => {
           const target = e.key === 'ArrowDown' ? Math.min(filtered.length - 1, filtered.findIndex(v => v.spectrum.id === s.id) + 1) : e.key === 'ArrowUp' ? Math.max(0, filtered.findIndex(v => v.spectrum.id === s.id) - 1) : e.key === 'Home' ? 0 : e.key === 'End' ? filtered.length - 1 : null;
           if (target !== null) { e.preventDefault(); onSelect(filtered[target].spectrum.id); (list.current?.children[target] as HTMLButtonElement)?.focus(); }
-        }}><span className="spectrum-row-number">{String(index + 1).padStart(2, '0')}</span><strong>{s.name}</strong><FitDot model={s.models.find(m => m.id === s.activeModelId)!}/><span className="spectrum-model-count" aria-label={`${s.models.length} models`}>{s.models.length}</span></button>)}{!filtered.length && <p className="no-spectra">{spectra.length ? 'No matching spectra.' : 'No spectra yet.'}</p>}</div>
+        }}><span className="spectrum-row-number">{String(index + 1).padStart(2, '0')}</span><strong>{s.name}</strong><FitDot model={s.models.find(m => m.id === s.activeModelId)!}/><span className="spectrum-model-count" aria-label={`${s.models.length} ${s.models.length === 1 ? 'model' : 'models'}`}>{s.models.length}</span></button>)}{!filtered.length && <p className="no-spectra">{spectra.length ? 'No matching spectra.' : 'No spectra yet.'}</p>}</div>
       </section>} models={children}/>
-      <div className="project-sidebar-footer">{spectra.length} spectra · {spectra.reduce((n, s) => n + s.models.length, 0)} models</div>
+      <div className="project-sidebar-footer">{spectra.length} {spectra.length === 1 ? 'spectrum' : 'spectra'} · {modelCount} {modelCount === 1 ? 'model' : 'models'}</div>
     </div>
 
   </aside>;

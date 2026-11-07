@@ -5,9 +5,35 @@ description: Inspect channel alignment, fit an iron reference, and apply named c
 
 Folding and velocity calibration operate on **raw count channels**. They determine the observations and axis shared by all models of that spectrum. Save the project before revising a calibration used for an important analysis.
 
+## Find calibration first
+
+Open **Fitting options → General → Folding & calibration**. It is the first section in General, above Spectrum model and Background.
+
+- **Wide screen:** use the right panel. If it is hidden, select **Show fitting options** at the right edge of the graph.
+- **Laptop:** choose **Fitting options** above the editor shared with Sites, then **General**.
+- **Tablet or narrow window:** choose the **Fitting options** view, then **General**. Return to **Spectrum** for the larger graph and results.
+
+**Fit options** is the solver tab. Velocity calibration is in **General**. **Calibrate source…**, under Source profile in full-transmission mode, determines the source line shape; it does not calibrate velocity.
+
+![Current General panel with Folding & calibration first and the folding diagnostic available for newly imported almandine raw channels.](../../../assets/screenshots/importing-raw-counts.jpg)
+
+*A newly imported teaching spectrum before fitting. Check or replace this initial preset using your measurement's reference; the shown import scale is not a calibration result.*
+
+## Decide whether the file needs folding
+
+| Your file contains… | Preparation |
+| --- | --- |
+| Raw channels containing both acquisition directions | Enable folding in the calibration preset and inspect the alignment of the two halves |
+| Raw channels already folded by acquisition software | Turn folding off in the preset and apply the appropriate velocity scale |
+| Two columns of calibrated velocity and counts | Keep the supplied axis; raw-channel folding and calibration do not apply |
+
+Folding combines corresponding channels from the two acquisition halves. Whether it is needed depends on what was exported by the acquisition software. Verify that before applying it; do not fold already folded data again.
+
+For a first raw sample, create a preset from the iron standard, save it, then use **Apply to this spectrum** on the sample. Use **Use for new imports** if subsequent raw files should use the same preset. Preset selection, saving, applying, and choosing an import default are separate actions.
+
 ## Inspect folding
 
-For a raw sample, open **Gen → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
+For a raw sample, open **General → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
 
 - Original channels and the chosen center.
 - Reversed-left and right counts overlaid.
@@ -26,7 +52,7 @@ Click a symmetry bar to inspect another center, or enter a center manually. Comp
 
 ## Fit an α-Fe velocity reference
 
-1. Under **Gen → Folding & calibration**, use + to create a preset from an α-Fe reference.
+1. Under **Fitting options → General → Folding & calibration**, select + (**Add calibration preset**) → **From reference file…** to create a preset from an α-Fe reference.
 2. Load the reference as one column of counts, or use the current raw spectrum if it is the standard. Loading a reference here does not replace the sample.
 3. Enable **Fold reference channels** for an unfolded reference. Leave it off for an already folded spectrum.
 4. Select the acquisition's **linear or sinusoidal drive** and enter an approximate initial maximum velocity.
@@ -64,7 +90,7 @@ Automatic sample fold centers are found afresh for each import. They do not simp
 
 ## Reverse a sample's velocity direction
 
-Use **Gen → Velocity direction → Reverse velocity axis** when the acquisition requires the opposite direction, as in the [SMS exercise](/MossA/manual/tutorials/sms/). It negates the complete calibrated velocity, including the applied center-shift correction, and preserves count/velocity pairs while ordering the result by increasing velocity.
+Use **General → Velocity direction → Reverse velocity axis** when the acquisition requires the opposite direction, as in the [SMS exercise](/MossA/manual/tutorials/sms/). It negates the complete calibrated velocity, including the applied center-shift correction, and preserves count/velocity pairs while ordering the result by increasing velocity.
 
 The direction belongs to the selected spectrum, applies to all its models, and survives later folding or recalibration. Other spectra and import defaults retain their own settings. Changing it invalidates that spectrum's completed fits and can be undone. Site starting values are not transformed; inspect them before refitting.
 

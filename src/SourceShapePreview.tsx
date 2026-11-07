@@ -1,7 +1,9 @@
+import { useScreenPlotText } from './useScreenPlotText';
 import { centeredGaussians, gaussianDensity } from './source-profile';
 import type { Project } from './types';
 
 export function SourceShapePreview({ project }: { project: Project }) {
+  const text = useScreenPlotText(600,145);
   const gs = project.source_gaussians ? centeredGaussians(project.source_gaussians) : null;
   const range = gs ? Math.max(...gs.map(g => Math.abs(g.center) + 2 * g.fwhm)) : project.source_fwhm * 3;
   const values = Array.from({ length: 401 }, (_, i) => {
@@ -12,7 +14,7 @@ export function SourceShapePreview({ project }: { project: Project }) {
   const peak = Math.max(...values);
   const path = values.map((y, i) => `${i ? 'L' : 'M'}${40 + i * 1.3},${108 - 85 * y / peak}`).join(' ');
   return <div className="source-shape-preview">
-    <svg viewBox="0 0 600 145" role="img" aria-label="Complete source response profile, centered at zero velocity">
+    <svg ref={text.ref} style={text.style} viewBox="0 0 600 145" role="img" aria-label="Complete source response profile, centered at zero velocity">
       <title>Complete source response profile</title>
       <path d="M40,18 V108 H560" fill="none" stroke="currentColor" opacity=".35"/>
       <path d="M300,18 V108" stroke="currentColor" opacity=".15"/>

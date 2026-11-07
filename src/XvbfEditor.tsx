@@ -1,5 +1,6 @@
 import { useEffect,useId,useRef,useState } from 'react';
 import { Numeric } from './Numeric';
+import { SiteOptionsPicker } from './SiteOptionsPicker';
 import { JointDistributionPlot,DistributionPlot } from './XvbfPlots';
 import { addDistribution,editDistribution,enableXvbf,removeDistribution } from './xvbf';
 import { formatResult,formatStd,uncertainty } from './results';
@@ -7,17 +8,18 @@ import type { FitSummary } from './session';
 import type { DistributionComponent,Project,Site,Xvbf } from './types';
 
 type Props={project:Project;selected:number;result:FitSummary|null;onSite:(site:Site)=>void};
-function errorText(project:Project,result:FitSummary|null,id:string,scale=1) {const e=uncertainty(project,result,id);return e.state==='fixed'?'fixed':`± ${formatStd(e.error==null?null:e.error*scale)}`;}
-export function XvbfEditor({project,selected,result,onSite,onCorrelation}:{onCorrelation?:()=>void}&Props) {
-  const site=project.sites[selected],model=site?.xvbf,[error,setError]=useState(''),[view,setView]=useState<'cs'|'qs'|'corr'>('cs'),id=useId();
+function errorText(project:Project,result:FitSummary|null,id:string,scale=1) {const e=uncertainty(project,result,id);return e.state==='fixed'?'fixed':e.error==null?'(—)':`std ${formatStd(e.error*scale)}`;}
+export function XvbfEditor({project,selected,result,onSite,onCorrelation,onSelect,initialView='cs'}:{onCorrelation?:()=>void;onSelect?:(index:number)=>void;initialView?:'cs'|'qs'|'corr'}&Props) {
+  const site=project.sites[selected],model=site?.xvbf,[error,setError]=useState(''),[view,setView]=useState<'cs'|'qs'|'corr'>(initialView),id=useId();
   const act=(change:()=>Site)=>{try{onSite(change());setError('');}catch(e){setError(String(e));}};
+  useEffect(()=>setError(''),[selected]);
   const views=['cs','qs','corr'] as const;
   return <section className="option-section xvbf-editor">{!site?<p className="xvbf-note">Select a site.</p>:<>
-    <label className="check-label"><input type="checkbox" checked={!!model} disabled={!model&&(site.kind!=='Doublet'||site.profile!=='Lorentzian')} onChange={e=>act(()=>{if(e.target.checked)return enableXvbf(site);const{xvbf:_old,...normal}=site;return normal;})}/>Enable for selected site</label>
+    <div className="xvbf-enable-row"><label className="check-label" title="Enable xVBF for the selected site"><input type="checkbox" aria-label="Enable for selected site" checked={!!model} disabled={!model&&(site.kind!=='Doublet'||site.profile!=='Lorentzian')} onChange={e=>act(()=>{if(e.target.checked)return enableXvbf(site);const{xvbf:_old,...normal}=site;return normal;})}/>xVBF</label><SiteOptionsPicker sites={project.sites} selected={selected} onSelect={onSelect}/></div>
     {!model&&<p className="xvbf-note">Available for Lorentzian doublets.</p>}
     {model&&<><div className="xvbf-sidebar-tabs" role="tablist" aria-label="xVBF distribution views">{views.map((value,index)=><button key={value} type="button" role="tab" id={`${id}-${value}`} aria-selected={view===value} aria-controls={`${id}-view`} tabIndex={view===value?0:-1} onClick={()=>setView(value)} onKeyDown={e=>{let next=index;if(e.key==='ArrowRight')next=(index+1)%3;else if(e.key==='ArrowLeft')next=(index+2)%3;else if(e.key==='Home')next=0;else if(e.key==='End')next=2;else return;e.preventDefault();setView(views[next]);e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();}}>{value==='corr'?'Corr':value.toUpperCase()}</button>)}</div>
       <div className="xvbf-sidebar-view" role="tabpanel" id={`${id}-view`} aria-labelledby={`${id}-${view}`}>
-      {view!=='corr'?<XvbfDistributions project={project} selected={selected} result={result} onSite={onSite} view={view}/>:<div className="xvbf-correlation-panel">
+      {view!=='corr'?<XvbfDistributions key={selected} project={project} selected={selected} result={result} onSite={onSite} view={view}/>:<div className="xvbf-correlation-panel">
         <div className="param-row"><label title="Correlation between CS and QS broadening; −1 to 1">Coupling δ</label><Numeric label="xVBF coupling" value={model.delta.value} onChange={v=>act(()=>({...site,xvbf:{...model,delta:{...model.delta,value:v!}}}))}/><input type="checkbox" aria-label="Fit xVBF coupling" checked={model.delta.fit} onChange={e=>act(()=>({...site,xvbf:{...model,delta:{...model.delta,fit:e.target.checked}}}))}/></div><div className="xvbf-coupling-std">{errorText(project,result,`site:${selected}:delta`)}</div>
         <div className="xvbf-correlation-heading"><h3>CS–QS correlation</h3><button type="button" aria-label="Enlarge correlation plot" title="Enlarge correlation plot" disabled={!onCorrelation} onClick={onCorrelation}>↗</button></div>
         <button type="button" className="xvbf-correlation-open" aria-label="Open joint CS–QS distribution" disabled={!onCorrelation} onClick={onCorrelation}><JointDistributionPlot model={model} compact/></button>

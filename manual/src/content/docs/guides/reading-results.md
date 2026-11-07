@@ -33,10 +33,12 @@ The results table reports approximate **1 std** from a local-Jacobian covariance
 
 | Display | Meaning |
 | --- | --- |
-| A value with ± std | A symmetric local uncertainty is available |
+| `0.12044(33)` | A value of 0.12044 with approximate 1 std of 0.00033 |
 | **Fixed** | The parameter was held fixed |
-| **± —** | An uncertainty is unavailable; hover for the reason |
-| **Fit for errors** | There is no current completed fit with applicable uncertainties |
+| **(—)** | An uncertainty is unavailable; hover for the reason |
+| **Fit to estimate std** | There is no current completed fit with applicable uncertainties |
+
+Values and std share one line. Parentheses give two significant uncertainty digits in the final quoted value digits; the value is rounded to match. For example, `33.1005(24)` means 33.1005 ± 0.0024. Scientific notation applies the exponent to both the value and parenthetical std. Hovering shows the stored value and the uncertainty explanation. The compact display does not change stored values or CSV precision. Screen-reader cell descriptions expand the uncertainty as “plus or minus.” Select **Results** beside **Fit spectrum** to inspect values and std in the dock below the graph. The editor stays at full height. Drag the divider to resize the table, or select **Expand results** for a full-width comparison; Escape closes that view. Fit status stays visible beside these controls; hiding the table leaves no separate results strip. Columns such as Lorentz mix appear only when at least one site uses that parameter.
 
 Active bounds and unidentifiable parameter directions prevent a suitable symmetric uncertainty. Strong parameter correlations can make values poorly determined even when the fitted curve looks convincing. Linked-parameter errors propagate through their proportional links.
 
@@ -61,3 +63,9 @@ An intensity fraction is not automatically a mineral abundance, mass fraction, o
 ## Record the fit status
 
 Read warnings as part of the result. Reaching an iteration limit, rank deficiency, and a parameter at a bound are distinct problems. A numerical stopping code is not silently relabeled as convergence. Keep the completed project and its provenance alongside exported tables and figures.
+
+When std is unavailable, `(—)` is a placeholder rather than a numerical uncertainty. Fixed parameters remain labeled **fixed**. Fit the current model to estimate std; changing only a site’s name or color preserves the completed fit.
+
+Warnings remain visible even when Results is closed. The warning count opens all engine diagnostics directly. A rank-deficient fit displays **std unavailable · rank deficient** above the table; warnings affecting only some parameters retain the parenthetical std key. The expanded table fits its content until the viewport requires scrolling, with all scientific columns retained.
+
+The warning dialog lists fitted or linked parameters whose symmetric std is unavailable, including xVBF fields and background coefficients. **Inspect parameter** opens the relevant editor directly. This list excludes fixed parameters; it does not infer which underlying constraint is active.

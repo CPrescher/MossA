@@ -30,7 +30,7 @@ test('first Save chooses a file, later Save reuses it, and Save As selects a new
     await files.save(document, 'Renamed project.mossa', 'copy', true);
     assert.equal(env.calls.at(-1)!.args.target, 'first'); assert.equal(env.calls.at(-1)!.args.saveAs, true);
     await files.save(document, 'Renamed project.mossa', 'copy edited');
-    assert.equal(env.calls.at(-1)!.args.target, 'copy'); assert.equal(env.calls.at(-1)!.args.saveAs, false);
+    assert.equal(files.filename(document),'copy.mossa');assert.equal(env.calls.at(-1)!.args.target, 'copy'); assert.equal(env.calls.at(-1)!.args.saveAs, false);
   } finally { env.close(); }
 });
 
@@ -40,7 +40,7 @@ test('canceling or failing Save As retains the current target; canceling the fir
     assert.equal(await files.save(document, 'Untitled.mossa', '{}'), false);
     assert.equal(await files.save(document, 'Untitled.mossa', '{}'), false);
     assert.equal(env.calls.at(-1)!.args.target, null);
-    files.opened(document, { id: 'opened', filename: 'input.mossa' });
+    files.opened(document, { id: 'opened', filename: 'input.mossa' });assert.equal(files.filename(document),'input.mossa');
     assert.equal(await files.save(document, 'input.mossa', '{}', true), false);
     env.answer(new Error('Disk full'));
     await assert.rejects(files.save(document, 'input.mossa', '{}', true), /Disk full/);

@@ -8,7 +8,7 @@ export function parameterValue(project: Project, evaluation: Evaluation | null, 
   const p = project.sites[site].params[key];
   return p.link ? evaluation?.parameters?.[`site:${site}:${key}`] ?? resolveValue(project, `site:${site}:${key}`, new Set()) : p.value;
 }
-function parameterAt(project: Project, id: string): Parameter | undefined {
+export function parameterAt(project: Project, id: string): Parameter | undefined {
   const bits = id.split(':');
   if(bits[0]==='site'&&project.sites[Number(bits[1])]?.xvbf) { const x=project.sites[Number(bits[1])].xvbf!;if(['cs','qs'].includes(bits[2]))return undefined;if(bits[2]==='delta')return x.delta; if(bits.length===5) {const c=(bits[2]==='csd'?x.cs:x.qs)[Number(bits[3])];return c?.[bits[4] as 'center'|'width'|'weight'];} }
   return bits[0] === 'site' ? project.sites[Number(bits[1])]?.params[bits[2]] : bits[0] === 'bkg' ? project.background[Number(bits[1])] : undefined;
@@ -40,4 +40,31 @@ export function formatFraction(value: number | null, error: number | null) {
   if (value > 0 && value < .01) return formatResult(value,3);
   const decimals = error && error > 0 ? Math.max(2,Math.min(6,1-Math.floor(Math.log10(error)))) : 2;
   return value.toFixed(decimals);
+}
+
+// Parentheses express an approximate 1 std in the last quoted value digits.
+// Round both together to two significant uncertainty digits, keeping trailing zeros.
+export function formatParenthetical(value:number|null|undefined, std:number|null|undefined):{value:string; suffix:string} {
+  const plain = (v:number) => formatResult(v).replaceAll(',','');
+  if(value == null || !Number.isFinite(value)) return {value:'—',suffix:''};
+  if(std == null || !Number.isFinite(std) || std < 0) return {value:plain(value),suffix:''};
+  if(std === 0) return {value:plain(value),suffix:'(0)'};
+  let place = Math.floor(Math.log10(std)) - 1;
+  let digits = Math.round(std / 10 ** place);
+  if(digits >= 100) { place++; digits = Math.round(std / 10 ** place); }
+  const magnitude = Math.max(value === 0 ? -Infinity : Math.floor(Math.log10(Math.abs(value))), Math.floor(Math.log10(std)));
+  const scientific = place > 0 || place < -8 || magnitude >= 9;
+  let exponent = scientific ? magnitude : 0;
+  let decimals = Math.max(0, exponent - place);
+  if(decimals > 14 || !Number.isFinite(value / 10 ** exponent)) return {value:plain(value),suffix:` ± ${formatStd(std)}`};
+  if(scientific && Math.abs(Number((value / 10 ** exponent).toFixed(decimals))) >= 10) { exponent++; decimals = exponent - place; }
+  let displayed = (value / 10 ** exponent).toFixed(decimals);
+  if(Number(displayed) === 0) displayed = (0).toFixed(decimals);
+  return {value:displayed,suffix:`(${digits})${scientific ? `e${exponent}` : ''}`};
+}
+
+export function resultCellLabel(value:number|null|undefined, std:number|null|undefined, reason:string) {
+  const formatted = formatParenthetical(value,std);
+  const exponent = formatted.suffix.match(/e-?\d+$/)?.[0] ?? '';
+  return std != null ? `${formatted.value}${exponent}, plus or minus ${formatStd(std)}, approximate 1 std` : `${formatted.value}. ${reason}`;
 }

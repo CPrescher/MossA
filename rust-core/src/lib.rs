@@ -51,6 +51,8 @@ pub struct Parameter {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Site {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
     pub kind: String,
     pub profile: String,
     pub params: BTreeMap<String, Parameter>,

@@ -17,8 +17,8 @@ test('solid sites draw deepest first, retain their own names/colors, and include
   const { project, evaluation, options } = fixture(), before = JSON.stringify({ project, evaluation });
   options.sites[1].name = '<Fe & "oxide">';
   const doc = documentSvg(renderFigure(project, evaluation, options, true));
-  const paths = [...doc.querySelectorAll('path[data-site-index]')];
-  assert.deepEqual(paths.map(p => p.getAttribute('data-site-index')), ['1', '0']);
+  const paths = [...doc.querySelectorAll('path[data-site-fill]')];
+  assert.deepEqual(paths.map(p => p.getAttribute('data-site-fill')), ['1', '0']);
   assert.equal(paths[0].getAttribute('fill'), options.sites[1].color);
   assert.ok(paths.every(p => p.getAttribute('d')!.endsWith('Z')));
   assert.ok(doc.documentElement.textContent!.includes('<Fe & "oxide">'));
@@ -177,4 +177,61 @@ test('title is centered over the axes and explicit inside and above legends rema
     assert.equal(Number(title.getAttribute('x')), Number(axes.getAttribute('x')) + Number(axes.getAttribute('width')) / 2);
     assert.equal(doc.querySelector('[data-figure-legend]')!.getAttribute('data-figure-legend'), position);
   }
+});
+
+test('optional legend fractions use resolved intensities and all sites, preserve math, and never mutate the model', () => {
+ const {project,evaluation,options}=fixture();
+ options.order='custom';options.legend='above';options.sites[0].name='\\alpha_{Fe}';
+ project.sites[0].params.intensity.value=1;project.sites[1].params.intensity.link={target:'site:0:intensity',factor:3};
+ evaluation.parameters['site:1:intensity']=3;
+ const before=JSON.stringify({project,evaluation});
+ assert.equal(options.legendFractions,false);
+ assert.doesNotMatch(documentSvg(renderFigure(project,evaluation,options,true)).querySelector('[data-figure-legend]')!.textContent!,/%/);
+ options.legendFractions=true;
+ let doc=documentSvg(renderFigure(project,evaluation,options,true));
+ const labels=()=>[...doc.querySelectorAll('[data-scientific-label]')].map(label=>label.getAttribute('aria-label'));
+ assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0%','Fe²⁺ · 75.0%']);
+ assert.ok(doc.querySelector('[data-scientific-label] svg path'));
+ assert.match(doc.querySelector('metadata')!.textContent!,/intensity fractions of all model sites/);
+ options.sites[1].visible=false;doc=documentSvg(renderFigure(project,evaluation,options,true));
+ assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0%']);
+ assert.equal(JSON.stringify({project,evaluation}),before);
+ project.sites[0].params.intensity.value=0;evaluation.parameters['site:1:intensity']=0;
+ assert.match(documentSvg(renderFigure(project,evaluation,options,true)).querySelector('[data-scientific-label]')!.getAttribute('aria-label')!,/—%/);
+});
+
+test('legend markers center against first-line label extents for plain and tall math labels in every placement',()=>{
+ const {project,evaluation,options}=fixture();options.order='custom';options.legendDataFit=true;
+ options.sites[0].name='Plain';options.sites[1].name='$\\frac{a_1}{b^2}$';
+ for(const legend of ['above','below','right','top-left','top-right','bottom-left','bottom-right'] as const){
+  options.legend=legend;
+  const doc=documentSvg(renderFigure(project,evaluation,options,true));
+  for(const item of doc.querySelectorAll('[data-legend-item]')){
+   const center=Number(item.getAttribute('data-marker-center')),label=item.querySelector('[data-scientific-label]')!;
+   const first=label.firstElementChild!;
+   if(first.tagName==='svg')assert.ok(Math.abs(Number(first.getAttribute('y'))+Number(first.getAttribute('height'))/2-center)<.002);
+   else assert.ok(Math.abs(Number(first.getAttribute('y'))-3.3-center)<.002);
+  }
+ }
+});
+
+test('unfitted legend percentages are visibly qualified and tiny positive fractions retain their significance',()=>{
+ const {project,evaluation,options}=fixture();options.legendFractions=true;project.sites[0].params.intensity.value=.0001;project.sites[1].params.intensity.value=100;
+ const doc=documentSvg(renderFigure(project,evaluation,options,false));
+ assert.match([...doc.querySelectorAll('text')].map(node=>node.textContent).join(' '),/unfitted starting parameters/);
+ assert.ok([...doc.querySelectorAll('[data-scientific-label]')].some(node=>/0.0001%/.test(node.getAttribute('aria-label')!)));
+});
+
+test('transparent fills retain opaque outlines, and outlines-only has no fill or closing baseline',()=>{
+ const {project,evaluation,options}=fixture();options.style='transparent';
+ let doc=documentSvg(renderFigure(project,evaluation,options,true));
+ assert.equal(doc.querySelectorAll('[data-site-fill][fill-opacity="0.22"]').length,2);
+ for(const curve of doc.querySelectorAll('[data-site-index]')){assert.equal(curve.getAttribute('fill'),'none');assert.equal(curve.hasAttribute('opacity'),false);assert.ok(!curve.getAttribute('d')!.endsWith('Z'));}
+ options.style='lines';doc=documentSvg(renderFigure(project,evaluation,options,true));assert.equal(doc.querySelectorAll('[data-site-fill]').length,0);assert.equal(doc.querySelectorAll('[data-site-index]').length,2);
+});
+
+test('chosen transparency affects fills only and rejects invalid percentages',()=>{
+ const {project,evaluation,options}=fixture();options.style='transparent';
+ for(const opacity of [0,.35,1]){options.fillOpacity=opacity;const doc=documentSvg(renderFigure(project,evaluation,options,true));assert.ok([...doc.querySelectorAll('[data-site-fill]')].every(node=>Number(node.getAttribute('fill-opacity'))===opacity));assert.ok([...doc.querySelectorAll('[data-site-index]')].every(node=>!node.hasAttribute('opacity')&&!node.hasAttribute('stroke-opacity')));}
+ options.fillOpacity=NaN;assert.throws(()=>renderFigure(project,evaluation,options,true),/transparency/);
 });
