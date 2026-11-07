@@ -1,0 +1,55 @@
+{
+  "purpose": "Measured teaching data supplied with the Freiburg Mössbauer practical; browser tutorial adaptation authorized by the course instructor.",
+  "sources": [
+    "2026-02-02 GA - Übung - Mößbauer.pdf, section 4",
+    "MossA tutorial conv.pdf, steps 1–11"
+  ],
+  "transformation": "Filenames simplified for downloads; file bytes unchanged. No trimming, normalization, or background subtraction of raw measurements.",
+  "files": [
+    {
+      "original": "MossA tutorial/conv/Alm Fe-Foil.dat",
+      "download": "almandine-iron-foil.dat",
+      "sha256": "63787a35f416444f415322f540217a6c8b48914f934ec9c8abd64522b8f5039d",
+      "channels": 512
+    },
+    {
+      "original": "MossA tutorial/conv/Alm sample.dat",
+      "download": "almandine.dat",
+      "sha256": "245d0f1df1a92cc0ffd46eb507a4ae6d780cae23704a3ef5aa2ed62bfba4fc46",
+      "channels": 512
+    },
+    {
+      "original": "cpx Fe-foil.dat",
+      "download": "pyroxene-iron-foil.dat",
+      "sha256": "052bbf07cd103a732a0c107f038edcda2c0b427f626f1fabd41720239fac4b85",
+      "channels": 514
+    },
+    {
+      "original": "augite.dat",
+      "download": "augite.dat",
+      "sha256": "1d352bbfffebe8061f1ec49b41eac8e5faad71df3a7c01946699cd4274ae6b87",
+      "channels": 514
+    },
+    {
+      "original": "omphacite.dat",
+      "download": "omphacite.dat",
+      "sha256": "c93cd13e343f21142caf1650210ca6b701fdb71425f666afb9eac293460cda19",
+      "channels": 514
+    }
+  ],
+  "analysis": {
+    "referenceFieldT": 33,
+    "manualFoldCenter": 256.5,
+    "drive": "linear",
+    "weighting": "unweighted",
+    "magneticConstants": "fe57-iaea-2019-2020-codata2022",
+    "almandineCalibration": {
+      "max": 5.021549317636565,
+      "shift": -0.10859109899772898
+    },
+    "pyroxeneCalibration": {
+      "max": 5.032290668900297,
+      "shift": -0.13014475323832086
+    }
+  }
+}

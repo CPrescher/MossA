@@ -1,0 +1,20 @@
+[package]
+name = "mossa-desktop"
+version = "2.0.0-preview.16"
+description = "Offline desktop application for MossA Mössbauer analysis"
+authors = ["Clemens Prescher"]
+edition = "2021"
+license = "MIT"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tempfile = "3"
+url = "2"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

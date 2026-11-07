@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { decodeSession, readSession, writeSession, SESSION_KEY, defaultLayout, summarizeFit, type Session } from '../src/session';
 import { demo } from '../src/demo';
-export function fixture(): Session { return { version: 1, snapshot: { project: demo(), raw: Array.from({length:16},(_,i)=>i), cal:{max:10,shift:.12,folding:true,sinusoidal:false,center:8.5},filename:'my spectrum',selected:1 }, layout: {...defaultLayout,resultsHeight:284,sitesHeight:156,tab:'Bnds'},fit:null,elapsed:null }; }
+import { nuclearConstants } from '../src/nuclear-constants.mjs';
+export function fixture(): Session { return { version: 1, snapshot: { project: demo(nuclearConstants()), raw: Array.from({length:16},(_,i)=>i), cal:{max:10,shift:.12,folding:true,sinusoidal:false,center:8.5},filename:'my spectrum',selected:1 }, layout: {...defaultLayout,resultsHeight:284,sitesHeight:156,tab:'Bnds'},fit:null,elapsed:null }; }
 test('local session round-trips full-precision data, preprocessing, selection, and layout', () => {
   const session=fixture(); session.snapshot.project.sites[1].params.cs.value=.123456789123;
   const memory=new Map<string,string>(), store={getItem:(key:string)=>memory.get(key)??null,setItem:(key:string,value:string)=>{memory.set(key,value);}};

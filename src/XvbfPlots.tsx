@@ -10,9 +10,9 @@ export function DistributionPlot({components,label}:{components:DistributionComp
   const valid=[lo,hi,height,...sum].every(Number.isFinite);
   return <svg id={`xvbf-${label.toLowerCase()}-plot`} className="xvbf-distribution-plot" width="440" height="151" viewBox="0 0 440 151" role="img" aria-label={`${label} distribution`}><title>{`${label} marginal of the joint CS–QS distribution; widths use MATLAB pdd_calc's sigma convention`}</title><line x1="36" x2="424" y1="111" y2="111" stroke="#8b9ba4"/>{valid&&<>{curves.map((y,i)=>components[i].width.value>0?<path key={i} d={path(y)} fill="none" stroke="#78aaa5" strokeWidth="1.2"/>:components[i].weight.value>0?<line key={i} x1={xx(components[i].center.value)} x2={xx(components[i].center.value)} y1="16" y2="111" stroke="#78aaa5"/>:null)}<path d={path(sum)} className="xvbf-marginal-total" fill="none" stroke="#3b645f" strokeWidth="2"/>{ticks.values.map((x:number)=><text key={x} className="xvbf-plot-label" x={xx(x)} y="128" textAnchor="middle" fontSize="11" fill="#657582">{formatTick(x,ticks.step)}</text>)}</>}<text className="xvbf-plot-label" x="230" y="146" textAnchor="middle" fontSize="11" fill="#657582">{label} (mm/s)</text></svg>;
 }
-export function JointDistributionPlot({model,id='xvbf-correlation-plot',large=false}:{model:Xvbf;id?:string;large?:boolean}) {
+export function JointDistributionPlot({model,id='xvbf-correlation-plot',large=false,compact=false}:{model:Xvbf;id?:string;large?:boolean;compact?:boolean}) {
   const gradient=useId().replace(/[^a-zA-Z0-9_-]/g,''),data=useMemo(()=>densityGrid(model,large?120:64,large?100:56),[model,large]);
-  const width=large?760:320,height=large?500:292,ticksX=niceTicks(...data.cs,large?6:3),ticksY=niceTicks(...data.qs,large?6:4);
+  const width=large?760:320,height=large?500:compact?212:292,ticksX=niceTicks(...data.cs,large?6:3),ticksY=niceTicks(...data.qs,large?6:4);
   const left=Math.max(large?65:53,29+Math.max(0,...ticksY.values.map((v:number)=>formatTick(v,ticksY.step).length))*7),right=width-25,top=18,bottom=height-66,w=right-left,h=bottom-top;
   const xx=(v:number)=>left+(v-data.cs[0])/(data.cs[1]-data.cs[0])*w,yy=(v:number)=>bottom-(v-data.qs[0])/(data.qs[1]-data.qs[0])*h;
   const singular=data.pairs.filter(p=>p.singular),regular=data.pairs.some(p=>!p.singular);

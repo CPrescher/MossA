@@ -1,11 +1,13 @@
+import type { NuclearConstants } from './nuclear-constants.mjs';
 export type Parameter = { value: number; fit: boolean; min: number | null; max: number | null; link?: { target: string; factor: number } | null };
 export type DistributionComponent = { center: Parameter; width: Parameter; weight: Parameter };
 export type Xvbf = { delta: Parameter; cs: DistributionComponent[]; qs: DistributionComponent[] };
 export type Site = { name: string; kind: 'Singlet' | 'Doublet' | 'Sextet'; profile: 'Lorentzian' | 'Gaussian' | 'PseudoVoigt' | 'LorSquared'; params: Record<string, Parameter>; xvbf?: Xvbf };
-export type Project = { spectrum: { x: number[]; y: number[] }; sites: Site[]; background: Parameter[]; mode: 'thin' | 'transmission'; source_fwhm: number; source_squared: boolean; weighting: 'unweighted' | 'counts'; max_iterations: number };
+export type SourceGaussian = { center: number; fwhm: number; weight: number };
+export type Project = { spectrum: { x: number[]; y: number[] }; sites: Site[]; background: Parameter[]; mode: 'thin' | 'transmission'; source_fwhm: number; source_squared: boolean; source_gaussians?: SourceGaussian[]; weighting: 'unweighted' | 'counts'; max_iterations: number; nuclear_constants?: NuclearConstants; search_starts?: number };
 export type Evaluation = { parameters: Record<string, number>; y: number[]; background: number[]; components: number[][]; residual: number[]; sse: number; objective: number };
-export type FitResult = { project: Project; evaluation: Evaluation; errors: Record<string, number | null>; intensity_fractions?: { value: number | null; error: number | null }[]; iterations: number; converged: boolean; termination: string; free_parameters: number; dof: number; rank: number; reduced_objective: number; warnings: string[] };
-export type FitProgress = { project: Project; evaluation: Evaluation; iteration: number; elapsed_ms: number };
+export type FitResult = { project: Project; evaluation: Evaluation; errors: Record<string, number | null>; intensity_fractions?: { value: number | null; error: number | null }[]; iterations: number; converged: boolean; termination: string; free_parameters: number; dof: number; rank: number; reduced_objective: number; stationarity?: number | null; warnings: string[]; search?: { requested: number; completed: number; best_start: number; rejected_candidates: number; failed_starts: number; objectives: number[]; total_iterations: number } };
+export type FitProgress = { project: Project; evaluation: Evaluation; iteration: number; elapsed_ms: number; search_start?: number; search_starts?: number };
 export const labels: Record<string, string> = { cs: 'CS', fwhm: 'FWHM', intensity: 'Intensity', qs: 'QS', bhf: 'BHF', a12: 'A12', a13: 'A13', mix: 'L fraction' };
 export const colors = ['#168a87', '#c47735', '#8261a9', '#5684b3', '#a85e78', '#6c8f42'];
 export function keys(site: Site) {

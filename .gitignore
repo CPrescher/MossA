@@ -4,5 +4,10 @@ rust-core/target/
 src/wasm/
 test-results/
 playwright-report/
+manual/.astro/
 .DS_Store
 *.tsbuildinfo
+
+dist-desktop/
+src-tauri/target/
+src-tauri/gen/

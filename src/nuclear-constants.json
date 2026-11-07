@@ -1,0 +1,14 @@
+{
+  "mossa-legacy-rounded": {
+    "coefficients": [0.1613, 0.0934, 0.0255],
+    "description": "Original MossA MATLAB coefficients, mm/s/T, outer/middle/inner pairs"
+  },
+  "fe57-iaea-2019-2020-codata2022": {
+    "coefficients": [0.1612785758490726, 0.09338354131598467, 0.02548850678289673],
+    "ground_moment_muN": 0.09064,
+    "excited_moment_muN": -0.15531,
+    "transition_energy_eV": 14412.497,
+    "nuclear_magneton_J_T": 5.0507837393e-27,
+    "sources": ["https://doi.org/10.61092/iaea.yjpc-cns6", "https://doi.org/10.61092/iaea.1p48-p6c6", "https://doi.org/10.1107/S0909049512022339", "https://physics.nist.gov/cuu/Constants/"]
+  }
+}

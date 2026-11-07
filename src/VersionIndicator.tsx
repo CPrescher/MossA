@@ -45,15 +45,16 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
   }, [check, deployed]);
 
   const label = `v${build.version} · ${build.commit?.slice(0, 7) ?? 'unknown'}${build.dirty ? ' (modified)' : ''}`;
-  const message = !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available' : status === 'unavailable' ? 'Could not check for updates' : 'Checking latest deployment…';
+  const desktop = build.channel === 'desktop';
+  const message = desktop ? 'Offline desktop app' : !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available' : status === 'unavailable' ? 'Could not check for updates' : 'Checking latest deployment…';
   const title = `${label}\n${build.builtAt ? `Built ${build.builtAt}\n` : ''}${message} — click for changelog`;
   return <div className={`version-indicator ${deployed ? status : 'local'}`}>
     <button className="version-button" title={title} aria-label={`${label}. ${message}. Open changelog`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { dialog.current?.showModal(); setOpen(true); void check(); }}>
-      <span className="version-dot" aria-hidden="true"/>{label}{!deployed && ' · local'}{deployed && status === 'update' && <strong>Update available ↻</strong>}
+      <span className="version-dot" aria-hidden="true"/>{label}{!deployed && (desktop ? ' · desktop' : ' · local')}{deployed && status === 'update' && <strong>Update available ↻</strong>}
     </button>
     <dialog className="changelog-dialog" ref={dialog} aria-labelledby="changelog-heading" onClose={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
       <div className="changelog-heading"><h2 id="changelog-heading">What’s new in MossA 2</h2><form method="dialog"><button aria-label="Close changelog">×</button></form></div>
-      <p className="changelog-build" title={build.builtAt ? `Built ${build.builtAt}` : undefined}>Running {label}{!deployed && ' · local'}</p>
+      <p className="changelog-build" title={build.builtAt ? `Built ${build.builtAt}` : undefined}>Running {label}{!deployed && (desktop ? ' · desktop' : ' · local')}</p>
       <div className="changelog-entries">{changelog.map(entry => <section key={entry.version}>
         <h3>v{entry.version}<time dateTime={entry.date}>{entry.date}</time></h3>
         <ul>{entry.changes.map(change => <li key={change}>{change}</li>)}</ul>

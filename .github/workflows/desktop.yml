@@ -1,0 +1,135 @@
+name: Build MossA desktop apps
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mossa2, 'codex/tauri-*']
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'rust-core/**'
+      - 'manual/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'package*.json'
+      - 'vite.config.ts'
+      - 'index.html'
+      - 'LICENSE'
+      - 'THIRD_PARTY_NOTICES.txt'
+      - '.github/workflows/desktop.yml'
+  pull_request:
+    branches: [mossa2]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  RUST_VERSION: 1.99.1
+
+jobs:
+  scientific-tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.12.1
+          cache: npm
+      - name: Set up Rust and WebAssembly
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal --target wasm32-unknown-unknown
+          rustup default "$RUST_VERSION"
+      - run: npm ci
+      - run: npm test
+
+  desktop:
+    needs: scientific-tests
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: app,dmg
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: app,dmg
+          - runner: windows-2022
+            target: x86_64-pc-windows-msvc
+            bundles: nsis,msi
+          - runner: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage,deb
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    env:
+      APPIMAGE_EXTRACT_AND_RUN: '1'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev librsvg2-dev patchelf libfuse2 fonts-dejavu-core
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.12.1
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            manual/package-lock.json
+      - name: Set up Rust and WebAssembly
+        run: |
+          rustup toolchain install "$RUST_VERSION" --profile minimal --target wasm32-unknown-unknown --target ${{ matrix.target }}
+          rustup default "$RUST_VERSION"
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            rust-core/target
+            src-tauri/target
+          key: desktop-${{ matrix.target }}-${{ env.RUST_VERSION }}-${{ hashFiles('rust-core/Cargo.lock', 'src-tauri/Cargo.lock') }}
+          restore-keys: desktop-${{ matrix.target }}-${{ env.RUST_VERSION }}-
+      - name: Install locked JavaScript dependencies
+        run: |
+          npm ci
+          npm ci --prefix manual
+      - name: Build app, offline documentation, and installers
+        run: npm run desktop:build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Test native desktop command boundaries
+        run: cargo test --locked --release --features custom-protocol --manifest-path src-tauri/Cargo.toml --target ${{ matrix.target }}
+      - name: Archive macOS application with permissions and symlinks
+        if: runner.os == 'macOS'
+        run: tar -czf "dist-desktop/MossA-${{ matrix.target }}.app.tar.gz" -C "src-tauri/target/${{ matrix.target }}/release/bundle/macos" MossA.app
+      - name: Upload desktop installers and build identity
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: MossA-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.exe
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.msi
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.AppImage
+            src-tauri/target/${{ matrix.target }}/release/bundle/**/*.deb
+            dist-desktop/*.app.tar.gz
+            dist-desktop/build-info.json
+
+# These are preview artifacts. This workflow does not tag or publish releases.
+# macOS artifacts are ad-hoc signed; public distribution additionally needs
+# Developer ID signing and notarization (see DESKTOP.md).

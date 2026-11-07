@@ -2,12 +2,12 @@
 //! See reference/MossA and PORTING.md for provenance and intentional differences.
 use basin::{
     CostFunction, DenseMatrix, Executor, Jacobian, Observe, ObserverMode, Residual, State,
-    TrustRegionReflective,
+    TrustRegionReflective, BoundedLevenbergMarquardt,
 };
 use nalgebra::{DMatrix, DVector};
 use rustfft::{num_complex::Complex, FftPlanner};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, f64::consts::PI};
+use std::{collections::BTreeMap, f64::consts::PI, sync::OnceLock};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 mod xvbf;
@@ -42,6 +42,45 @@ pub struct Spectrum {
     pub y: Vec<f64>,
 }
 #[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct SourceGaussian {
+    pub center: f64,
+    pub fwhm: f64,
+    pub weight: f64,
+}
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct NuclearConstants {
+    pub id: String,
+    /// Positive outer/middle/inner half-displacements in mm/s/T.
+    pub coefficients: [f64; 3],
+}
+#[derive(Deserialize)]
+struct NuclearDefinition {
+    coefficients: [f64; 3],
+}
+fn deserialize_nuclear_constants<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<NuclearConstants>, D::Error> {
+    // Only an absent field is legacy; explicit null must not silently erase
+    // a convention marker at the raw native/WASM API boundary.
+    NuclearConstants::deserialize(deserializer).map(Some)
+}
+fn magnetic_coefficients(p: &Project) -> Result<[f64; 3], String> {
+    static DEFINITIONS: OnceLock<BTreeMap<String, NuclearDefinition>> = OnceLock::new();
+    let definitions = DEFINITIONS.get_or_init(|| {
+        serde_json::from_str(include_str!("../../src/nuclear-constants.json"))
+            .expect("Bundled nuclear constants must be valid")
+    });
+    match &p.nuclear_constants {
+        None => Ok(definitions["mossa-legacy-rounded"].coefficients),
+        Some(constants) => match definitions.get(&constants.id) {
+            Some(definition) if definition.coefficients == constants.coefficients => {
+                Ok(constants.coefficients)
+            }
+            _ => Err("Unsupported or inconsistent 57Fe nuclear constants.".into()),
+        },
+    }
+}
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Project {
     pub spectrum: Spectrum,
     pub sites: Vec<Site>,
@@ -49,8 +88,17 @@ pub struct Project {
     pub mode: String,
     pub source_fwhm: f64,
     pub source_squared: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_gaussians: Option<Vec<SourceGaussian>>,
     pub weighting: String,
     pub max_iterations: usize,
+    /// Absent in existing projects: preserve the original MATLAB convention.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        deserialize_with = "deserialize_nuclear_constants"
+    )]
+    pub nuclear_constants: Option<NuclearConstants>,
 }
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Evaluation {
@@ -84,6 +132,10 @@ pub struct FitResult {
     pub dof: usize,
     pub rank: usize,
     pub reduced_objective: f64,
+    /// Largest normalized residual-gradient component after projecting outward
+    /// gradients at active bounds. Independent of the solver termination code.
+    #[serde(default)]
+    pub stationarity: Option<f64>,
     pub warnings: Vec<String>,
 }
 
@@ -149,6 +201,10 @@ fn get(s: &Site, key: &str) -> f64 {
     s.params[key].value
 }
 pub fn site_curve(s: &Site, x: f64) -> f64 {
+    // Retained legacy helper for the original MATLAB-expression fixtures.
+    site_curve_with_coefficients(s, x, [0.1613, 0.0934, 0.0255])
+}
+fn site_curve_with_coefficients(s: &Site, x: f64, coefficients: [f64; 3]) -> f64 {
     if s.xvbf.is_some() {
         return xvbf::curve(s, x);
     }
@@ -169,12 +225,13 @@ pub fn site_curve(s: &Site, x: f64) -> f64 {
             let r3 = 1. / get(s, "a13");
             // Preserve sextet.m's normalization and its A12/A13 ratio conventions.
             let a = area * 3. / (6. + 6. * (r2 + r3));
-            line(cs - b * 0.1613 + q, a)
-                + line(cs - b * 0.0934 - q, a * r2)
-                + line(cs - b * 0.0255 - q, a * r3)
-                + line(cs + b * 0.0255 - q, a * r3)
-                + line(cs + b * 0.0934 - q, a * r2)
-                + line(cs + b * 0.1613 + q, a)
+            let [outer, middle, inner] = coefficients;
+            line(cs - b * outer + q, a)
+                + line(cs - b * middle - q, a * r2)
+                + line(cs - b * inner - q, a * r3)
+                + line(cs + b * inner - q, a * r3)
+                + line(cs + b * middle - q, a * r2)
+                + line(cs + b * outer + q, a)
         }
     }
 }
@@ -203,6 +260,43 @@ struct Entry {
     lower: f64,
     upper: f64,
 }
+impl Entry {
+    fn value(&self, p: &Project) -> f64 {
+        if let Some(i) = self.site {
+            return xvbf::parameter(&p.sites[i], &self.key).value;
+        }
+        if self.key == "source_fwhm" {
+            return p.source_fwhm;
+        }
+        if let Some(key) = self.key.strip_prefix("gaussian:") {
+            let (i, field) = key.split_once(':').unwrap();
+            let g = &p.source_gaussians.as_ref().unwrap()[i.parse::<usize>().unwrap()];
+            return match field {
+                "center" => g.center,
+                "fwhm" => g.fwhm,
+                _ => g.weight,
+            };
+        }
+        p.background[self.key.parse::<usize>().unwrap()].value
+    }
+    fn set(&self, p: &mut Project, value: f64) {
+        if let Some(i) = self.site {
+            xvbf::parameter_mut(&mut p.sites[i], &self.key).value = value;
+        } else if self.key == "source_fwhm" {
+            p.source_fwhm = value;
+        } else if let Some(key) = self.key.strip_prefix("gaussian:") {
+            let (i, field) = key.split_once(':').unwrap();
+            let g = &mut p.source_gaussians.as_mut().unwrap()[i.parse::<usize>().unwrap()];
+            match field {
+                "center" => g.center = value,
+                "fwhm" => g.fwhm = value,
+                _ => g.weight = value,
+            };
+        } else {
+            p.background[self.key.parse::<usize>().unwrap()].value = value;
+        }
+    }
+}
 #[derive(Clone)]
 struct Prepared {
     project: Project,
@@ -216,9 +310,25 @@ struct Prepared {
     // Precomputed source Fourier transform, shared by all model evaluations.
     source_fft: Option<Vec<Complex<f64>>>,
     source_calibration: bool,
+    magnetic_coefficients: [f64; 3],
     simplexes: Vec<xvbf::Simplex>,
 }
 fn valid(p: &Project) -> Result<(), String> {
+    if let Some(gs) = &p.source_gaussians {
+        if gs.is_empty()
+            || gs.len() > 3
+            || gs.iter().any(|g| {
+                !g.center.is_finite()
+                    || g.center.abs() > 5.
+                    || !g.fwhm.is_finite()
+                    || !(0.03..=5.).contains(&g.fwhm)
+                    || !g.weight.is_finite()
+                    || !(0.001..=100.).contains(&g.weight)
+            })
+        {
+            return Err("Gaussian source requires 1–3 components, centers inside ±5 mm/s, FWHM 0.03–5 mm/s, and positive relative weights 0.001–100.".into());
+        }
+    }
     let n = p.spectrum.x.len();
     if n < 8 || n > 20000 || p.spectrum.y.len() != n {
         return Err("Provide 8–20,000 paired spectrum points.".into());
@@ -274,6 +384,7 @@ impl Prepared {
     }
     fn with_source_calibration(p: &Project, source_calibration: bool) -> Result<Self, String> {
         valid(p)?;
+        let magnetic_coefficients = magnetic_coefficients(p)?;
         if source_calibration
             && (p.mode != "transmission"
                 || p.sites.len() != 1
@@ -290,7 +401,30 @@ impl Prepared {
             return Err("Source calibration requires one Lorentzian singlet with fixed absorber FWHM, a quadratic background, and unweighted transmission fitting.".into());
         }
         let mut entries = Vec::new();
-        if source_calibration {
+        if source_calibration && p.source_gaussians.is_some() {
+            for (i, g) in p.source_gaussians.as_ref().unwrap().iter().enumerate() {
+                for (field, value, lo, hi) in [
+                    ("fwhm", g.fwhm, 0.03, 5.),
+                    ("center", g.center, -5., 5.),
+                    ("weight", g.weight, 0.001, 100.),
+                ] {
+                    entries.push(Entry {
+                        id: format!("source:{i}:{field}"),
+                        param: Parameter {
+                            value,
+                            fit: field == "fwhm" || i > 0,
+                            min: None,
+                            max: None,
+                            link: None,
+                        },
+                        site: None,
+                        key: format!("gaussian:{i}:{field}"),
+                        lower: lo,
+                        upper: hi,
+                    });
+                }
+            }
+        } else if source_calibration {
             entries.push(Entry {
                 id: "source:fwhm".into(),
                 param: Parameter {
@@ -465,6 +599,7 @@ impl Prepared {
             initial,
             source_fft,
             source_calibration,
+            magnetic_coefficients,
             simplexes,
         })
     }
@@ -477,11 +612,7 @@ impl Prepared {
         for (i, e) in self.entries.iter().enumerate() {
             let (r, f) = self.roots[i];
             let v = values[r] * f;
-            match e.site {
-                Some(s) => xvbf::parameter_mut(&mut p.sites[s], &e.key).value = v,
-                None if e.key == "source_fwhm" => p.source_fwhm = v,
-                None => p.background[e.key.parse::<usize>().unwrap()].value = v,
-            };
+            e.set(&mut p, v);
         }
         xvbf::expand(&self.simplexes, &mut p, &values, &self.entries);
         p
@@ -501,14 +632,29 @@ impl Prepared {
         let components: Vec<Vec<f64>> = p
             .sites
             .iter()
-            .map(|s| xs.iter().map(|&v| site_curve(s, v)).collect())
+            .map(|s| {
+                xs.iter()
+                    .map(|&v| site_curve_with_coefficients(s, v, self.magnetic_coefficients))
+                    .collect()
+            })
             .collect();
         let changing_source = self.source_calibration.then(|| source_transform(&p));
         let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_ref()) {
             let mut a = vec![Complex::default(); source.len()];
             for (i, z) in a.iter_mut().take(6001).enumerate() {
                 let v = -30. + i as f64 * 0.01;
-                z.re = (-p.sites.iter().map(|s| site_curve(s, v)).sum::<f64>()).exp();
+                let optical_depth = p
+                    .sites
+                    .iter()
+                    .map(|s| site_curve_with_coefficients(s, v, self.magnetic_coefficients))
+                    .sum::<f64>();
+                // A Gaussian kernel acts on the absorption deficit. Zero padding
+                // then represents an unabsorbed continuum, rather than zero transmission.
+                z.re = if p.source_gaussians.is_some() {
+                    (-optical_depth).exp_m1()
+                } else {
+                    (-optical_depth).exp()
+                };
             }
             let mut planner = FftPlanner::new();
             planner.plan_fft_forward(a.len()).process(&mut a);
@@ -518,9 +664,19 @@ impl Prepared {
             let len = a.len() as f64;
             planner.plan_fft_inverse(a.len()).process(&mut a);
             // MATLAB conv(source, exp(-absorber), 'same'), then pchip; /100 is the original 0.01 grid step.
-            let grid: Vec<_> = (0..6001).map(|i| a[i + 3000].re / len / 100.).collect();
-            let slopes = pchip_slopes(&grid, 0.01);
-            let sampled: Vec<_> = xs.iter().map(|&v| pchip(&grid, &slopes, v)).collect();
+            let continuum = if p.source_gaussians.is_some() { 1. } else { 0. };
+            let grid: Vec<_> = (0..6001)
+                .map(|i| continuum + a[i + 3000].re / len / 100.)
+                .collect();
+            let sampled: Vec<_> = if p.source_gaussians.is_some() {
+                // A Gaussian-convolved transmission is smooth. Six-point local
+                // interpolation avoids the O(h^3) off-grid error of PCHIP while
+                // retaining the original MATLAB interpolation for legacy sources.
+                xs.iter().map(|&v| smooth_grid_sample(&grid, v)).collect()
+            } else {
+                let slopes = pchip_slopes(&grid, 0.01);
+                xs.iter().map(|&v| pchip(&grid, &slopes, v)).collect()
+            };
             // MossA.m src_calib_model normalizes AFTER interpolation at the
             // observed velocities. Ordinary transmission fitting does not.
             let norm = if self.source_calibration {
@@ -587,6 +743,27 @@ impl Prepared {
 }
 fn source_transform(p: &Project) -> Vec<Complex<f64>> {
     let mut a = vec![Complex::default(); 16384];
+    if let Some(gs) = &p.source_gaussians {
+        let weight: f64 = gs.iter().map(|g| g.weight).sum();
+        let center: f64 = gs.iter().map(|g| g.weight * g.center).sum::<f64>() / weight;
+        for (i, z) in a.iter_mut().take(6001).enumerate() {
+            let v = -30. + i as f64 * 0.01;
+            z.re = gs
+                .iter()
+                .map(|g| {
+                    let w = g.fwhm;
+                    (g.weight / weight) * (4. * 2_f64.ln() / PI).sqrt() / w
+                        * (-4. * 2_f64.ln() * ((v - g.center + center) / w).powi(2)).exp()
+                })
+                .sum();
+        }
+        let area = a.iter().map(|z| z.re).sum::<f64>() * 0.01;
+        for z in &mut a {
+            z.re /= area;
+        }
+        FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
+        return a;
+    }
     for (i, z) in a.iter_mut().take(6001).enumerate() {
         z.re = profile(
             -30. + i as f64 * 0.01,
@@ -603,6 +780,19 @@ fn source_transform(p: &Project) -> Vec<Complex<f64>> {
     }
     FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
     a
+}
+fn smooth_grid_sample(y: &[f64], x: f64) -> f64 {
+    let u = ((x + 30.) / 0.01).clamp(0., (y.len() - 1) as f64);
+    let start = (u.floor() as usize).saturating_sub(2).min(y.len() - 6);
+    let t = u - start as f64;
+    (0..6)
+        .map(|j| {
+            let weight = (0..6)
+                .filter(|&k| k != j)
+                .fold(1., |w, k| w * (t - k as f64) / (j as f64 - k as f64));
+            y[start + j] * weight
+        })
+        .sum()
 }
 fn pchip_slopes(y: &[f64], h: f64) -> Vec<f64> {
     let d: Vec<_> = y.windows(2).map(|w| (w[1] - w[0]) / h).collect();
@@ -704,11 +894,7 @@ fn evaluate_prepared(m: &Prepared, x: &[f64]) -> Evaluation {
         .entries
         .iter()
         .map(|e| {
-            let value = match e.site {
-                Some(i) => xvbf::parameter(&expanded.sites[i], &e.key).value,
-                None if e.key == "source_fwhm" => expanded.source_fwhm,
-                None => expanded.background[e.key.parse::<usize>().unwrap()].value,
-            };
+            let value = e.value(&expanded);
             (e.id.clone(), value)
         })
         .collect();
@@ -856,10 +1042,31 @@ fn fit_prepared(
     m: Prepared,
     callback: Option<Box<dyn FnMut(FitProgress)>>,
 ) -> Result<FitResult, String> {
+    fit_prepared_with_solver(m, callback, false)
+}
+fn fit_prepared_with_solver(
+    m: Prepared,
+    callback: Option<Box<dyn FnMut(FitProgress)>>,
+    bounded_lm: bool,
+) -> Result<FitResult, String> {
     let p = &m.project;
     let mut warnings = vec![];
     let (x, iterations, converged, termination) = if m.free.is_empty() {
         (vec![], 0, true, "All parameters fixed".to_string())
+    } else if bounded_lm {
+        let solver = BoundedLevenbergMarquardt::new()
+            .with_absolute_scaled_gradient_tolerance(1e-8)
+            .with_relative_cost_change_tolerance(1e-10);
+        let result = Executor::from_start(m.clone(), solver, m.initial.clone())
+            .max_iter(p.max_iterations as u64)
+            .run()
+            .map_err(|e| format!("Bounded LM: {e:?}"))?;
+        (
+            result.param().clone(),
+            result.state.iter(),
+            result.report.termination.is_converged(),
+            format!("{:?}", result.report.code()),
+        )
     } else {
         let solver = TrustRegionReflective::new()
             .with_absolute_scaled_gradient_tolerance(1e-8)
@@ -894,8 +1101,25 @@ fn fit_prepared(
     let mut rank = 0;
     let mut covariance = None;
     let mut active = vec![];
+    let mut stationarity = 0_f64;
     if !x.is_empty() {
         let j = m.derivative(&x);
+        let residuals = DVector::from_vec(m.residuals(&x));
+        let residual_norm = residuals.norm();
+        for k in 0..x.len() {
+            let column = j.column(k);
+            let gradient = column.dot(&residuals);
+            if !gradient.is_finite() || !residual_norm.is_finite() || !column.norm().is_finite() {
+                stationarity = f64::INFINITY;
+                break;
+            }
+            let h = 1e-8 * x[k].abs().max(1.);
+            let outward = ((x[k] - m.lower[k]).abs() < h && gradient >= 0.)
+                || ((x[k] - m.upper[k]).abs() < h && gradient <= 0.);
+            if !outward && residual_norm > 0. && column.norm() > 0. {
+                stationarity = stationarity.max(gradient.abs() / (column.norm() * residual_norm));
+            }
+        }
         let svd = j.svd(false, true);
         let largest = svd.singular_values.max();
         let cutoff = largest * 1e-10;
@@ -974,6 +1198,7 @@ fn fit_prepared(
         dof,
         rank,
         reduced_objective: reduced,
+        stationarity: stationarity.is_finite().then_some(stationarity),
         warnings,
     })
 }
@@ -988,6 +1213,16 @@ pub fn fit_json(json: &str) -> Result<String, JsValue> {
     let p: Project = serde_json::from_str(json).map_err(|e| JsValue::from_str(&e.to_string()))?;
     let v = fit(&p).map_err(|e| JsValue::from_str(&e))?;
     serde_json::to_string(&v).map_err(|e| JsValue::from_str(&e.to_string()))
+}
+
+/// Alternative bounded local solver for stalled comparison fits. Model
+/// expansion, physical bounds, links, objective, and diagnostics are identical.
+#[wasm_bindgen]
+pub fn fit_recovery_json(json: &str) -> Result<String, JsValue> {
+    let p: Project = serde_json::from_str(json).map_err(|e| JsValue::from_str(&e.to_string()))?;
+    let m = Prepared::new(&p).map_err(|e| JsValue::from_str(&e))?;
+    let result = fit_prepared_with_solver(m, None, true).map_err(|e| JsValue::from_str(&e))?;
+    serde_json::to_string(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[cfg(test)]

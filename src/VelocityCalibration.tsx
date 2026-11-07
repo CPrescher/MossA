@@ -1,6 +1,8 @@
+import { nuclearConstants } from './nuclear-constants.mjs';
 import { useEffect, useRef, useState } from 'react';
 import { Engine } from './engine';
-import { parseSpectrum } from './io.mjs';
+import { parseSpectrum, type ImportInfo } from './io.mjs';
+import { ImportDetails } from './ImportDetails';
 import { Numeric } from './Numeric';
 import { Plot } from './Plot';
 import { finishCalibration, referenceProject, referenceSeeds, type CalibrationSettings, type VelocityCalibration } from './calibration';
@@ -9,11 +11,12 @@ import type { Evaluation, FitResult, Project } from './types';
 import { estimateFoldCenter, type FoldEstimate } from './folding';
 import { FoldingDiagnostics } from './FoldingDiagnostics';
 
-export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal: Calibration; raw: number[] | null; onApply: (result: VelocityCalibration) => void; onClose: () => void }) {
+export function VelocityCalibrationDialog({ cal, raw, onApply, onClose, purpose = 'apply' }: { cal: Calibration; raw: number[] | null; onApply: (result: VelocityCalibration) => void; onClose: () => void; purpose?: 'apply' | 'preset' | 'update-preset' }) {
   const saved = cal.reference;
   const [counts, setCounts] = useState<number[] | null>(saved?.counts ?? null);
   const [name, setName] = useState(saved?.name ?? '');
-  const [settings, setSettings] = useState<CalibrationSettings>(saved?.settings ?? { max: cal.max, field: 33, sinusoidal: cal.sinusoidal, folding: cal.folding, center: 256.5, autoCenter: true });
+  const [importInfo, setImportInfo] = useState<ImportInfo | undefined>(saved?.importInfo);
+  const [settings, setSettings] = useState<CalibrationSettings>(saved?.settings ?? { nuclear_constants: nuclearConstants(cal.nuclear_constants), max: cal.max, field: 33, sinusoidal: cal.sinusoidal, folding: cal.folding, center: 256.5, autoCenter: true });
   const [ready, setReady] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const [progress, setProgress] = useState('');
   const [view, setView] = useState<{ project: Project; evaluation: Evaluation | null } | null>(null);
@@ -36,7 +39,7 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
   }, [counts, settings]);
   const change = (next: Partial<CalibrationSettings>) => { setResult(null); setSettings(old => ({ ...old, ...next })); setProgress(''); if (next.folding === false) setPreviewTab('spectrum'); };
   const useCounts = (next: number[], filename: string, folding = settings.folding, center = next.length / 2 + .5) => {
-    setCounts(next); setName(filename); setResult(null); setFoldEstimate(null); setProgress(''); setSettings(old => ({ ...old, folding, center, autoCenter: true }));
+    setCounts(next); setName(filename); setImportInfo(undefined); setResult(null); setFoldEstimate(null); setProgress(''); setSettings(old => ({ ...old, folding, center, autoCenter: true }));
   };
   async function load(file?: File) {
     if (!file) return;
@@ -45,6 +48,7 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
       const parsed = parseSpectrum(await file.text());
       if (!parsed.raw) throw new Error('Load one column of raw reference counts. Two-column files already contain velocity values.');
       useCounts(parsed.raw, file.name);
+      if (parsed.importInfo) setImportInfo({ ...parsed.importInfo, filename: file.name });
     } catch (e) { setResult(null); setError(String(e)); }
   }
   async function fit() {
@@ -79,6 +83,7 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
         } catch (e) { failure = String(e); }
       }
       if (!best) throw new Error(failure || 'Reference fit failed.');
+      if (importInfo) best.reference.importInfo = importInfo;
       const evaluated = await engine.current.request('evaluate', best.preview);
       if (id !== token.current) return;
       setResult(best); setView({ project: best.preview, evaluation: evaluated.result as Evaluation });
@@ -107,7 +112,7 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
       <p className="calibration-note">Use an α-Fe reference and an approximate velocity range. Partial iron patterns are supported. Turn folding off for an already folded reference.</p>
       <fieldset className="bare" disabled={busy}><button className="full-width" onClick={() => input.current?.click()}>Open reference spectrum</button>
         {raw && <button className="full-width" onClick={() => useCounts(raw, 'Current raw spectrum', cal.folding, cal.center)}>Use current raw spectrum</button>}
-        <input ref={input} type="file" hidden accept=".txt,.dat,.csv,.asc" aria-label="Reference spectrum file" onChange={e => { void load(e.target.files?.[0]); e.target.value = ''; }}/>
+        <input ref={input} type="file" hidden accept=".txt,.dat,.csv,.asc,.mca" aria-label="Reference spectrum file" onChange={e => { void load(e.target.files?.[0]); e.target.value = ''; }}/>
         {name && <p className="calibration-filename" title={name}>{name}<br/>{counts?.length} loaded points{settings.folding && counts ? ` → ${Math.floor(counts.length / 2)} folded points` : ''}</p>}
         <label className="inline-label">Initial max. velocity<Numeric label="Reference initial maximum velocity" value={settings.max} onChange={v => change({ max: v! })}/></label>
         <label className="inline-label">Reference BHF (T)<Numeric label="Reference hyperfine field" value={settings.field} onChange={v => change({ field: v! })}/></label>
@@ -118,6 +123,7 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
         <button className="full-width" disabled={!counts || !ready || !settings.folding} onClick={() => void findCenter()}>Find fold center</button>
       </fieldset>
       {busy ? <button className="full-width" onClick={stop}>Stop calibration</button> : <button className="fit-button" disabled={!ready || !view || !!error} onClick={() => void fit()}>Fit reference</button>}
+      <ImportDetails info={importInfo}/>
       <p className="calibration-progress" role="status">{progress || (!ready ? 'Loading fitting engine…' : '')}</p>
       {error && <p className="calibration-error" role="alert">{error}</p>}
       {result && <dl className="calibration-values"><div><dt>Max. velocity</dt><dd>{result.max.toPrecision(6)} mm/s</dd></div><div><dt>Standard CS</dt><dd>{result.shift.toPrecision(6)} mm/s</dd></div></dl>}
@@ -126,6 +132,6 @@ export function VelocityCalibrationDialog({ cal, raw, onApply, onClose }: { cal:
       {previewTab === 'folding' && counts && settings.folding ? <div className="calibration-view" id="cal-folding-view" role="tabpanel" aria-labelledby="cal-folding-tab"><FoldingDiagnostics counts={counts} center={settings.center} estimate={foldEstimate} disabled={busy} onCenter={center => change({ center, autoCenter: false })}/></div>
         : <div className="calibration-view" id="cal-spectrum-view" role="tabpanel" aria-labelledby="cal-spectrum-tab">{view ? <Plot id="calibration-plot" project={view.project} evaluation={view.evaluation} fitted={!!result} picking={null} onPick={() => {}} onHover={() => {}} onCancelPick={() => {}}/> : <p>Open a reference spectrum to preview its fit.</p>}</div>}
     </div></div>
-    <div className="calibration-footer"><p>{raw ? 'Apply recalibrates the current raw spectrum. Undo restores its previous scale and fit.' : 'This spectrum already has velocity values. The calibration will be saved for future raw-count imports.'}</p><button disabled={!result || busy} onClick={() => { if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before applying.'); return; } if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>{raw ? 'Apply calibration' : 'Use calibration'}</button></div>
+    <div className="calibration-footer"><p>{purpose === 'update-preset' ? 'Return the revised calibration to the preset editor, then save changes. Your spectrum stays unchanged.' : purpose === 'preset' ? 'Continue to name and save a calibration preset. Your current spectrum stays unchanged.' : raw ? 'Apply recalibrates the current raw spectrum. Undo restores its previous scale and fit.' : 'This spectrum already has velocity values. The calibration will be saved for future raw-count imports.'}</p><button disabled={!result || busy} onClick={() => { if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before applying.'); return; } if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>{purpose === 'update-preset' ? 'Use revised calibration' : purpose === 'preset' ? 'Continue with calibration' : raw ? 'Apply calibration' : 'Use calibration'}</button></div>
   </dialog>;
 }

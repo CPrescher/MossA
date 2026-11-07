@@ -1,0 +1,32 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MossA",
+  "version": "../package.json",
+  "identifier": "de.clemensprescher.mossa",
+  "build": {
+    "beforeDevCommand": "npm run dev:desktop:web",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "npm run build:desktop:web",
+    "frontendDist": "../dist-desktop"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ipc: http://ipc.localhost; worker-src 'self' blob:; object-src 'none'; base-uri 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Education",
+    "shortDescription": "Mössbauer spectrum analysis, fully offline",
+    "longDescription": "MossA provides local Mössbauer spectrum analysis with a shared Rust/WebAssembly fitting engine, project files, figure exports, and a bundled searchable manual with tutorial data.",
+    "copyright": "Copyright Clemens Prescher and contributors",
+    "license": "MIT",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "macOS": { "minimumSystemVersion": "11.0", "signingIdentity": "-" },
+    "windows": { "webviewInstallMode": { "type": "offlineInstaller", "silent": true }, "nsis": { "installMode": "currentUser" } },
+    "linux": { "deb": { "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"] } }
+  }
+}

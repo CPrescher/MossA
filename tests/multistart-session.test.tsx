@@ -1,0 +1,22 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import init,{fit_json,evaluate_json} from '../src/wasm/mossa_core.js';
+import {fitMultiStart} from '../src/multistart.mjs';
+import {demo} from '../src/demo';
+import {createProjectFile,openProjectFile} from '../src/projectFile';
+import {summarizeFit,decodeSession,defaultLayout,type Snapshot} from '../src/session';
+import type {Project} from '../src/types';
+await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm',import.meta.url))});
+test('search settings and completed search diagnostics survive portable save/open and autosave',async()=>{
+ const p=demo();p.search_starts=4;
+ const result=fitMultiStart(p,q=>JSON.parse(fit_json(JSON.stringify(q))),q=>JSON.parse(evaluate_json(JSON.stringify(q))));
+ const cal={max:10,shift:0,sinusoidal:false,folding:false,center:256.5};
+ const snapshot:Snapshot={project:result.project,raw:null,cal,filename:'Search fit',selected:0,fit:summarizeFit(result),fitElapsed:15};
+ const file=await createProjectFile(snapshot,{});
+ const restored=await openProjectFile(JSON.parse(JSON.stringify(file)),cal,'search',async(q:Project)=>JSON.parse(evaluate_json(JSON.stringify(q))));
+ assert.deepEqual(restored.snapshot.fit?.search,result.search);assert.equal(restored.snapshot.project.search_starts,4);
+ const saved={version:1,snapshot,layout:defaultLayout,fit:snapshot.fit,elapsed:15};
+ assert.deepEqual(decodeSession(JSON.stringify(saved)).fit?.search,result.search);
+ saved.snapshot.project.search_starts=100;assert.throws(()=>decodeSession(JSON.stringify(saved)),/search starts/);
+});

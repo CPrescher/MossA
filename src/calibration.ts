@@ -1,14 +1,21 @@
-import { calibrateCounts } from './io.mjs';
+import { newNuclearConstants, nuclearConstants, validNuclearConstants, type NuclearConstants } from './nuclear-constants.mjs';
+import { calibrateCounts, reverseSpectrum, validImportInfo, type ImportInfo } from './io.mjs';
 import { newSite, parameter, type FitResult, type Project } from './types';
 import type { Calibration, Snapshot } from './session';
 
-export type CalibrationSettings = { max: number; field: number; sinusoidal: boolean; folding: boolean; center: number; autoCenter?: boolean };
-export type CalibrationReference = { name: string; counts: number[]; settings: CalibrationSettings; fittedField: number; rms: number; date: string };
+export type CalibrationSettings = { max: number; field: number; sinusoidal: boolean; folding: boolean; center: number; autoCenter?: boolean; nuclear_constants?: NuclearConstants };
+export type CalibrationReference = { name: string; counts: number[]; settings: CalibrationSettings; fittedField: number; rms: number; date: string; importInfo?: ImportInfo };
 export type VelocityCalibration = { max: number; shift: number; reference: CalibrationReference; preview: Project; fit: FitResult };
+
+// A supplied velocity axis starts a new convention. Raw channels reuse the
+// convention which established their velocity calibration, including legacy.
+export function importedSpectrumConstants(raw: number[] | undefined, cal: Calibration): NuclearConstants {
+  return raw ? nuclearConstants(cal.nuclear_constants) : newNuclearConstants();
+}
 
 export function validCalibrationReference(value: unknown): value is CalibrationReference {
   const r = value as CalibrationReference | null;
-  return !!r && typeof r.name === 'string' && typeof r.date === 'string' && Array.isArray(r.counts) && r.counts.length >= 16 && r.counts.length <= 20000 && r.counts.every(v => Number.isFinite(v) && v >= 0) && !!r.settings && [r.settings.max, r.settings.field, r.settings.center, r.fittedField, r.rms].every(Number.isFinite) && r.settings.max > 0 && r.settings.field > 0 && r.fittedField > 0 && r.rms >= 0 && typeof r.settings.sinusoidal === 'boolean' && typeof r.settings.folding === 'boolean';
+  return !!r && (r.importInfo === undefined || (validImportInfo(r.importInfo) && r.importInfo.channels === r.counts?.length)) && (r.settings?.nuclear_constants === undefined || validNuclearConstants(r.settings.nuclear_constants)) && typeof r.name === 'string' && typeof r.date === 'string' && Array.isArray(r.counts) && r.counts.length >= 16 && r.counts.length <= 20000 && r.counts.every(v => Number.isFinite(v) && v >= 0) && !!r.settings && [r.settings.max, r.settings.field, r.settings.center, r.fittedField, r.rms].every(Number.isFinite) && r.settings.max > 0 && r.settings.field > 0 && r.fittedField > 0 && r.rms >= 0 && typeof r.settings.sinusoidal === 'boolean' && typeof r.settings.folding === 'boolean';
 }
 
 // calib.m: normalize to 100 and fit a Lorentzian sextet with QS fixed at zero.
@@ -28,7 +35,7 @@ export function referenceProject(counts: number[], settings: CalibrationSettings
   site.params.bhf = parameter(settings.field, true, .001, null);
   site.params.a12 = parameter(1.5, true, .05, 20);
   site.params.a13 = parameter(3, true, .05, 20);
-  return { spectrum, sites: [site], background: [parameter(100, true, 90, 110), parameter(0, true, -5, 5)], mode: 'thin', weighting: 'unweighted', source_fwhm: .097, source_squared: false, max_iterations: 300 };
+  return { ...(settings.nuclear_constants ? { nuclear_constants: nuclearConstants(settings.nuclear_constants) } : {}), spectrum, sites: [site], background: [parameter(100, true, 90, 110), parameter(0, true, -5, 5)], mode: 'thin', weighting: 'unweighted', source_fwhm: .097, source_squared: false, max_iterations: 300 };
 }
 
 // The outer iron lines provide a second starting estimate when the initial
@@ -49,13 +56,14 @@ export function referenceSeeds(counts: number[], settings: CalibrationSettings):
   if (minima.length !== 2) return [project];
   const guessed = structuredClone(project), site = guessed.sites[0];
   site.params.cs.value = (x[minima[0]] + x[minima[1]]) / 2;
-  site.params.bhf.value = (x[minima[1]] - x[minima[0]]) / (2 * .1613);
+  site.params.bhf.value = (x[minima[1]] - x[minima[0]]) / (2 * nuclearConstants(project.nuclear_constants).coefficients[0]);
   site.params.fwhm.value = .25 * site.params.bhf.value / settings.field;
   site.params.intensity.value = Math.max(.1, (100 - Math.min(...y)) * Math.PI * site.params.fwhm.value * 2);
   return [guessed, project];
 }
 
 export function finishCalibration(counts: number[], settings: CalibrationSettings, name: string, fit: FitResult): VelocityCalibration {
+  if (nuclearConstants(settings.nuclear_constants).id !== nuclearConstants(fit.project.nuclear_constants).id) throw new Error('The reference fit uses different nuclear constants than its calibration settings.');
   const site = fit.project.sites[0], field = site.params.bhf.value;
   // A scan may show only part of the iron pattern, as in calib.m. Keep solver
   // warnings visible instead of requiring every line or nuisance parameter.
@@ -81,17 +89,28 @@ export function finishCalibration(counts: number[], settings: CalibrationSetting
 export function applyRawCalibration(snapshot: Snapshot, cal: Calibration = snapshot.cal): Snapshot {
   const next = cal === snapshot.cal ? snapshot : { ...snapshot, cal };
   if (!snapshot.raw) return next;
-  const spectrum = calibrateCounts(snapshot.raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null);
+  const spectrum = calibrateCounts(snapshot.raw, cal.max, cal.shift, cal.sinusoidal, cal.folding ? cal.center : null, snapshot.velocityReversed);
   const previous = snapshot.project.spectrum;
+  const sameConstants = nuclearConstants(snapshot.project.nuclear_constants).id === nuclearConstants(cal.nuclear_constants).id;
   // Compare the actual data, since the controls may already have been edited.
   // Retain the project identity too: Plot resets its viewport when x changes.
-  if (spectrum.x.length === previous.x.length && spectrum.y.length === previous.y.length && spectrum.x.every((v, i) => v === previous.x[i]) && spectrum.y.every((v, i) => v === previous.y[i])) return next;
+  if (sameConstants && spectrum.x.length === previous.x.length && spectrum.y.length === previous.y.length && spectrum.x.every((v, i) => v === previous.x[i]) && spectrum.y.every((v, i) => v === previous.y[i])) return next;
   // Calibration changes the observations, not the fitted background or sites.
-  return { ...next, project: { ...snapshot.project, spectrum }, fit: null, fitElapsed: null };
+  return { ...next, project: { ...snapshot.project, nuclear_constants: cal.nuclear_constants, spectrum }, fit: null, fitElapsed: null };
+}
+
+// Like MATLAB Flip Signs: negate calibrated velocities, not channel order or
+// source/reference settings. Sorting paired observations preserves x ordering.
+export function reverseVelocity(snapshot: Snapshot): Snapshot {
+  const { velocityReversed: wasReversed, ...rest } = snapshot;
+  return { ...rest, ...(wasReversed ? {} : { velocityReversed: true }),
+    project: { ...snapshot.project, spectrum: reverseSpectrum(snapshot.project.spectrum) }, fit: null, fitElapsed: null };
 }
 
 export function applyVelocityCalibration(snapshot: Snapshot, result: VelocityCalibration): Snapshot {
   const cal = { ...snapshot.cal, max: result.max, shift: result.shift, sinusoidal: result.reference.settings.sinusoidal, reference: result.reference };
+  if (result.reference.settings.nuclear_constants) cal.nuclear_constants = nuclearConstants(result.reference.settings.nuclear_constants);
+  else delete cal.nuclear_constants;
   if (!snapshot.raw) return { ...snapshot, cal }; // Existing velocity columns retain their scale and fit.
   if (snapshot.raw.length === result.reference.counts.length && snapshot.raw.every((v, i) => v === result.reference.counts[i])) {
     cal.center = result.reference.settings.center; cal.folding = result.reference.settings.folding;

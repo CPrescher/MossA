@@ -75,6 +75,12 @@ test('version opens changelog, retains build identity, and only reloads through 
     assert.equal(container.querySelector('dialog')!.open, true, 'local and offline users can also read release notes');
     await act(async () => window.dispatchEvent(new dom.window.Event('focus')));
     assert.equal(requests, previousRequests);
+    await act(async () => root.render(<VersionIndicator build={{ ...build, channel: 'desktop' }}/>));
+    assert.match(button().textContent!, /desktop/);
+    assert.match(button().title, /Offline desktop app/);
+    assert.equal(checkButton(), undefined);
+    await act(async () => window.dispatchEvent(new dom.window.Event('focus')));
+    assert.equal(requests, previousRequests, 'desktop never polls website deployment metadata');
   } finally {
     await act(async () => root.unmount());
     globalThis.fetch = originalFetch;

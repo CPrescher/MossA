@@ -1,0 +1,82 @@
+{
+  "purpose": "New browser-core worked fits; not MATLAB reference outputs",
+  "source": "MossA tutorial SMS.pdf",
+  "sourceMeanRule": "Arithmetic mean of before and after Lorentzian-squared widths; held fixed in sample fits",
+  "pressure": {
+    "tutorialAndFilename": "1 GPa",
+    "internalHeaderFilename": "02GPa",
+    "status": "Unresolved source-label discrepancy; no independent pressure assignment"
+  },
+  "files": [
+    {
+      "name": "Iron foil calibration.txt",
+      "sha256": "edc6257963ec32abe17c7ee6dad8c858530342f8e0f18c387bb0ee9ace251ba9",
+      "points": 1024
+    },
+    {
+      "name": "singleLineBefore.dat",
+      "sha256": "920244ad6a0ea2c8b21819753e35abcc961bc9f26e0868b56b2c45f7bbb25f12",
+      "points": 512,
+      "importInfo": {
+        "format": "sms-five-column",
+        "channels": 512,
+        "columns": [
+          1,
+          2
+        ],
+        "filename": "singleLineBefore.dat"
+      }
+    },
+    {
+      "name": "singleLineAfter.dat",
+      "sha256": "76c64cfb534826fdad930210bf6daa37088ec7b2e819e61ef4d39de129167dcd",
+      "points": 512,
+      "importInfo": {
+        "format": "sms-five-column",
+        "channels": 512,
+        "columns": [
+          1,
+          2
+        ],
+        "filename": "singleLineAfter.dat"
+      }
+    },
+    {
+      "name": "Fe7C3_01GPa.mca",
+      "sha256": "15181fdf9896e996568c0a26d123d5867c955385dbaf8b0955e685a4e459ad51",
+      "points": 1024,
+      "importInfo": {
+        "format": "spec-mca",
+        "channels": 1024,
+        "headers": [
+          "#F /data/id18/inhouse/users/2011/SMS_June/SMS/SL/july /Fe7C3_b_02GPa.mca",
+          "#D Thu Jul  7 11:48:24 2011",
+          "#S 1 mca_oh1a MCA_DATA0.c.1",
+          "#D Thu Jul  7 11:48:24 2011",
+          "#@MCA %16C",
+          "#@CHANN 1024 0 1023 1",
+          "#@CALIB 0 1 0"
+        ],
+        "filename": "Fe7C3_01GPa.mca"
+      }
+    }
+  ],
+  "settings": {
+    "referenceFieldT": 33,
+    "initialMaxVelocity": 8,
+    "velocityMax": 8.73428881202933,
+    "standardCenterShift": 0.7120281451023417,
+    "ironFoldCenter": 513,
+    "sampleFoldCenter": 513,
+    "sinusoidal": true,
+    "velocityReversed": true,
+    "knownAbsorberFwhm": 0.215,
+    "sourceModel": "Lorentzian-squared",
+    "sourceBefore": 0.41597011439014486,
+    "sourceAfter": 0.4559865162653671,
+    "sourceMean": 0.435978315327756,
+    "nuclearConstants": "fe57-iaea-2019-2020-codata2022",
+    "weighting": "unweighted",
+    "maxIterations": 1000
+  }
+}

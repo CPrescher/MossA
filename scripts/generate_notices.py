@@ -14,7 +14,7 @@ resolved = {node['id'] for node in metadata['resolve']['nodes']}
 for package in metadata['packages']:
     if package['source'] and package['id'] in resolved:
         packages.append((package['name'], package['version'], package['license'], Path(package['manifest_path']).parent))
-for name in ['react', 'react-dom', 'scheduler']:
+for name in ['react', 'react-dom', 'scheduler', '@mathjax/src', '@mathjax/mathjax-tex-font']:
     folder = root / 'node_modules' / name
     package = json.loads((folder / 'package.json').read_text())
     packages.append((name, package['version'], package['license'], folder))
@@ -28,6 +28,13 @@ for name, version, license_id, folder in sorted(packages):
             if body not in texts:
                 texts[body] = f'Text {len(texts) + 1}'
             notices.append(f'{path.name}: {texts[body]}')
+    # The TeX font npm archive declares Apache-2.0 but omits its license file.
+    # Include the complete identical Apache text distributed with MathJax.
+    if not notices and name == '@mathjax/mathjax-tex-font' and license_id == 'Apache-2.0':
+        body = (root / 'node_modules/@mathjax/src/LICENSE').read_text().strip()
+        if body not in texts:
+            texts[body] = f'Text {len(texts) + 1}'
+        notices.append(f'Apache-2.0 (package metadata; text from @mathjax/src/LICENSE): {texts[body]}')
     if not notices:
         raise RuntimeError(f'No upstream license text found for {name} {version}')
     entries.append(f'{name} {version} — {license_id}\n  ' + '; '.join(notices))
@@ -36,7 +43,7 @@ header = '''MossA — Third-party notices
 
 MossA itself is licensed under the MIT License (see LICENSE.txt).
 Dependencies retain their upstream licenses. This inventory covers the resolved
-Rust dependency graph (including build-time support crates) and the React runtime.
+Rust dependency graph (including build-time support crates) and the React and MathJax runtimes.
 Identical license texts are included once and referenced by text number.
 
 '''

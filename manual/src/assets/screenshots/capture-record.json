@@ -1,0 +1,202 @@
+{
+  "context": "Actual local MossA browser UI; measured examples from the supplied Freiburg practical, synthetic illustrations labeled in their captions. Restored fits are new browser-core computations, not MATLAB reference results.",
+  "records": [
+    {
+      "name": "workspace",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "almandine-two-doublets",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "almandine-one-doublet",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "bounds-and-links",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "fit-options",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "calibration-preset",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "almandine-calibration",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "figure-export",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "augite-two-doublets",
+      "spectrum": "augite",
+      "status": "StatusConverged · 22 iterationsFit detailsSSE1.728e+9Reduced6,967,900",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "omphacite-two-doublets",
+      "spectrum": "omphacite",
+      "status": "StatusConverged · 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "pyroxene-folding",
+      "spectrum": "omphacite",
+      "status": "StatusConverged · 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "importing-raw-counts",
+      "spectrum": "omphacite",
+      "status": "StatusConverged · 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "model-comparison",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "transmission-overlays",
+      "spectrum": "Synthetic singlet reference",
+      "status": "StatusOpened 1 spectra with all models and saved fit results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "source-calibration",
+      "spectrum": "Synthetic singlet reference",
+      "status": "StatusOpened 1 spectra with all models and saved fit results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-distributions",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-correlation",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-map",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "iteration-limit",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusStopped · 1 iterations · 14 ms▾ Fit details · 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "../first-fit",
+      "spectrum": "Synthetic iron mixture",
+      "context": "Completed synthetic fit, refreshed after the current interface build."
+    }
+  ],
+  "app_build": {
+    "application": "MossA 2 preview",
+    "version": "2.0.0-preview.15",
+    "commit": "6c821460f752c6b2d00fc8c6285cc1acb949f4b4",
+    "branch": "mossa2",
+    "builtAt": "2026-11-06T22:15:16.017Z",
+    "channel": "local",
+    "dirty": true
+  },
+  "application_bundle_sha256": {
+    "index-DYKIujYA.js": "0bd6be3067a4df00d264490f533add12f16625ddd0cc3a7d7b1293b3a90bc0ef"
+  },
+  "sms": {
+    "context": "Actual local browser workflow; original measured SMS files; example browser refits, unresolved pressure labels retained.",
+    "browser": {
+      "buildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build — click for changelog",
+      "scripts": [
+        "http://127.0.0.1:4175/MossA/assets/index-DzSRhK_3.js"
+      ]
+    },
+    "records": [
+      {
+        "name": "sms-mca-import",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusAdded 1 spectrum to the project."
+      },
+      {
+        "name": "sms-reversed-axis",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusRedid change."
+      },
+      {
+        "name": "sms-final-fit",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-two-sextets",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
+      },
+      {
+        "name": "sms-two-sextets-qs",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
+      },
+      {
+        "name": "sms-three-sextets",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 17 iterations▸ Fit detailsSSE4.115e+6Reduced8,296.9"
+      },
+      {
+        "name": "sms-intensity-links",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-velocity-calibration",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-reference-columns",
+        "spectrum": "singleLineBefore.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+      },
+      {
+        "name": "sms-source-before",
+        "spectrum": "singleLineBefore.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+      },
+      {
+        "name": "sms-source-after",
+        "spectrum": "singleLineAfter.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
+      }
+    ]
+  }
+}

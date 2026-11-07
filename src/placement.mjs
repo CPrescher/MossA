@@ -1,5 +1,6 @@
+import { nuclearConstants, LEGACY_NUCLEAR_CONVENTION } from './nuclear-constants.mjs';
 // MossA.m define1 → define2 → define3 mouse workflow. Values are starting estimates.
-export function placedParameters(kind, profile, first, widthPoint, opposite, background, mode, mix = .5) {
+export function placedParameters(kind, profile, first, widthPoint, opposite, background, mode, mix = .5, constants) {
   const fwhm = widthPoint ? Math.max(.001, 2 * Math.abs(widthPoint.x - first.x)) : .2;
   const h = fwhm / 2;
   const depth = mode === 'transmission'
@@ -9,7 +10,7 @@ export function placedParameters(kind, profile, first, widthPoint, opposite, bac
   const conversion = profile === 'Gaussian' ? g : profile === 'PseudoVoigt' ? mix * l + (1 - mix) * g : profile === 'LorSquared' ? l / 2 : l;
   let intensity = depth * conversion, cs = first.x, qs = 0, bhf = 0;
   if (kind === 'Doublet') { intensity *= 2; if (opposite) { cs = (first.x + opposite.x) / 2; qs = Math.abs(opposite.x - first.x); } }
-  if (kind === 'Sextet') { intensity *= 4; if (opposite) { cs = (first.x + opposite.x) / 2; bhf = Math.abs(opposite.x - first.x) * 3.097; } }
+  if (kind === 'Sextet') { intensity *= 4; if (opposite) { cs = (first.x + opposite.x) / 2; const conversion = nuclearConstants(constants); bhf = Math.abs(opposite.x - first.x) * (conversion.id === LEGACY_NUCLEAR_CONVENTION ? 3.097 : 1 / (2 * conversion.coefficients[0])); } }
   return { cs, fwhm, intensity, qs, bhf };
 }
 

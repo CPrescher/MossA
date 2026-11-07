@@ -1,5 +1,6 @@
 import { validateProjectFile } from './io.mjs';
-import { decodeFitSummary, decodeSession, defaultLayout, type Calibration, type FitSummary, type Snapshot } from './session';
+import { decodeFitSummary, decodeSession, defaultLayout, snapshotVersion, type Calibration, type FitSummary, type Snapshot } from './session';
+import { nuclearConstants } from './nuclear-constants.mjs';
 import type { Evaluation, Project } from './types';
 
 // Stable across JSON whitespace/key order and site renames. All numerical
@@ -27,9 +28,10 @@ async function binding(project: Project) {
 export async function createProjectFile(snapshot: Snapshot, provenance: Record<string, unknown>) {
   const fit = snapshot.fit ?? null;
   return {
-    format: 'mossa-project', version: snapshot.project.sites.some(s=>s.xvbf) ? 2 : 1, required_features: snapshot.project.sites.some(s=>s.xvbf) ? ['xvbf-v1'] : undefined, name: snapshot.filename, project: snapshot.project,
+    format: 'mossa-project', version: snapshotVersion(snapshot), required_features: snapshot.velocityReversed ? ['velocity-reversal-v1', ...(snapshot.project.sites.some(s=>s.xvbf)?['xvbf-v1']:[])] : snapshot.project.sites.some(s=>s.xvbf)?['xvbf-v1']:undefined, name: snapshot.filename, project: snapshot.project,
     selected_site: snapshot.selected,
-    preprocessing: { raw_counts: snapshot.raw, controls: snapshot.cal }, provenance, fit,
+    preprocessing: { raw_counts: snapshot.raw, controls: snapshot.cal, ...(snapshot.velocityReversed ? { velocity_reversed: true } : {}), ...(snapshot.importInfo ? { import_info: snapshot.importInfo } : {}) },
+    provenance: { ...provenance, nuclear_constants: nuclearConstants(snapshot.project.nuclear_constants), calibration_nuclear_constants: nuclearConstants(snapshot.cal.nuclear_constants) }, fit,
     fit_state: fit ? { binding: await binding(snapshot.project), elapsed_ms: snapshot.fitElapsed ?? null } : null,
   };
 }
@@ -41,7 +43,10 @@ export async function openProjectFile(doc: unknown, fallbackCal: Calibration, fi
   const file = doc as ReturnType<typeof JSON.parse>;
   // Reuse the local-session schema for project/preprocessing validation, while
   // retaining the current app's layout outside the portable project file.
-  const snapshot: Snapshot = decodeSession(JSON.stringify({ version: 1, snapshot: { project, raw: file.preprocessing?.raw_counts ?? null, cal: file.preprocessing?.controls ?? fallbackCal, filename: typeof file.name === 'string' ? file.name : filename, selected: file.selected_site ?? 0 }, layout: defaultLayout, fit: null, elapsed: null })).snapshot;
+  // A file without preprocessing predates convention metadata. Do not attach
+  // the current app's modern calibration to an untagged legacy project.
+  const legacyFallback = { ...fallbackCal }; delete legacyFallback.nuclear_constants; delete legacyFallback.reference;
+  const snapshot: Snapshot = decodeSession(JSON.stringify({ version: file.version, snapshot: { project, raw: file.preprocessing?.raw_counts ?? null, cal: file.preprocessing?.controls ?? legacyFallback, velocityReversed: file.preprocessing?.velocity_reversed, importInfo: file.preprocessing?.import_info, filename: typeof file.name === 'string' ? file.name : filename, selected: file.selected_site ?? 0 }, layout: defaultLayout, fit: null, elapsed: null })).snapshot;
   const evaluation = await evaluate(snapshot.project);
   let fit: FitSummary | null = decodeFitSummary(file.fit, project.sites.length), notice = '';
   if (file.fit != null && !fit) notice = 'Saved fit metadata is invalid; data and parameters were loaded without fit results.';

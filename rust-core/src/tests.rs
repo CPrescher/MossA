@@ -39,8 +39,10 @@ fn project(kind: &str, shape: &str) -> Project {
         mode: "thin".into(),
         source_fwhm: 0.097,
         source_squared: false,
+        source_gaussians: None,
         weighting: "unweighted".into(),
         max_iterations: 300,
+        nuclear_constants: None,
     };
     p.spectrum.y = evaluate(&p).unwrap().y;
     p
@@ -69,6 +71,100 @@ fn independent_reference_profiles() {
             );
         }
     }
+}
+#[test]
+fn modern_zeeman_coefficients_reach_thin_and_transmission_models() {
+    let mut p = project("Sextet", "Lorentzian");
+    p.nuclear_constants = Some(NuclearConstants {
+        id: "fe57-iaea-2019-2020-codata2022".into(),
+        coefficients: [0.1612785758490726, 0.09338354131598467, 0.02548850678289673],
+    });
+    p.sites[0].params.get_mut("qs").unwrap().value = 0.;
+    p.sites[0].params.get_mut("intensity").unwrap().value = 0.3;
+    p.sites[0].params.get_mut("a12").unwrap().value = 1.5;
+    p.sites[0].params.get_mut("a13").unwrap().value = 3.;
+    let k = 1000. * 299792458. * 5.0507837393e-27 / (14412.497 * 1.602176634e-19);
+    let mut transitions = vec![];
+    for mg in [-0.5_f64, 0.5] {
+        for me in [-1.5_f64, -0.5, 0.5, 1.5] {
+            if (me - mg).abs() > 1. {
+                continue;
+            }
+            let coefficient = k * (-(-0.15531 / 1.5) * me + (0.09064 / 0.5) * mg);
+            let weight = if me.abs() == 1.5 {
+                3.
+            } else if me == mg {
+                2.
+            } else {
+                1.
+            };
+            transitions.push((coefficient, weight));
+        }
+    }
+    // Independent Lorentzian expression, not site_curve or the registry.
+    let absorption = |v: f64| {
+        transitions
+            .iter()
+            .map(|(coefficient, weight)| {
+                0.3 * weight / 12. * 0.21
+                    / PI
+                    / ((v - 0.23 - 31.2 * coefficient).powi(2) + 0.21_f64.powi(2))
+            })
+            .sum::<f64>()
+    };
+    let thin = evaluate(&p).unwrap();
+    for (i, &v) in p.spectrum.x.iter().enumerate() {
+        assert!((thin.y[i] - (1000. - absorption(v))).abs() < 1e-11);
+    }
+    p.mode = "transmission".into();
+    for squared in [false, true] {
+        p.source_squared = squared;
+        let model = evaluate(&p).unwrap();
+        for &i in &[80, 180, 200, 260] {
+            let center = ((p.spectrum.x[i] + 30.) / 0.01).round() as i64;
+            let want = (0..6001)
+                .map(|j| {
+                    let index = center + 3000 - j;
+                    if !(0..6001).contains(&index) {
+                        return 0.;
+                    }
+                    let source = profile(
+                        -30. + j as f64 * 0.01,
+                        0.,
+                        p.source_fwhm,
+                        1.,
+                        if squared { "LorSquared" } else { "Lorentzian" },
+                        0.,
+                    );
+                    source * (-absorption(-30. + index as f64 * 0.01)).exp()
+                })
+                .sum::<f64>()
+                * 10.;
+            assert!(
+                (model.y[i] - want).abs() < 1e-8,
+                "{squared}: {} != {want}",
+                model.y[i]
+            );
+        }
+    }
+    let mut bad = p.clone();
+    bad.nuclear_constants.as_mut().unwrap().coefficients[0] = 0.1613;
+    assert!(evaluate(&bad).is_err());
+    bad.nuclear_constants.as_mut().unwrap().id = "unknown".into();
+    assert!(evaluate(&bad).is_err());
+    let mut json = serde_json::to_value(&p).unwrap();
+    json["nuclear_constants"] = serde_json::Value::Null;
+    assert!(serde_json::from_value::<Project>(json).is_err());
+    let legacy = project("Sextet", "Lorentzian");
+    let json = serde_json::to_value(&legacy).unwrap();
+    assert!(
+        json.get("nuclear_constants").is_none(),
+        "do not change old model hashes"
+    );
+    assert_eq!(
+        evaluate(&serde_json::from_value(json).unwrap()).unwrap().y,
+        evaluate(&legacy).unwrap().y
+    );
 }
 #[test]
 fn recover_all_twelve_profile_combinations() {

@@ -1,0 +1,40 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import init,{fit_json,evaluate_json} from '../src/wasm/mossa_core.js';
+import {fitMultiStart,searchCandidate} from '../src/multistart.mjs';
+await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm',import.meta.url))});
+const local=p=>JSON.parse(fit_json(JSON.stringify(p)));
+const evaluate=p=>JSON.parse(evaluate_json(JSON.stringify(p)));
+const fixture=JSON.parse(readFileSync(new URL('fixtures/public-mixture-coarse.json',import.meta.url))).project;
+test('measured coarse-start mixture escapes its worse local minimum without changing the model',()=>{
+ const p=structuredClone(fixture),original=structuredClone(p);p.search_starts=4;
+ const single=local(p);const progress=[];
+ const result=fitMultiStart(p,local,evaluate,s=>progress.push(s));
+ assert.ok(result.evaluation.objective < single.evaluation.objective*.27);
+ assert.equal(result.search.completed,4);assert.equal(result.search.best_start,4);
+ assert.equal(result.project.search_starts,4);
+ assert.deepEqual(result.project.sites.map(s=>[s.kind,s.profile]),p.sites.map(s=>[s.kind,s.profile]));
+ assert.ok(progress.every((s,i)=>!i||s.evaluation.objective<=progress[i-1].evaluation.objective+1e-6));
+ delete p.search_starts;assert.deepEqual(p,original);
+});
+test('fixed parameters and proportional links survive search with restrictive linked bounds',()=>{
+ const p=structuredClone(fixture);p.search_starts=4;p.sites=p.sites.slice(0,2);
+ for(const s of p.sites)for(const q of Object.values(s.params))q.fit=false;
+ const a=p.sites[0].params,b=p.sites[1].params;
+ a.fwhm.value=.35;a.fwhm.fit=true;a.fwhm.min=.3499;a.fwhm.max=.3501;
+ b.fwhm.value=.7;b.fwhm.min=.6999;b.fwhm.max=.7001;b.fwhm.link={target:'site:0:fwhm',factor:2};
+ const candidate=searchCandidate(p,3);
+ assert.equal(candidate.sites[0].params.bhf.value,a.bhf.value);
+ assert.deepEqual(candidate.sites[1].params.fwhm.link,b.fwhm.link);
+ const result=fitMultiStart(p,local,evaluate);
+ const fitted=result.project.sites.map(s=>s.params.fwhm.value);
+ assert.ok(fitted[1]>=.6999&&fitted[1]<=.7001);assert.ok(Math.abs(fitted[1]-2*fitted[0])<1e-12);
+ assert.equal(result.project.sites[0].params.bhf.value,a.bhf.value);
+ assert.ok(result.evaluation.objective<=result.search.objectives[0]*(1+1e-12));
+});
+test('single-start remains the direct local fit and invalid counts are rejected',()=>{
+ const p=structuredClone(fixture);p.max_iterations=1;
+ assert.deepEqual(fitMultiStart(p,local,evaluate),local(p));
+ for(const n of [0,1.5,33])assert.throws(()=>fitMultiStart({...p,search_starts:n},local,evaluate),/Search starts/);
+});

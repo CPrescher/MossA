@@ -2,9 +2,13 @@ MossA — Third-party notices
 
 MossA itself is licensed under the MIT License (see LICENSE.txt).
 Dependencies retain their upstream licenses. This inventory covers the resolved
-Rust dependency graph (including build-time support crates) and the React runtime.
+Rust dependency graph (including build-time support crates) and the React and MathJax runtimes.
 Identical license texts are included once and referenced by text number.
 
+@mathjax/mathjax-tex-font 4.1.3 — Apache-2.0
+  Apache-2.0 (package metadata; text from @mathjax/src/LICENSE): Text 1
+@mathjax/src 4.1.3 — Apache-2.0
+  LICENSE: Text 1
 approx 0.5.1 — Apache-2.0
   LICENSE: Text 1
 autocfg 1.5.1 — Apache-2.0 OR MIT
