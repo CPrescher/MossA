@@ -1,3 +1,4 @@
+import { storageKey } from './storage-namespace';
 import { validCalibrationReference, type CalibrationReference } from './calibration';
 import { validXvbf } from './xvbf';
 import { validSourceReference, type SourceReference } from './source-calibration';
@@ -5,7 +6,7 @@ import { validGaussianSource } from './source-profile';
 import { nuclearConstants, validNuclearConstants, usesModernNuclearConstants, type NuclearConstants } from './nuclear-constants.mjs';
 import type { FitResult, Parameter, Project } from './types';
 import { calibrateCounts, validImportInfo, type ImportInfo } from './io.mjs';
-export const SESSION_KEY = 'mossa.session.v1';
+export const SESSION_KEY = storageKey('mossa.session.v1');
 export type Calibration = { max: number; shift: number; sinusoidal: boolean; folding: boolean; center: number; autoFold?: boolean; reference?: CalibrationReference; sourceReference?: SourceReference; nuclear_constants?: NuclearConstants; preset?: { id: string; name: string } };
 export type Snapshot = { project: Project; raw: number[] | null; cal: Calibration; filename: string; selected: number; fit?: FitSummary | null; fitElapsed?: number | null; velocityReversed?: boolean; importInfo?: ImportInfo };
 export type Layout = { resultsHeight: number; sitesHeight: number; tab: string; optionsOpen: boolean; projectCollapsed?: boolean; optionsCollapsed?: boolean; projectSplit?: number };

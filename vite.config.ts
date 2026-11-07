@@ -13,7 +13,7 @@ const buildInfo = {
   commit: process.env.GITHUB_SHA || git('rev-parse', 'HEAD') || null,
   branch: process.env.GITHUB_REF_NAME || git('branch', '--show-current'),
   builtAt: new Date().toISOString(),
-  channel: process.env.MOSSA_DESKTOP === '1' ? 'desktop' : process.env.GITHUB_ACTIONS === 'true' ? 'github-pages' : 'local',
+  channel: process.env.MOSSA_DESKTOP === '1' ? 'desktop' : process.env.MOSSA_PREVIEW === '1' ? 'github-pages-preview' : process.env.GITHUB_ACTIONS === 'true' ? 'github-pages' : 'local',
   dirty: !!git('status', '--porcelain'),
 };
 

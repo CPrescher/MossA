@@ -7,6 +7,7 @@ const titles: Record<Notice, string> = { privacy: 'Privacy & local processing', 
 
 export function AppFooter() {
   const desktop = buildInfo.channel === 'desktop';
+  const sourceRef = buildInfo.commit || (buildInfo.channel === 'github-pages-preview' ? 'develop' : 'main');
   const [notice, setNotice] = useState<Notice>('privacy');
   const dialog = useRef<HTMLDialogElement>(null);
   const open = (next: Notice) => { setNotice(next); dialog.current?.showModal(); };
@@ -42,10 +43,10 @@ export function AppFooter() {
         {notice === 'legal' && <>
           <h3>Open-source software</h3>
           <p>MossA 2 is developed by Clemens Prescher and contributors. The application source is licensed under the MIT License. The repository retains the original MATLAB application and its history. Third-party dependencies retain their own licenses.</p>
-          <p><a href="./LICENSE.txt" target="_blank" rel="noreferrer">Read the MIT license</a> · <a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">Third-party notices</a>{desktop && <> · <a href="./DESKTOP_NOTICES.txt" target="_blank" rel="noreferrer">Desktop &amp; manual notices</a></>} · <a href="https://github.com/CPrescher/MossA/tree/main" target="_blank" rel="noreferrer">Browser version source ↗</a></p>
+          <p><a href="./LICENSE.txt" target="_blank" rel="noreferrer">Read the MIT license</a> · <a href="./THIRD_PARTY_NOTICES.txt" target="_blank" rel="noreferrer">Third-party notices</a>{desktop && <> · <a href="./DESKTOP_NOTICES.txt" target="_blank" rel="noreferrer">Desktop &amp; manual notices</a></>} · <a href={`https://github.com/CPrescher/MossA/tree/${sourceRef}`} target="_blank" rel="noreferrer">Browser version source ↗</a></p>
           <h3>Warranty & scientific use</h3>
           <p>The software is provided without warranty, to the extent permitted by applicable law, as described in the license. This version is a scientific preview. Check fitted models, residuals, calibration standards, and uncertainty assumptions before using results in research or teaching.</p>
-          <p>The scope and validation limits are documented in the <a href="https://github.com/CPrescher/MossA/blob/main/PORTING.md" target="_blank" rel="noreferrer">porting notes ↗</a>.</p>
+          <p>The scope and validation limits are documented in the <a href={`https://github.com/CPrescher/MossA/blob/${sourceRef}/PORTING.md`} target="_blank" rel="noreferrer">porting notes ↗</a>.</p>
         </>}
       </div>
     </dialog>

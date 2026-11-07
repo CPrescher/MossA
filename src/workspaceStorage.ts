@@ -1,3 +1,4 @@
+import { storageKey } from './storage-namespace';
 import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { decodeWorkspace, modelSnapshot, type Workspace } from './workspace';
@@ -5,7 +6,7 @@ import { decodeSession, defaultLayout, snapshotVersion, type Layout } from './se
 
 export type WorkspaceSession = { version: 1 | 2; workspace: Workspace; layout: Layout };
 export const workspaceSessionVersion = (workspace: Workspace): 1 | 2 => workspace.spectra.some(s => s.velocityReversed) ? 2 : 1;
-const DATABASE = 'mossa-projects', KEY = 'current', FALLBACK_KEY = 'mossa.workspace.v1';
+const DATABASE = storageKey('mossa-projects'), KEY = 'current', FALLBACK_KEY = storageKey('mossa.workspace.v1');
 
 function database(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {

@@ -1,3 +1,4 @@
+import { storageKey } from './storage-namespace';
 export type ThemePreference = 'system' | 'light' | 'dark';
 export const themeStorageKey = 'mossa-theme';
 

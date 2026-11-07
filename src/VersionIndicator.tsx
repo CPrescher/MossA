@@ -5,7 +5,7 @@ import { changelog } from './changelog';
 type Status = 'checking' | 'current' | 'update' | 'unavailable';
 
 export function VersionIndicator({ build = buildInfo, reload = () => window.location.reload() }: { build?: BuildInfo; reload?: () => void }) {
-  const deployed = build.channel === 'github-pages' && !!build.commit && !build.dirty;
+  const deployed = ['github-pages', 'github-pages-preview'].includes(build.channel) && !!build.commit && !build.dirty;
   const [status, setStatus] = useState<Status>('checking');
   const [open, setOpen] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
@@ -46,15 +46,16 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
 
   const label = `v${build.version} · ${build.commit?.slice(0, 7) ?? 'unknown'}${build.dirty ? ' (modified)' : ''}`;
   const desktop = build.channel === 'desktop';
+  const preview = build.channel === 'github-pages-preview';
   const message = desktop ? 'Offline desktop app' : !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available' : status === 'unavailable' ? 'Could not check for updates' : 'Checking latest deployment…';
   const title = `${label}\n${build.builtAt ? `Built ${build.builtAt}\n` : ''}${message} — click for changelog`;
   return <div className={`version-indicator ${deployed ? status : 'local'}`}>
     <button className="version-button" title={title} aria-label={`${label}. ${message}. Open changelog`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { dialog.current?.showModal(); setOpen(true); void check(); }}>
-      <span className="version-dot" aria-hidden="true"/>{label}{!deployed && (desktop ? ' · desktop' : ' · local')}{deployed && status === 'update' && <strong>Update available ↻</strong>}
+      <span className="version-dot" aria-hidden="true"/>{label}{preview && ' · develop preview'}{!deployed && (desktop ? ' · desktop' : ' · local')}{deployed && status === 'update' && <strong>Update available ↻</strong>}
     </button>
     <dialog className="changelog-dialog" ref={dialog} aria-labelledby="changelog-heading" onClose={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
       <div className="changelog-heading"><h2 id="changelog-heading">What’s new in MossA 2</h2><form method="dialog"><button aria-label="Close changelog">×</button></form></div>
-      <p className="changelog-build" title={build.builtAt ? `Built ${build.builtAt}` : undefined}>Running {label}{!deployed && (desktop ? ' · desktop' : ' · local')}</p>
+      <p className="changelog-build" title={build.builtAt ? `Built ${build.builtAt}` : undefined}>Running {label}{preview && ' · develop preview'}{!deployed && (desktop ? ' · desktop' : ' · local')}</p>
       <div className="changelog-entries">{changelog.map(entry => <section key={entry.version}>
         <h3>v{entry.version}<time dateTime={entry.date}>{entry.date}</time></h3>
         <ul>{entry.changes.map(change => <li key={change}>{change}</li>)}</ul>
@@ -62,7 +63,7 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
       <div className="changelog-footer"><span role="status">{message}</span>{deployed && <div className="changelog-actions">
         <button disabled={status === 'checking'} onClick={() => void check()}>Check for updates</button>
         {status === 'update' && <button className="changelog-reload" onClick={reload}>Reload to update</button>}
-      </div>}<a href="https://github.com/CPrescher/MossA/commits/main/" target="_blank" rel="noreferrer">Full history on GitHub ↗</a></div>
+      </div>}<a href={`https://github.com/CPrescher/MossA/commits/${preview ? 'develop' : 'main'}/`} target="_blank" rel="noreferrer">Full history on GitHub ↗</a></div>
     </dialog>
     <span className="version-announcement" role="status">{deployed && status === 'update' ? 'A newer MossA 2 version is available. Open the changelog to reload when ready.' : ''}</span>
   </div>;

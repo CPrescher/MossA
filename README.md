@@ -16,7 +16,19 @@ MossA also has a Tauri desktop target for offline use, including its searchable 
 
 ## GitHub Pages
 
-Pushes to `main` run the Rust/WASM and UI tests, build the static app and Starlight manual, and deploy one `dist/` artifact through `.github/workflows/pages.yml`. The app is at `/MossA/` and the manual at `/MossA/manual/`. The `develop` branch runs tests and desktop build checks. GitHub Pages uses the `github-pages` environment, restricted to `main`. The site needs no calculation server; its relative asset URLs support the `/MossA/` project path. `build-info.json` identifies the deployed commit.
+The release site is [MossA](https://cprescher.github.io/MossA/); the testing site is
+[Develop preview](https://cprescher.github.io/MossA/preview/). Pushes to `main` or
+`develop` build both sites independently and publish them together: the release
+site always uses `main`, and `/preview/` always uses `develop`. Each has its own
+manual and source/build identity. The preview uses separate autosave databases
+and journals; export/open a `.mossa` file to transfer work between sites. Testing
+the preview does not read or replace release-site projects. Clearing browser
+storage for `cprescher.github.io` can clear both sites.
+
+The `github-pages` environment allows the `main` and `develop` branches. The
+relative application assets work under either path; `build-info.json` identifies
+the actual source commit and channel for each site. `develop` also runs desktop
+CI checks, while version tags build the release installer matrix.
 
 ## User manual
 

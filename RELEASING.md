@@ -14,8 +14,10 @@ as a historical development branch.
 
 - Pull requests targeting `main` or `develop` run scientific tests and desktop
   builds. Pushes to `develop` do the same. CI artifacts are testing downloads.
-- Pushes to `main` deploy the browser app and manual after their checks pass.
-  `develop` does not deploy over the public website.
+- Pushes to `main` or `develop` deploy both sites after their checks pass. The
+  release app/manual at `/MossA/` always come from `main`; the testing app/manual
+  at `/MossA/preview/` always come from `develop`. Preview storage is namespaced
+  separately, and both sites record their actual source commit.
 - Version tags trigger the desktop build matrix. GitHub Releases provide the
   permanent user downloads, release notes, checksums, and build provenance.
 - Versions with `preview`, `rc`, or another prerelease suffix remain marked as
