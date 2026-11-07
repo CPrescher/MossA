@@ -89,7 +89,10 @@ compatible Linux host and should be tested on the target distribution.
 
 ## Signing and public distribution
 
-Local and CI Mac preview builds use an ad-hoc signature. For public distribution,
+Ordinary local and cross-platform CI Mac preview builds use an ad-hoc signature.
+The separately validated Apple Silicon 2.0.0-preview.16 distribution has now been
+Developer ID signed, notarized, and stapled; see [DESKTOP-VALIDATION.md](DESKTOP-VALIDATION.md)
+for its files and successful CI runs. For public distribution,
 build with a Developer ID Application identity, notarize with Apple, and staple
 the notarization ticket. CI currently produces unsigned Windows previews.
 Configure platform signing before treating CI artifacts as a polished public
@@ -127,7 +130,8 @@ The helper submits the signed app, waits for Apple's acceptance, staples and
 validates its ticket, then creates a signed DMG **containing the stapled app**.
 It submits and staples that DMG and verifies both artifacts with Gatekeeper.
 Submission IDs, hashes, payloads, and logs remain under
-`src-tauri/target/notarization/`. Rerun the same command to resume a pending
+`src-tauri/target/notarization/`. For a profile in a CI file-based Keychain, set
+`MOSSA_NOTARY_KEYCHAIN` to that Keychain path. Rerun the same command to resume a pending
 submission. It does not create tags or publish downloads.
 
 ## Validation
