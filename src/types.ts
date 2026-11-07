@@ -16,5 +16,5 @@ export function keys(site: Site) {
 }
 export function parameter(value: number, fit = true, min: number | null = null, max: number | null = null): Parameter { return { value, fit, min, max, link: null }; }
 export function newSite(index: number, kind: Site['kind'] = 'Doublet'): Site {
-  return { name: `Site ${index + 1}`, kind, profile: 'Lorentzian', params: { cs: parameter(0, true, -10, 10), fwhm: parameter(.35, true, .01, 3), intensity: parameter(400, true, 0), qs: parameter(1, true, -10, 10), bhf: parameter(33, true, 0, 60), a12: parameter(kind === 'Doublet' ? .5 : 1.5, false, kind === 'Doublet' ? 0 : .001, kind === 'Doublet' ? 1 : null), a13: parameter(3, false, .001), mix: parameter(.5, true, 0, 1) } };
+  return { name: `Site ${index + 1}`, kind, profile: 'Lorentzian', params: { cs: parameter(0, true, -10, 10), fwhm: parameter(.35, true, .01, 3), intensity: parameter(400, true, 0), qs: parameter(1, kind !== 'Sextet', -10, 10), bhf: parameter(33, true, 0, 60), a12: parameter(kind === 'Doublet' ? .5 : 1.5, false, kind === 'Doublet' ? 0 : .001, kind === 'Doublet' ? 1 : null), a13: parameter(3, false, .001), mix: parameter(.5, true, 0, 1) } };
 }
