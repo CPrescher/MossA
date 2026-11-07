@@ -11,3 +11,6 @@ manual/.astro/
 dist-desktop/
 src-tauri/target/
 src-tauri/gen/
+
+__pycache__/
+*.pyc

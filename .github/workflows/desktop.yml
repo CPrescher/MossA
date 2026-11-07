@@ -25,7 +25,7 @@ permissions:
 
 concurrency:
   group: desktop-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   RUST_VERSION: 1.99.1
@@ -48,6 +48,8 @@ jobs:
           rustup default "$RUST_VERSION"
       - run: npm ci
       - run: npm test
+      - name: Test notarization recovery without Apple credentials
+        run: python3 -m unittest discover -s tests -p '*_test.py'
 
   desktop:
     needs: scientific-tests
@@ -94,7 +96,8 @@ jobs:
         run: |
           rustup toolchain install "$RUST_VERSION" --profile minimal --target wasm32-unknown-unknown --target ${{ matrix.target }}
           rustup default "$RUST_VERSION"
-      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+      - uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        id: rust-cache
         with:
           path: |
             ~/.cargo/registry/index
@@ -115,6 +118,17 @@ jobs:
       - name: Archive macOS application with permissions and symlinks
         if: runner.os == 'macOS'
         run: tar -czf "dist-desktop/MossA-${{ matrix.target }}.app.tar.gz" -C "src-tauri/target/${{ matrix.target }}/release/bundle/macos" MossA.app
+      - name: Preserve compiled dependencies even if packaging fails
+        if: always() && steps.rust-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            rust-core/target
+            src-tauri/target
+          key: ${{ steps.rust-cache.outputs.cache-primary-key }}
       - name: Upload desktop installers and build identity
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

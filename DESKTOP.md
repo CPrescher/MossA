@@ -76,6 +76,10 @@ include `build-info.json`. The `.app` is archived as a tarball to preserve its
 executable permissions and symlinks. The workflow can be dispatched manually and
 does not create tags or GitHub Releases.
 
+The MSI package uses numeric version `2.0.0.16` because WiX rejects the textual
+`preview.16` prerelease. The app and NSIS installer retain `2.0.0-preview.16`.
+A test checks that the MSI version stays synchronized with the app version.
+
 Windows installers embed the WebView2 offline installer. This makes initial
 installation independent of downloading WebView2, at the cost of a larger
 installer. Linux DEB packages declare their GTK/WebKit runtime dependencies;
@@ -92,6 +96,39 @@ Configure platform signing before treating CI artifacts as a polished public
 release. Tauri's [macOS signing guide](https://v2.tauri.app/distribute/sign/macos/)
 and [Windows signing guide](https://v2.tauri.app/distribute/sign/windows/)
 describe the necessary credentials. Do not commit certificates or credentials.
+
+## Sign and notarize locally
+
+Use the Developer ID Application certificate already installed in Keychain. Pass
+its identity explicitly so ordinary preview builds can remain ad-hoc signed:
+
+```sh
+npm run desktop:build -- --config '{"bundle":{"macOS":{"signingIdentity":"Developer ID Application: Your Name (TEAMID)"}}}' --bundles app,dmg -- --locked
+```
+
+Create a Keychain profile once using your developer Apple ID and team ID. This
+works from any folder and prompts securely for an **app-specific password**:
+
+```sh
+xcrun notarytool store-credentials mossa-notarization --apple-id "YOUR_APPLE_ID_EMAIL" --team-id YOUR_TEAM_ID
+```
+
+Generate the password at [account.apple.com](https://account.apple.com/) under
+Sign-In and Security → App-Specific Passwords. An App Store Connect API key is
+an alternative, not a requirement. Keep credentials out of source and chat.
+
+After the signed build, run the helper with the generated DMG's actual filename:
+
+```sh
+python3 scripts/notarize-macos.py --profile mossa-notarization --dmg src-tauri/target/release/bundle/dmg/MossA_2.0.0-preview.16_aarch64.dmg
+```
+
+The helper submits the signed app, waits for Apple's acceptance, staples and
+validates its ticket, then creates a signed DMG **containing the stapled app**.
+It submits and staples that DMG and verifies both artifacts with Gatekeeper.
+Submission IDs, hashes, payloads, and logs remain under
+`src-tauri/target/notarization/`. Rerun the same command to resume a pending
+submission. It does not create tags or publish downloads.
 
 ## Validation
 
