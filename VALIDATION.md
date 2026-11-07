@@ -116,3 +116,29 @@ Final GUI check: three site rows visible, no duplicated plot status blocks, no a
 - The `mossa2` branch combines the initial browser implementation history with the original MATLAB history. The legacy MATLAB branch is named `main` and retains commit d201482b7990afbd0e2dcc23e306bfc8d60a5049 unchanged.
 - `reference/MossA` is now ordinary tracked source rather than a submodule pointing back to this repository. Its complete Git tree is exactly 0dcc27b4acb4f8f418ab1827f14e2e2cf74339b0, matching the original MATLAB commit, including file contents and modes. No recursive submodule checkout is required.
 - The production build and all 58 tests passed from the relocated working checkout. The existing preview continued serving the same build through its compatibility path; its browser address was preserved.
+
+## Manual publication beside the existing browser app (2026-11-07)
+
+This documentation-only change adds the Starlight manual, locked manual dependencies,
+theme-aware screenshots, attributed tutorial downloads, physics equations, and an
+interactive added-site comparison lesson. It retains the deployed preview.11 app
+source and dependencies. Every manual page identifies its preview.16 development
+scope and warns that older public app versions may lack described features and
+project formats. The recorded preview.16 scientific checks in `manual/RESEARCH.md`
+are distinguished from the application baseline deployed by this commit.
+
+From an isolated checkout of the deployed `mossa2` baseline, both npm lockfiles
+installed successfully. The full baseline suite plus lesson tests passed: 13 Rust,
+25 JavaScript, and 65 TypeScript/DOM tests (103 total). The TypeScript/Vite app
+build and standalone manual build passed. The manual checks 1,308 local links
+across 21 pages; output checks verified the version notice on every page, no
+KaTeX errors, and no reserved classroom chapter, download, asset, or textual
+references. `scripts/assemble-pages.mjs` produced one app/manual artifact so a
+manual deployment cannot replace the application root.
+
+Pages configuration, package scripts, the manual and its tests are the only
+publication changes; unfinished application and desktop work stays in the shared
+working checkout. Source generation scripts referenced by the manual require the
+preview.16 development checkout; this commit publishes their recorded outputs,
+not the unfinished application implementation. Source screenshots and worked
+results retain their original preview-build provenance.

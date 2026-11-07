@@ -1,0 +1,141 @@
+{
+  "author": "Sergey Yaroslavtsev / ESRF",
+  "copyright": "Copyright (c) European Synchrotron Radiation Facility (ESRF)",
+  "repository": "https://github.com/sergey-yaroslavtsev/syncmoss",
+  "upstreamCommit": "b712fbc1521004a47409b964b9ab012fe5c5e255",
+  "license": "MIT",
+  "licenseText": "MIT License\n\nCopyright (c) European Synchrotron Radiation Facility (ESRF)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+  "reference": "Yaroslavtsev (2023), J. Synchrotron Rad. 30, 596–604; doi:10.1107/S1600577523001686",
+  "purpose": "New MossA worked teaching fits; not SYNCmoss author fits or reproductions of published figure models",
+  "source": {
+    "author": "Sergey Yaroslavtsev / ESRF",
+    "copyright": "Copyright (c) European Synchrotron Radiation Facility (ESRF)",
+    "repository": "https://github.com/sergey-yaroslavtsev/syncmoss",
+    "upstreamCommit": "b712fbc1521004a47409b964b9ab012fe5c5e255",
+    "license": "MIT",
+    "licenseText": "MIT License\n\nCopyright (c) European Synchrotron Radiation Facility (ESRF)\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+    "reference": "Yaroslavtsev (2023), J. Synchrotron Rad. 30, 596–604; doi:10.1107/S1600577523001686",
+    "rawINSexp": [
+      0.11128918719357384,
+      -0.11736705027472578,
+      0.4669751363703076,
+      0.1994552479800052,
+      0.06805369254098546,
+      0.7866806046744412,
+      0.5135750889889642,
+      -0.07893915229473415,
+      0.4038166022354557
+    ],
+    "rawINSint": [
+      2.6518132566569803,
+      0.004932389302343025
+    ],
+    "naturalWidthUsedByUpstream": 0.098,
+    "mossaAnchorComponents": [
+      {
+        "center": 0.11736705027472578,
+        "fwhm": 0.14455129531677993,
+        "weight": 0.21806577798806737
+      },
+      {
+        "center": -0.06805369254098546,
+        "fwhm": 0.20906656562131762,
+        "weight": 0.6188663737709444
+      },
+      {
+        "center": 0.07893915229473415,
+        "fwhm": 0.7364920385275889,
+        "weight": 0.16306784824098822
+      }
+    ],
+    "mossaCenteredComponents": [
+      {
+        "center": 0.12101701736429557,
+        "fwhm": 0.14455129531677993,
+        "weight": 0.21806577798806737
+      },
+      {
+        "center": -0.06440372545141568,
+        "fwhm": 0.20906656562131762,
+        "weight": 0.6188663737709444
+      },
+      {
+        "center": 0.08258911938430394,
+        "fwhm": 0.7364920385275889,
+        "weight": 0.16306784824098822
+      }
+    ],
+    "rawSourceCentroid": 0.0036499670895697826,
+    "conversion": "sigma=a^2+0.098/2; FWHM=2 sqrt(2 ln 2) sigma; area=c^2; response center=-mu, then normalize weights and remove their weighted centroid.",
+    "status": "Supplied source, not estimated from these iron spectra. INSint is retained as metadata and is not a MossA velocity calibration."
+  },
+  "inputTreatment": "Original bytes and all velocity/count rows retained. No folding, velocity reversal, resampling, count normalization, or header-based velocity recalibration.",
+  "limitations": [
+    "CMS fits are empirical thin-model line-shape comparisons, not a reproduction of the supplied GCMS source/geometry model.",
+    "SMS uses a single isotropic scalar powder sextet and fixed intrinsic width; polarization, texture, relaxation, and source/velocity uncertainty are not modeled.",
+    "The squared-source control fixes width 0.200 mm/s in the legacy parameter convention; it is not an optimized source calibration or a model-selection test.",
+    "Calibration.dat repeats exactly the CMS velocity/count observations and is not an independent validation dataset."
+  ],
+  "files": [
+    {
+      "name": "Standard_CMS.dat",
+      "source": "https://github.com/sergey-yaroslavtsev/syncmoss/blob/b712fbc1521004a47409b964b9ab012fe5c5e255/syncmoss/parameters/Standard_CMS.dat",
+      "upstreamPath": "syncmoss/parameters/Standard_CMS.dat",
+      "gitBlob": "70e37f5654ff43dd09fd8fd46a93dafb5f49bd70",
+      "sha256": "a7eb98f6bc737073fe2b1b02498bf601fce51f1a9db034c79fa62bf508cbb74a",
+      "bytes": 14458,
+      "points": 512,
+      "range": [
+        -9.895537584275214,
+        10.129313437637718
+      ],
+      "headers": [
+        "# SYNCmoss standard spectrum: measured alpha-Fe, CMS (MossLab 035, calibrated with its single line 036; f_LM 0.744; high-energy background 12889 counts per 100 s, measured 50258 s)",
+        "#@GCMS 0.06583247551101032 0.19223224658336782 5.0 20.0"
+      ]
+    },
+    {
+      "name": "Standard_SMS.dat",
+      "source": "https://github.com/sergey-yaroslavtsev/syncmoss/blob/b712fbc1521004a47409b964b9ab012fe5c5e255/syncmoss/parameters/Standard_SMS.dat",
+      "upstreamPath": "syncmoss/parameters/Standard_SMS.dat",
+      "gitBlob": "7e1b8d1bd0b0fbc4447e2e3a6b8adfaf24c0eafd",
+      "sha256": "f4d6e51aa44c5c3a82bc1228227d845c77397902334f4ffd4875c11ae69ab3df",
+      "bytes": 13548,
+      "points": 511,
+      "range": [
+        -10.575991372481505,
+        11.917598265553826
+      ],
+      "headers": [
+        "# SYNCmoss standard spectrum: measured alpha-Fe, SMS, with the instrumental function found for it",
+        "#@INSexp 0.11128918719357384 -0.11736705027472578 0.4669751363703076 0.1994552479800052 0.06805369254098546 0.7866806046744412 0.5135750889889642 -0.07893915229473415 0.4038166022354557",
+        "#@INSint 2.6518132566569803 0.004932389302343025"
+      ]
+    },
+    {
+      "name": "Calibration.dat",
+      "source": "https://github.com/sergey-yaroslavtsev/syncmoss/blob/b712fbc1521004a47409b964b9ab012fe5c5e255/syncmoss/parameters/Calibration.dat",
+      "upstreamPath": "syncmoss/parameters/Calibration.dat",
+      "gitBlob": "f08940a1a7dd786cb3abf61734da35ad997bd9fc",
+      "sha256": "e15f19226496a142878b27464af37cfb592453d99101412d62cab83f7a793eab",
+      "bytes": 14236,
+      "points": 512,
+      "range": [
+        -9.895537584275214,
+        10.129313437637718
+      ],
+      "headers": [
+        "#\tlin \t0\t1023"
+      ]
+    },
+    {
+      "name": "UPSTREAM_LICENSE.txt",
+      "source": "https://github.com/sergey-yaroslavtsev/syncmoss/blob/b712fbc1521004a47409b964b9ab012fe5c5e255/LICENSE",
+      "upstreamPath": "LICENSE",
+      "gitBlob": "9e889419862ce22f4af68a3a24606d2a9cf2d186",
+      "sha256": "7e50804d3039c18fcd2ee65acdb52986c68ec84ac7dd66e0141d623b53195a97",
+      "bytes": 1098
+    }
+  ],
+  "wasmSHA256": "dd629aa7f292a740b301d1e9680266b81c8647f5efa6b8118e5f876de73bec33"
+}

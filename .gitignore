@@ -6,3 +6,6 @@ test-results/
 playwright-report/
 .DS_Store
 *.tsbuildinfo
+
+manual/.astro/
+manual/dist-desktop/

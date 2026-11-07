@@ -1,0 +1,832 @@
+{
+  "context": "Actual local MossA browser UI; measured examples from the supplied Freiburg practical, synthetic illustrations labeled in their captions. Restored fits are new browser-core computations, not MATLAB reference results.",
+  "records": [
+    {
+      "name": "almandine-two-doublets",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "almandine-one-doublet",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "bounds-and-links",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "fit-options",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "calibration-preset",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "almandine-calibration",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "figure-export",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "model-comparison",
+      "spectrum": "almandine",
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "transmission-overlays",
+      "spectrum": "Synthetic singlet reference",
+      "status": "StatusOpened 1 spectra with all models and saved fit results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "source-calibration",
+      "spectrum": "Synthetic singlet reference",
+      "status": "StatusOpened 1 spectra with all models and saved fit results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-distributions",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-correlation",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "xvbf-map",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusModel changed; fit again to update results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "iteration-limit",
+      "spectrum": "Synthetic iron mixture",
+      "status": "StatusStopped · 1 iterations · 14 ms▾ Fit details · 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
+    },
+    {
+      "name": "../first-fit",
+      "spectrum": "Synthetic iron mixture",
+      "context": "Completed synthetic fit, refreshed after the current interface build."
+    }
+  ],
+  "app_build": {
+    "application": "MossA 2 preview",
+    "version": "2.0.0-preview.15",
+    "commit": "6c821460f752c6b2d00fc8c6285cc1acb949f4b4",
+    "branch": "mossa2",
+    "builtAt": "2026-11-06T22:15:16.017Z",
+    "channel": "local",
+    "dirty": true
+  },
+  "application_bundle_sha256": {
+    "index-DYKIujYA.js": "0bd6be3067a4df00d264490f533add12f16625ddd0cc3a7d7b1293b3a90bc0ef"
+  },
+  "sms": {
+    "context": "Actual local browser workflow; original measured SMS files; example browser refits, unresolved pressure labels retained.",
+    "browser": {
+      "buildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build — click for changelog",
+      "scripts": [
+        "http://127.0.0.1:4175/MossA/assets/index-DzSRhK_3.js"
+      ]
+    },
+    "records": [
+      {
+        "name": "sms-mca-import",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusAdded 1 spectrum to the project."
+      },
+      {
+        "name": "sms-reversed-axis",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusRedid change."
+      },
+      {
+        "name": "sms-final-fit",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-two-sextets",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
+      },
+      {
+        "name": "sms-two-sextets-qs",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
+      },
+      {
+        "name": "sms-three-sextets",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 17 iterations▸ Fit detailsSSE4.115e+6Reduced8,296.9"
+      },
+      {
+        "name": "sms-intensity-links",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-velocity-calibration",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
+      },
+      {
+        "name": "sms-reference-columns",
+        "spectrum": "singleLineBefore.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+      },
+      {
+        "name": "sms-source-before",
+        "spectrum": "singleLineBefore.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+      },
+      {
+        "name": "sms-source-after",
+        "spectrum": "singleLineAfter.dat",
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
+      }
+    ]
+  },
+  "dark_theme": {
+    "context": "31 real local app dark-mode captures of the corresponding documented workflows. The originals remain the light-mode variants; no pixel recoloring or inversion. Figures retain their white publication canvas within the dark app. Fits and examples are the same teaching projects, with newly executed source/velocity calibration previews where applicable.",
+    "app_build": {
+      "application": "MossA 2 preview",
+      "version": "2.0.0-preview.16",
+      "commit": "6c821460f752c6b2d00fc8c6285cc1acb949f4b4",
+      "branch": "mossa2",
+      "builtAt": "2026-11-07T04:03:53.028Z",
+      "channel": "local",
+      "dirty": true
+    },
+    "records": [
+      {
+        "name": "almandine-calibration",
+        "file": "public/screenshots/dark/almandine-calibration.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:07.620Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "ad5f94f32a3863ceeff3d2f5b7ed902ad150de6a04c67f0a0cd02702732bb21c"
+      },
+      {
+        "name": "almandine-one-doublet",
+        "file": "public/screenshots/dark/almandine-one-doublet.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:05.497Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "0e520162fc39ba416fc44120026133c8e15dda81425abb9895ebe70e64aedea7"
+      },
+      {
+        "name": "almandine-two-doublets",
+        "file": "public/screenshots/dark/almandine-two-doublets.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:05.133Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "8c6db0aac1fb702e26d9bbba230a352200fa492ab4f2af2b455a6c19dfe6895a"
+      },
+      {
+        "name": "bounds-and-links",
+        "file": "public/screenshots/dark/bounds-and-links.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:06.126Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "cd66f9bc3199fdce63317fb7ae4c171e4f07cfe9c12a46d47211b800880013dd"
+      },
+      {
+        "name": "calibration-preset",
+        "file": "public/screenshots/dark/calibration-preset.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:07.044Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "84f9aa64c89ea989e3cb7d893166a961152b302c2d954e1f1bbc5771f7255c88"
+      },
+      {
+        "name": "figure-export",
+        "file": "public/screenshots/dark/figure-export.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:12.487Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "83c7bced2a769aaea8d94fa039b6f53ad35d18b58df307637156c962135c2c76"
+      },
+      {
+        "name": "first-fit",
+        "file": "public/screenshots/dark/first-fit.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:38.024Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "07645128d24d5c3de2a7f11c546d5647d10f3e71d9fb8376a2c8d1d3a2a1f013"
+      },
+      {
+        "name": "fit-options",
+        "file": "public/screenshots/dark/fit-options.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:06.468Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "2739bdb6ed74d4e01d784d6e96ff81b21c762ae7eddb9314e5c5980df3bd975c"
+      },
+      {
+        "name": "iteration-limit",
+        "file": "public/screenshots/dark/iteration-limit.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:04:21.769Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "fb88f5ed77e58d70c1335a12fe8c67c976d01ef4d309e8594f4f60e1fbfcc9b7"
+      },
+      {
+        "name": "model-comparison",
+        "file": "public/screenshots/dark/model-comparison.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:27.128Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "2dfac87e288e4a0d15450bd1ecb2e20db400102ab74c2547275ebc8071f30614"
+      },
+      {
+        "name": "sms-final-fit",
+        "file": "public/screenshots/dark/sms-final-fit.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "307f4ea6d26bf057762874fd4c46ed7f8809c6b584d23805ad16a96eff095a77"
+      },
+      {
+        "name": "sms-intensity-links",
+        "file": "public/screenshots/dark/sms-intensity-links.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:05:36.701Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "a7e08ea3f8e14690501f304be6603c0674ab4a7c44e6a76a65fad6e113702952"
+      },
+      {
+        "name": "sms-mca-import",
+        "file": "public/screenshots/dark/sms-mca-import.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "6dd919a6130d5061ac9ebffff25b21ac9ca3e27ac3dc7477827df186bdfb3f38"
+      },
+      {
+        "name": "sms-reference-columns",
+        "file": "public/screenshots/dark/sms-reference-columns.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:02:52.752Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "816340557e554762dd027d060ff0b663e15f01d16e9ab1b5e90fb635b756de43"
+      },
+      {
+        "name": "sms-reversed-axis",
+        "file": "public/screenshots/dark/sms-reversed-axis.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "5b827681af4dbabf286e6763c9897df347e557c3e1497f720c705388cb69dcff"
+      },
+      {
+        "name": "sms-source-after",
+        "file": "public/screenshots/dark/sms-source-after.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:02:54.929Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "bdaac49e1b7a9360de08603c5ebc68c4c0dce11ed4b29dfcdd901832c6550988"
+      },
+      {
+        "name": "sms-source-before",
+        "file": "public/screenshots/dark/sms-source-before.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:02:53.573Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "ec82e1627e53462345088d5981366d1ac0e7fa2df4fe49adbf7233d083b6c953"
+      },
+      {
+        "name": "sms-three-sextets",
+        "file": "public/screenshots/dark/sms-three-sextets.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "3350f8a019ad6100c8467888449b27251946a58a77080a9f19f370085ac6c28d"
+      },
+      {
+        "name": "sms-two-sextets-qs",
+        "file": "public/screenshots/dark/sms-two-sextets-qs.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "bf18858565ac31224b1de7ef9914ecdd5e359276b4e0be02fc8d5dff02dd2953"
+      },
+      {
+        "name": "sms-two-sextets",
+        "file": "public/screenshots/dark/sms-two-sextets.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "c3de566f2edb4202058d47d1b0d38cb1623f093187e268fb4a628cd1da8a7d20"
+      },
+      {
+        "name": "sms-velocity-calibration",
+        "file": "public/screenshots/dark/sms-velocity-calibration.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "fe47df88454cd7db0d39aecfe5578a16f8dc92e975c546f568424a77cc4efe5b"
+      },
+      {
+        "name": "source-calibration",
+        "file": "public/screenshots/dark/source-calibration.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:37.049Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "b9c26edc1633779bed14ebef6e816d1d0ab37c2b8feb1fa23f2e6f329510997a"
+      },
+      {
+        "name": "transmission-overlays",
+        "file": "public/screenshots/dark/transmission-overlays.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:29.425Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "533f7e77772173e845f71687fa95a4b91e94857099f5c3410687858fe4e5fd23"
+      },
+      {
+        "name": "xvbf-correlation",
+        "file": "public/screenshots/dark/xvbf-correlation.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:58.394Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "6431b11f6c06cc7480d9c3ccbbbd2c856d34a1945c3c834a206e3d8851bdfccd"
+      },
+      {
+        "name": "xvbf-distributions",
+        "file": "public/screenshots/dark/xvbf-distributions.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:50.738Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "f865021698a428fd8b3b09f27455a54e0fdd52b38adba7cae9da041e5c8db694"
+      },
+      {
+        "name": "xvbf-map",
+        "file": "public/screenshots/dark/xvbf-map.jpg",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:03:58.777Z",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "63c600a2975a0bd782741d42b174de4c08f2fd0b8f4b3ada626cce3e876d179b"
+      }
+    ]
+  },
+  "syncmoss": {
+    "context": "Actual local browser UI; original pinned SYNCmoss measured CMS/SMS standards; new MossA worked fits, with empirical CMS and deliberate fixed-source control limits described in the chapter.",
+    "upstreamCommit": "b712fbc1521004a47409b964b9ab012fe5c5e255",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T23:02:48.671Z\nLocal build — click for changelog",
+    "records": [
+      {
+        "name": "syncmoss-import",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:35.245Z",
+        "file": "src/assets/screenshots/syncmoss-import.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "df81b80d6f2a41cfeef9fc206644465b298e606a94c9f2b21f8d49c0676cd301"
+      },
+      {
+        "name": "syncmoss-workspace",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:35.662Z",
+        "file": "src/assets/screenshots/syncmoss-workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "d0245006942566ebceba6834f5c141ea81b74581ff9b27ce7aed211c85bce0ed"
+      },
+      {
+        "name": "syncmoss-cms-lorentzian",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:45.893Z",
+        "file": "src/assets/screenshots/syncmoss-cms-lorentzian.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "e0697da0b99b9c4fdf4b6754944bbaa5d020392398f554b270922c41309455f5"
+      },
+      {
+        "name": "syncmoss-cms-pseudovoigt",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:46.280Z",
+        "file": "src/assets/screenshots/syncmoss-cms-pseudovoigt.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "e33e0b42d9d01898a3c74098e864db136d657267354d46bb701d383d967892d6"
+      },
+      {
+        "name": "syncmoss-sms-gaussian",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:46.672Z",
+        "file": "src/assets/screenshots/syncmoss-sms-gaussian.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "8b3b56de996a6076bd5bc2220f3c615df56f0491f4acf579aee8ac339487e044"
+      },
+      {
+        "name": "syncmoss-weighting",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:47.023Z",
+        "file": "src/assets/screenshots/syncmoss-weighting.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "2b39788cd5fd2921a89061921fd74db3743545867fbcf28f07a84e2137006c9f"
+      },
+      {
+        "name": "syncmoss-sms-squared",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:47.660Z",
+        "file": "src/assets/screenshots/syncmoss-sms-squared.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "31f25fbef0406fc50412e9f025d6336c44c1ffa922e3139a2b7a97f1df262253"
+      },
+      {
+        "name": "syncmoss-export",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:21:48.260Z",
+        "file": "src/assets/screenshots/syncmoss-export.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "5cedd28b1477107b70a0c9961362859bf378395b17beee2e712cc2531a0137f7"
+      },
+      {
+        "name": "syncmoss-import",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:06.107Z",
+        "file": "public/screenshots/dark/syncmoss-import.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "9647ebb520617a34c1be721b8f9b2551388dc8bfd1c5ba4861df57ee6df971b3"
+      },
+      {
+        "name": "syncmoss-workspace",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:06.667Z",
+        "file": "public/screenshots/dark/syncmoss-workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "2ae292969dd77282b6d092f17272620afb00ade7b6c6c12aa9ed85269151a06e"
+      },
+      {
+        "name": "syncmoss-cms-lorentzian",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:07.056Z",
+        "file": "public/screenshots/dark/syncmoss-cms-lorentzian.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "a595aa8ec7eec51a1c182570464d298d0739ddc7e5823ff9d1169e408431a637"
+      },
+      {
+        "name": "syncmoss-cms-pseudovoigt",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:07.578Z",
+        "file": "public/screenshots/dark/syncmoss-cms-pseudovoigt.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "0e705e80b23ef65b2e9a2d4d6c8ee4a692f85cb45fff3cf87e95aff9dd9f4ab7"
+      },
+      {
+        "name": "syncmoss-sms-gaussian",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:08.137Z",
+        "file": "public/screenshots/dark/syncmoss-sms-gaussian.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "179fa9ea2c54637086b5357a0b7c0588311fe4fb97900fcfb02cc31067ac62d4"
+      },
+      {
+        "name": "syncmoss-weighting",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:08.608Z",
+        "file": "public/screenshots/dark/syncmoss-weighting.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "c0cb96422f37ea37a804723af61dd01edef683f8d96f66e6b018391343fd3bbe"
+      },
+      {
+        "name": "syncmoss-sms-squared",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:09.287Z",
+        "file": "public/screenshots/dark/syncmoss-sms-squared.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "a065b461a717f82520d42537e220c10045baeb050e80b37dd133207783477da7"
+      },
+      {
+        "name": "syncmoss-export",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:22:10.133Z",
+        "file": "public/screenshots/dark/syncmoss-export.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "47c14602fd754f15e99c1231b449ba6a528c206220a10118c499a1b5b6902ca2"
+      }
+    ]
+  },
+  "calculated_figures": {
+    "context": "Original calculated teaching figures, not app screenshots or measured observations. Each has separately rendered light/dark variants.",
+    "records": [
+      {
+        "name": "physics-transmission",
+        "theme": "light",
+        "generator": "scripts/plot-transmission-tutorial.py",
+        "file": "src/assets/screenshots/physics-transmission.png",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "efe09869850969c2ed9167fa1adb42020bb9c226e2fef518730b1f5b47761262"
+      },
+      {
+        "name": "physics-transmission",
+        "theme": "dark",
+        "generator": "scripts/plot-transmission-tutorial.py",
+        "file": "public/screenshots/dark/physics-transmission.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "f024c37d0b15e164470906cbcfb8e765b4b66c580f59a731241e760e0d1acdae"
+      },
+      {
+        "name": "syncmoss-source-response",
+        "theme": "light",
+        "generator": "scripts/plot-syncmoss-source.py",
+        "file": "src/assets/screenshots/syncmoss-source-response.png",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "bc53e19f35345468bbba5aff41b054d821c48eeead56bcd41a6bdb903ebbf1fb"
+      },
+      {
+        "name": "syncmoss-source-response",
+        "theme": "dark",
+        "generator": "scripts/plot-syncmoss-source.py",
+        "file": "public/screenshots/dark/syncmoss-source-response.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "fe4331951c9038bd4de7cec58895ce4f44148cd78164fd743df80e9f63153998"
+      }
+    ]
+  },
+  "comparison_lesson": {
+    "context": "Actual completed local browser comparison tests; original synthetic fixed-shape singlet examples generated by scripts/prepare-comparison-tutorial.ts. Gaussian noise, 199 simulations, seed 12345, one worker. Separate runs in each app theme; no image recoloring. The weak-line observed one-line fit retains its stationary-solver warning.",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:33:00.987Z\nLocal build — click for changelog",
+    "records": [
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:50:44.076411+00:00",
+        "file": "src/assets/screenshots/comparison-no-extra-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "ff6dd89c1ab3362a82cdd9bc521d23dba6bdb0f73a01c1407f2bc07134f493b2"
+      },
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:50:27.804754+00:00",
+        "file": "public/screenshots/dark/comparison-no-extra-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "bb8357d9971bdbfd5c41dd17a4290af98220b12a0335569e618206168fb1fdac"
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:50:54.545153+00:00",
+        "file": "src/assets/screenshots/comparison-borderline-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "0800e9a788348ebd9b20df7bca7541a2919cb2c55c3da94babc90a0954bae340"
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:51:05.200145+00:00",
+        "file": "public/screenshots/dark/comparison-borderline-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "404c527cd4ed9a49eb8195eaaecb828a2ddad480950f0641bc0cedd006c4c8ab"
+      }
+    ]
+  },
+  "almandine_only_refresh": {
+    "context": "Actual local app, almandine-only project with four saved model stages; replacements for workspace, raw-count import controls, and folding diagnostic. Separate classroom exercises are excluded. No pixel recoloring.",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:56:45.507Z\nLocal build — click for changelog",
+    "records": [
+      {
+        "name": "workspace",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:35.059420+00:00",
+        "file": "src/assets/screenshots/workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "481dadc5c56877292fd7d79d6b756b22392cdb92842722fbff4facc98b7c0d26"
+      },
+      {
+        "name": "workspace",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:34.773633+00:00",
+        "file": "public/screenshots/dark/workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "1b5cc991a72dcf9a18c9adf28ea1c2d9589cfd2c44390b0bed18d768b475d7ca"
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:41.370911+00:00",
+        "file": "src/assets/screenshots/importing-raw-counts.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "286c8429172dad4807e45655b448d8fd4bfbde6fcc744113ce9c6f7d174a8fa3"
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:41.640625+00:00",
+        "file": "public/screenshots/dark/importing-raw-counts.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "127c8797e30a2fbac407fd6c28ec94d780e9d6733e18225b3500bede4e2c21c8"
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:51.288131+00:00",
+        "file": "src/assets/screenshots/almandine-folding.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "64446b762c5e2e5ea698a8ab92f622b61d23ed00db2a2f76537a5cabf6e2733e"
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:50.448797+00:00",
+        "file": "public/screenshots/dark/almandine-folding.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "e576086bf4a17c1d06331f7241f18eee1a2968bb15e4c8f3bb42a944c3ad30d5"
+      }
+    ]
+  }
+}

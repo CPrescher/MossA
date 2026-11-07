@@ -11,7 +11,10 @@
     "build:web": "tsc -b && vite build",
     "test": "npm run wasm && cargo test --manifest-path rust-core/Cargo.toml && node --test tests/*.test.mjs && tsx --test tests/*.test.tsx",
     "preview": "vite preview --host 127.0.0.1",
-    "serve": "node scripts/serve.mjs"
+    "serve": "node scripts/serve.mjs",
+    "dev:manual": "npm --prefix manual run dev",
+    "build:manual": "npm --prefix manual run build",
+    "build:pages": "npm run build:web && npm run build:manual && node scripts/assemble-pages.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

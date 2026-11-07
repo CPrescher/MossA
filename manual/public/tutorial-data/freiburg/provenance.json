@@ -1,0 +1,32 @@
+{
+  "purpose": "Measured teaching data supplied with the Freiburg Mössbauer practical; browser tutorial adaptation authorized by the course instructor.",
+  "sources": [
+    "MossA tutorial conv.pdf, steps 1–11"
+  ],
+  "transformation": "Filenames simplified for downloads; file bytes unchanged. No trimming, normalization, or background subtraction of raw measurements.",
+  "files": [
+    {
+      "original": "MossA tutorial/conv/Alm Fe-Foil.dat",
+      "download": "almandine-iron-foil.dat",
+      "sha256": "63787a35f416444f415322f540217a6c8b48914f934ec9c8abd64522b8f5039d",
+      "channels": 512
+    },
+    {
+      "original": "MossA tutorial/conv/Alm sample.dat",
+      "download": "almandine.dat",
+      "sha256": "245d0f1df1a92cc0ffd46eb507a4ae6d780cae23704a3ef5aa2ed62bfba4fc46",
+      "channels": 512
+    }
+  ],
+  "analysis": {
+    "referenceFieldT": 33,
+    "manualFoldCenter": 256.5,
+    "drive": "linear",
+    "weighting": "unweighted",
+    "magneticConstants": "fe57-iaea-2019-2020-codata2022",
+    "almandineCalibration": {
+      "max": 5.021549317636565,
+      "shift": -0.10859109899772898
+    }
+  }
+}

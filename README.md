@@ -10,7 +10,13 @@ The original MATLAB source is also retained as ordinary tracked files in `refere
 
 ## GitHub Pages
 
-Pushes to `mossa2` run the Rust/WASM and UI tests, build the static app, and deploy `dist/` through `.github/workflows/pages.yml`. The MATLAB `main` branch is not a deployment source. GitHub Pages uses the `github-pages` environment, restricted to `mossa2`. The site needs no calculation server; its relative asset URLs support the `/MossA/` project path. `build-info.json` identifies the deployed commit.
+Pushes to `mossa2` run the Rust/WASM and UI tests, build the app and Starlight manual, and deploy `dist/` through `.github/workflows/pages.yml`. The MATLAB `main` branch is not a deployment source. GitHub Pages uses the `github-pages` environment, restricted to `mossa2`. The site needs no calculation server; its relative asset URLs support the `/MossA/` project path. `build-info.json` identifies the deployed commit.
+
+## User manual
+
+Read the [MossA manual](https://cprescher.github.io/MossA/manual/), including the physics, equations, almandine/SMS/SYNCmoss tutorials, light/dark screenshots, and interactive model-comparison lesson. The manual documents the preview.16 development interface; the app's footer identifies its actual running version. Some described features and project formats are unavailable in older releases.
+
+The manual has separate locked dependencies: `npm ci --prefix manual`. Use `npm run dev:manual` for local authoring, `npm run build:manual` to build and check links, or `npm run build:pages` after generating WASM to assemble one app/manual Pages artifact. Classroom exercises are excluded from the publication.
 
 ## Open the prebuilt prototype
 

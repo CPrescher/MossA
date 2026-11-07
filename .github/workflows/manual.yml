@@ -1,0 +1,30 @@
+name: Check MossA manual
+
+on:
+  pull_request:
+    branches: [mossa2]
+    paths:
+      - 'manual/**'
+      - '.github/workflows/manual.yml'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.12.1
+          cache: npm
+          cache-dependency-path: manual/package-lock.json
+      - run: npm ci --prefix manual
+      - name: Build manual and check local links
+        run: npm --prefix manual run build

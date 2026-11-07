@@ -1,0 +1,601 @@
+{
+  "format": "mossa-workspace",
+  "version": 1,
+  "provenance": {
+    "purpose": "Synthetic teaching example; fixed singlet positions and widths, Gaussian noise std 2. No measured spectra or unknown source parameters.",
+    "generationSeed": 42,
+    "generationExtraIntensity": 8,
+    "options": {
+      "simulations": 199,
+      "seed": 12345,
+      "noise": "gaussian",
+      "doubledFirstChannel": false,
+      "workers": 1
+    },
+    "method": "parametric-bootstrap",
+    "report": "clear-report.json"
+  },
+  "workspace": {
+    "name": "Site-comparison teaching · Clear extra line",
+    "spectra": [
+      {
+        "id": "56e32457-cc6b-40c0-9522-18e8ab5a16c1",
+        "name": "Synthetic · Clear extra line",
+        "spectrum": {
+          "x": [
+            -4,
+            -3.9,
+            -3.8,
+            -3.7,
+            -3.6,
+            -3.5,
+            -3.4,
+            -3.3,
+            -3.2,
+            -3.1,
+            -3,
+            -2.9,
+            -2.8,
+            -2.7,
+            -2.6,
+            -2.5,
+            -2.4,
+            -2.3,
+            -2.2,
+            -2.1,
+            -2,
+            -1.9,
+            -1.7999999999999998,
+            -1.7000000000000002,
+            -1.6,
+            -1.5,
+            -1.4,
+            -1.2999999999999998,
+            -1.2000000000000002,
+            -1.1,
+            -1,
+            -0.8999999999999999,
+            -0.7999999999999998,
+            -0.7000000000000002,
+            -0.6000000000000001,
+            -0.5,
+            -0.3999999999999999,
+            -0.2999999999999998,
+            -0.20000000000000018,
+            -0.10000000000000009,
+            0,
+            0.09999999999999964,
+            0.20000000000000018,
+            0.2999999999999998,
+            0.40000000000000036,
+            0.5,
+            0.5999999999999996,
+            0.7000000000000002,
+            0.7999999999999998,
+            0.9000000000000004,
+            1,
+            1.0999999999999996,
+            1.2000000000000002,
+            1.2999999999999998,
+            1.4000000000000004,
+            1.5,
+            1.5999999999999996,
+            1.7000000000000002,
+            1.7999999999999998,
+            1.9000000000000004,
+            2,
+            2.0999999999999996,
+            2.2,
+            2.3,
+            2.4000000000000004,
+            2.5,
+            2.5999999999999996,
+            2.7,
+            2.8,
+            2.9000000000000004,
+            3,
+            3.0999999999999996,
+            3.2,
+            3.3,
+            3.4000000000000004,
+            3.5,
+            3.5999999999999996,
+            3.7,
+            3.8,
+            3.9000000000000004,
+            4
+          ],
+          "y": [
+            997.574647703739,
+            998.9099110022202,
+            995.7387926115878,
+            997.1030836778895,
+            998.2850597772446,
+            1001.7559529126585,
+            998.7117389865,
+            995.5896308144362,
+            997.79924626342,
+            992.5036728230307,
+            1000.114296527981,
+            1000.9022179798892,
+            1001.8036628104395,
+            999.4482259179534,
+            1000.7683274641481,
+            1000.4561877706825,
+            999.0859365560449,
+            995.1347502930271,
+            1002.6201651330947,
+            995.6827048666858,
+            995.0537415368613,
+            995.4828701491238,
+            997.0786066895706,
+            996.0511166393447,
+            993.6304524469234,
+            990.8231661187951,
+            991.0089074651938,
+            989.9729294337013,
+            985.3332161944172,
+            981.2852489416687,
+            976.8560765803292,
+            956.2919401673918,
+            938.2379468186102,
+            904.4776104223804,
+            886.5197163589298,
+            906.0089111079515,
+            937.5525906785468,
+            963.1138631968225,
+            974.3563165538505,
+            978.3204872269457,
+            983.2123797352888,
+            988.5243741467733,
+            988.1347653428486,
+            992.1982495079502,
+            993.754646152739,
+            991.6939566120004,
+            996.9149111439627,
+            993.5032300302682,
+            994.379703300877,
+            986.8425534365462,
+            988.4768394038931,
+            985.5236493843892,
+            987.5577379306849,
+            989.1111002227971,
+            992.521596998329,
+            996.9583218139041,
+            998.5320601127147,
+            998.4423646887501,
+            999.9067928516163,
+            997.6019539210894,
+            998.0778668695494,
+            1000.0847227809842,
+            999.0901514816521,
+            996.9746954479106,
+            1002.5899330229246,
+            998.7203092128948,
+            998.7201175990547,
+            1002.1826202975803,
+            1002.8055267686216,
+            1001.486300686285,
+            1001.2351380709347,
+            998.8894401355525,
+            996.991228251371,
+            998.4889172673816,
+            998.1500629319062,
+            999.1339399564483,
+            997.7766036107981,
+            997.7541828228028,
+            998.0840467945485,
+            998.3194983996327,
+            999.99557435372
+          ]
+        },
+        "raw": null,
+        "cal": {
+          "max": 4,
+          "shift": 0,
+          "sinusoidal": false,
+          "folding": false,
+          "center": 41,
+          "nuclear_constants": {
+            "id": "fe57-iaea-2019-2020-codata2022",
+            "coefficients": [
+              0.1612785758490726,
+              0.09338354131598467,
+              0.02548850678289673
+            ]
+          }
+        },
+        "models": [
+          {
+            "id": "teaching-clear-0",
+            "name": "One line",
+            "project": {
+              "sites": [
+                {
+                  "name": "Main line · fixed shape",
+                  "kind": "Singlet",
+                  "profile": "Lorentzian",
+                  "params": {
+                    "a12": {
+                      "value": 1.5,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "a13": {
+                      "value": 3,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "bhf": {
+                      "value": 33,
+                      "fit": true,
+                      "min": 0,
+                      "max": 60,
+                      "link": null
+                    },
+                    "cs": {
+                      "value": -0.6,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "fwhm": {
+                      "value": 0.45,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "intensity": {
+                      "value": 78.2940020753626,
+                      "fit": true,
+                      "min": 0,
+                      "max": null,
+                      "link": null
+                    },
+                    "mix": {
+                      "value": 0.5,
+                      "fit": true,
+                      "min": 0,
+                      "max": 1,
+                      "link": null
+                    },
+                    "qs": {
+                      "value": 1,
+                      "fit": true,
+                      "min": -10,
+                      "max": 10,
+                      "link": null
+                    }
+                  }
+                }
+              ],
+              "background": [
+                {
+                  "value": 998.6598628068715,
+                  "fit": true,
+                  "min": null,
+                  "max": null,
+                  "link": null
+                }
+              ],
+              "mode": "thin",
+              "source_fwhm": 0.097,
+              "source_squared": false,
+              "weighting": "unweighted",
+              "max_iterations": 400,
+              "nuclear_constants": {
+                "id": "fe57-iaea-2019-2020-codata2022",
+                "coefficients": [
+                  0.1612785758490726,
+                  0.09338354131598467,
+                  0.02548850678289673
+                ]
+              },
+              "search_starts": 1
+            },
+            "selected": 0,
+            "fit": {
+              "errors": {
+                "bkg:0": 0.39122849755952205,
+                "site:0:cs": null,
+                "site:0:fwhm": null,
+                "site:0:intensity": 1.323937048718001
+              },
+              "intensity_fractions": [
+                {
+                  "value": 100,
+                  "error": 0
+                }
+              ],
+              "iterations": 2,
+              "converged": true,
+              "termination": "RelativeCostTolerance",
+              "free_parameters": 2,
+              "dof": 79,
+              "rank": 2,
+              "reduced_objective": 10.387363785617644,
+              "stationarity": 2.6889825733389935e-12,
+              "warnings": []
+            },
+            "fitElapsed": null,
+            "version": 2,
+            "fit_state": {
+              "binding": {
+                "algorithm": "sha256-canonical-project-v1",
+                "value": "8e89904403965f12431954e6bd261da9b77d21bb2b42e4e1f20f3a420d864863"
+              },
+              "elapsed_ms": null
+            }
+          },
+          {
+            "id": "teaching-clear-1",
+            "name": "Two lines · extra area free",
+            "project": {
+              "sites": [
+                {
+                  "name": "Main line · fixed shape",
+                  "kind": "Singlet",
+                  "profile": "Lorentzian",
+                  "params": {
+                    "a12": {
+                      "value": 1.5,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "a13": {
+                      "value": 3,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "bhf": {
+                      "value": 33,
+                      "fit": true,
+                      "min": 0,
+                      "max": 60,
+                      "link": null
+                    },
+                    "cs": {
+                      "value": -0.6,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "fwhm": {
+                      "value": 0.45,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "intensity": {
+                      "value": 79.2966869634226,
+                      "fit": true,
+                      "min": 0,
+                      "max": null,
+                      "link": null
+                    },
+                    "mix": {
+                      "value": 0.5,
+                      "fit": true,
+                      "min": 0,
+                      "max": 1,
+                      "link": null
+                    },
+                    "qs": {
+                      "value": 1,
+                      "fit": true,
+                      "min": -10,
+                      "max": 10,
+                      "link": null
+                    }
+                  }
+                },
+                {
+                  "name": "Extra line · fixed shape",
+                  "kind": "Singlet",
+                  "profile": "Lorentzian",
+                  "params": {
+                    "a12": {
+                      "value": 1.5,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "a13": {
+                      "value": 3,
+                      "fit": false,
+                      "min": 0.001,
+                      "max": null,
+                      "link": null
+                    },
+                    "bhf": {
+                      "value": 33,
+                      "fit": true,
+                      "min": 0,
+                      "max": 60,
+                      "link": null
+                    },
+                    "cs": {
+                      "value": 1.1,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "fwhm": {
+                      "value": 0.4,
+                      "fit": false,
+                      "min": null,
+                      "max": null,
+                      "link": null
+                    },
+                    "intensity": {
+                      "value": 8.374122301023709,
+                      "fit": true,
+                      "min": 0,
+                      "max": null,
+                      "link": null
+                    },
+                    "mix": {
+                      "value": 0.5,
+                      "fit": true,
+                      "min": 0,
+                      "max": 1,
+                      "link": null
+                    },
+                    "qs": {
+                      "value": 1,
+                      "fit": true,
+                      "min": -10,
+                      "max": 10,
+                      "link": null
+                    }
+                  }
+                }
+              ],
+              "background": [
+                {
+                  "value": 999.7779821989377,
+                  "fit": true,
+                  "min": null,
+                  "max": null,
+                  "link": null
+                }
+              ],
+              "mode": "thin",
+              "source_fwhm": 0.097,
+              "source_squared": false,
+              "weighting": "unweighted",
+              "max_iterations": 400,
+              "nuclear_constants": {
+                "id": "fe57-iaea-2019-2020-codata2022",
+                "coefficients": [
+                  0.1612785758490726,
+                  0.09338354131598467,
+                  0.02548850678289673
+                ]
+              },
+              "search_starts": 1
+            },
+            "selected": 1,
+            "fit": {
+              "errors": {
+                "bkg:0": 0.2790506167011188,
+                "site:0:cs": null,
+                "site:0:fwhm": null,
+                "site:0:intensity": 0.8747867001795926,
+                "site:1:cs": null,
+                "site:1:fwhm": null,
+                "site:1:intensity": 0.8163096948833842
+              },
+              "intensity_fractions": [
+                {
+                  "value": 90.44822059784532,
+                  "error": 0.8368978995914598
+                },
+                {
+                  "value": 9.55177940215469,
+                  "error": 0.8368978995914598
+                }
+              ],
+              "iterations": 4,
+              "converged": true,
+              "termination": "RelativeCostTolerance",
+              "free_parameters": 3,
+              "dof": 78,
+              "rank": 3,
+              "reduced_objective": 4.478361295164103,
+              "stationarity": 2.2001719207717777e-10,
+              "warnings": []
+            },
+            "fitElapsed": null,
+            "version": 2,
+            "fit_state": {
+              "binding": {
+                "algorithm": "sha256-canonical-project-v1",
+                "value": "a3ab4a6166058d0927d7d63bd1595920762987a9d8dd4f74aa872e65791a394d"
+              },
+              "elapsed_ms": null
+            }
+          }
+        ],
+        "activeModelId": "teaching-clear-1"
+      }
+    ],
+    "activeSpectrumId": "56e32457-cc6b-40c0-9522-18e8ab5a16c1",
+    "calibrationPresets": [
+      {
+        "id": "1e48a856-a288-4cf0-a633-64212239649d",
+        "name": "4 mm/s",
+        "cal": {
+          "max": 4,
+          "shift": 0,
+          "sinusoidal": false,
+          "folding": false,
+          "center": 41,
+          "nuclear_constants": {
+            "id": "fe57-iaea-2019-2020-codata2022",
+            "coefficients": [
+              0.1612785758490726,
+              0.09338354131598467,
+              0.02548850678289673
+            ]
+          }
+        }
+      },
+      {
+        "id": "77a17eff-2dfe-4810-8496-d85b7a0a5d11",
+        "name": "5 mm/s",
+        "cal": {
+          "max": 5,
+          "shift": 0,
+          "sinusoidal": false,
+          "folding": false,
+          "autoFold": true,
+          "center": 256.5,
+          "nuclear_constants": {
+            "id": "fe57-iaea-2019-2020-codata2022",
+            "coefficients": [
+              0.1612785758490726,
+              0.09338354131598467,
+              0.02548850678289673
+            ]
+          }
+        }
+      },
+      {
+        "id": "2febdc70-f971-499e-8ffa-5b26377f9d03",
+        "name": "10 mm/s",
+        "cal": {
+          "max": 10,
+          "shift": 0,
+          "sinusoidal": false,
+          "folding": false,
+          "autoFold": true,
+          "center": 256.5,
+          "nuclear_constants": {
+            "id": "fe57-iaea-2019-2020-codata2022",
+            "coefficients": [
+              0.1612785758490726,
+              0.09338354131598467,
+              0.02548850678289673
+            ]
+          }
+        }
+      }
+    ],
+    "importCalibrationPresetId": "1e48a856-a288-4cf0-a633-64212239649d"
+  }
+}
