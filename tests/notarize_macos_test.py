@@ -12,6 +12,10 @@ spec.loader.exec_module(module)
 
 
 class NotarizationResumeTest(unittest.TestCase):
+    def test_ci_can_use_an_existing_ephemeral_signing_keychain(self):
+        with patch.dict(module.os.environ, {"MOSSA_NOTARY_KEYCHAIN": "/tmp/signing.keychain-db"}):
+            self.assertEqual(module.authentication("existing-profile"), ["--keychain-profile", "existing-profile", "--keychain", "/tmp/signing.keychain-db"])
+
     def test_interrupted_upload_resumes_saved_id_and_rejects_changed_payload(self):
         with tempfile.TemporaryDirectory() as name:
             directory = Path(name)

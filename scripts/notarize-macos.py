@@ -37,9 +37,16 @@ def write_state(path, state):
     temporary.replace(path)
 
 
+def authentication(profile):
+    args = ["--keychain-profile", profile]
+    if os.environ.get("MOSSA_NOTARY_KEYCHAIN"):
+        args.extend(["--keychain", os.environ["MOSSA_NOTARY_KEYCHAIN"]])
+    return args
+
+
 def notary(arguments, profile, log):
     result = subprocess.run(
-        ["xcrun", "notarytool", *arguments, "--keychain-profile", profile,
+        ["xcrun", "notarytool", *arguments, *authentication(profile),
          "--output-format", "json"], capture_output=True, text=True)
     log.write_text(result.stdout)
     log.with_suffix(".stderr.txt").write_text(result.stderr)
@@ -75,7 +82,7 @@ def notarize(payload, profile, directory, name):
         elif code:
             raise RuntimeError(f"Apple status could not be read; resume using the saved submission in {state_path}")
         print(f"{name}: {state['status']}", flush=True)
-    run("xcrun", "notarytool", "log", state["id"], "--keychain-profile", profile, str(directory / f"{name}-issues.json"))
+    run("xcrun", "notarytool", "log", state["id"], *authentication(profile), str(directory / f"{name}-issues.json"))
     if state["status"] != "Accepted":
         raise RuntimeError(f"Apple rejected {name}; see {name}-issues.json")
     return state
