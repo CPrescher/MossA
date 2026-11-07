@@ -12,7 +12,7 @@ export default function rebaseLinks({ appBase = '/MossA', sourceRef = 'main' } =
   return tree => {
     function visit(node) {
       if (node.type === 'element' && node.properties) {
-        for (const key of ['href', 'src']) {
+        for (const key of ['href', 'src', 'dataSrc', 'data-src']) {
           if (key in node.properties) node.properties[key] = rewrite(node.properties[key]);
         }
       }

@@ -26,7 +26,7 @@ Pages live in `src/content/docs/`. Start each Markdown page with a `title` and `
 - Place screenshots in `src/assets/` and reference them with relative Markdown image paths and descriptive alt text. Capture synthetic or explicitly redistributable data; keep private measurement inputs out of the site.
 - Prefer a contextual link from the in-app Help dialog to duplicating the entire manual there.
 
-The first-fit chapter uses the current synthetic mixture (`src/demo.ts`). The measured-data tutorials adapt the Freiburg conventional-source/almandine tutorial and section 4 of the 2026 practical: dedicated pyroxene calibration, two-doublet augite and omphacite fits, and area-based Fe³⁺/ΣFe interpretation. The required almandine sequence follows the original steps 1–7; freeing A12 is optional. The SMS tutorial additionally covers sinusoidal calibration, measured before/after source references, SPEC MCA import, velocity reversal, three magnetic sextets, and 3:3:1 intensity links. The lab-equipment exercises remain outside the browser manual.
+The first-fit chapter uses the current synthetic mixture (`src/demo.ts`). The measured-data tutorials adapt the Freiburg conventional-source/almandine and SMS tutorials. Separate classroom exercises are excluded from the manual and its downloadable projects. The required almandine sequence follows the original steps 1–7; freeing A12 is optional. The SMS tutorial additionally covers sinusoidal calibration, measured before/after source references, SPEC MCA import, velocity reversal, three magnetic sextets, and 3:3:1 intensity links. The lab-equipment exercises remain outside the browser manual.
 
 Screenshots throughout the substantive manual pages were captured from the real local browser app. Captions distinguish measured teaching examples, generated source/xVBF illustrations, and deliberately produced warnings. Screenshots show local preview builds, so timings are not benchmarks. Store the capture record in `src/assets/screenshots/capture-record.json` and refresh a screenshot when its associated UI changes.
 
@@ -38,15 +38,17 @@ The physics section contains original, explicitly labeled calculated figures. Re
 
 KaTeX renders equations with both MathML and visual HTML. The math-search plugin keeps those accessibility/rendering representations intact while excluding the duplicate MathML/TeX text from Pagefind snippets.
 
+The model-comparison foundations chapter includes a native arithmetic control and a replay of real production-WASM bootstrap fits. Regenerate its three synthetic datasets, portable projects, reports, and replay with `node --import tsx scripts/prepare-comparison-tutorial.ts` from the repository root, using Node 26 and compiled WASM. The observed-data seed is 42; each 199-trial bootstrap uses seed 12345. `public/comparison-lesson.mjs` only renders saved spectra and fitted parameters; it does not run a second fitter. Playback requires an explicit click, supports pause and single steps, and becomes a static completion under reduced-motion preferences. The ordinary worked table and downloads remain readable without JavaScript and in print. Check the components with `node --test tests/comparison-lesson.test.mjs` from the repository root.
+
 The SYNCmoss tutorial pins upstream commit `b712fbc1521004a47409b964b9ab012fe5c5e255`. The three original `.dat` files and upstream MIT notice in `public/tutorial-data/syncmoss/` retain exact bytes. `Calibration.dat` duplicates the CMS numeric observations. Regenerate the four new worked fits with `node --import tsx scripts/prepare-syncmoss-tutorial.ts` (Node 26 and compiled WASM); the script verifies the original Git blob hashes and reopens every saved fit. Preserve attribution, full license notices, source conversion, and the distinction between empirical CMS models, the supplied SMS source, and newly calculated fits.
 
-The five course count files are distributed byte for byte under `public/tutorial-data/freiburg/`, with simplified download names and SHA-256 provenance. The `.mossa` files contain **new browser fits**, not original MATLAB answer files. To regenerate them after compiling WASM, run:
+The two almandine course count files are distributed byte for byte under `public/tutorial-data/freiburg/`, with simplified download names and SHA-256 provenance. The `.mossa` files contain **new browser fits**, not original MATLAB answer files. To regenerate them after compiling WASM, run:
 
 ```sh
 node --import tsx scripts/prepare-course-tutorial.ts /path/to/exercise-folder
 ```
 
-Run that command from the repository root with Node 26. It checks actual save/open round trips for individual and combined projects. The raw 514-channel pyroxene files retain the handout's center 256.5 rather than being trimmed or silently recentered; the manual documents that choice and the different automatic estimate. Original PDFs and third-party literature figures are not copied into the public site.
+Run that command from the repository root with Node 26. It exports only the almandine tutorial and checks actual save/open round trips for its model alternatives. Separate classroom spectra, calibrations, solutions, and combined exercise projects are not exported. Original PDFs and third-party literature figures are not copied into the public site.
 
 ## Build and check
 
@@ -70,7 +72,7 @@ The existing `.github/workflows/pages.yml` installs both locked dependency trees
 
 App-only `npm run build` and `npm run build:web` remain available. `build:pages` expects WASM to have been generated already, as the workflow's `npm test` does; from a clean checkout run `npm run wasm` first. The standalone manual PR workflow checks documentation changes without building the Rust app.
 
-Publishing follows pushes to **`mossa2`**, not the MATLAB `main` branch. There is no new hosting account or external search service. Generated output, Astro caches, and `node_modules/` are ignored by Git.
+Pushes to **`main`** or **`develop`** build both sites independently and publish them together. The release app/manual uses `main`; `/MossA/preview/` and its manual use `develop`. The MATLAB history is retained on `matlab-legacy`. There is no new hosting account or external search service. Generated output, Astro caches, and `node_modules/` are ignored by Git.
 
 ## SMS tutorial data and regeneration
 

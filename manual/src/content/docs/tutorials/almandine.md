@@ -32,7 +32,7 @@ Save any existing project before starting. You can begin with **New project**, o
 
 ![Velocity-reference dialog after fitting the almandine iron foil, with manual folding, the linear drive, fitted curve, and calibration result.](../../../assets/screenshots/almandine-calibration.png)
 
-*Use the foil acquired with this sample. Do not reuse the pyroxene reference simply because its velocity range is similar.*
+*Use the foil acquired with this sample. A reference from another acquisition may have a different calibration even when its velocity range is similar.*
 
 With the current browser implementation, the 33 T reference assumption, modern magnetic coefficients, and manual center 256.5, the example calibration gives a maximum velocity of about **5.02155 mm/s** and a standard center shift of **−0.10859 mm/s**. These are newly calculated browser results, not values transcribed from the original MATLAB tutorial. Subtracting this center shift is part of constructing the sample's velocity axis.
 
@@ -97,4 +97,4 @@ For a doublet, A12 is the **first-line area fraction**, not an unconstrained rat
 
 Save the whole project, export parameters, and prepare a figure with **Export graph**. The original tutorial's MATLAB report and Save Sites controls are replaced here by the browser's project, CSV, SVG, and PNG exports.
 
-Continue with [augite and omphacite](/MossA/manual/tutorials/clinopyroxenes/) using their **own** iron-foil reference.
+Continue with [comparing models](/MossA/manual/guides/comparing-models/) to learn how to assess added components.

@@ -11,7 +11,7 @@ Use a project file to preserve the analysis and exports to communicate its resul
 
 **Open project** accepts current whole-project files and earlier single-spectrum `.mossa`/`.mossa.json` browser projects. Matching completed fits reopen without optimization. The loader discards invalid or mismatched fit metadata while retaining loadable data and model settings.
 
-![Project sidebar and file controls with the Freiburg measured spectra and independent fitted models retained together.](../../../assets/screenshots/workspace.png)
+![Project sidebar and file controls with the measured almandine spectrum and independent fitted models retained together.](../../../assets/screenshots/workspace.jpg)
 
 *Save project retains all spectra and models shown here. A CSV or figure represents only the selected export and does not replace the project file.*
 

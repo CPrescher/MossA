@@ -2,118 +2,88 @@
   "context": "Actual local MossA browser UI; measured examples from the supplied Freiburg practical, synthetic illustrations labeled in their captions. Restored fits are new browser-core computations, not MATLAB reference results.",
   "records": [
     {
-      "name": "workspace",
-      "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
-    },
-    {
       "name": "almandine-two-doublets",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "almandine-one-doublet",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "bounds-and-links",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "fit-options",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "calibration-preset",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "almandine-calibration",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "figure-export",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
-    },
-    {
-      "name": "augite-two-doublets",
-      "spectrum": "augite",
-      "status": "StatusConverged \u00b7 22 iterationsFit detailsSSE1.728e+9Reduced6,967,900",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
-    },
-    {
-      "name": "omphacite-two-doublets",
-      "spectrum": "omphacite",
-      "status": "StatusConverged \u00b7 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
-    },
-    {
-      "name": "pyroxene-folding",
-      "spectrum": "omphacite",
-      "status": "StatusConverged \u00b7 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
-    },
-    {
-      "name": "importing-raw-counts",
-      "spectrum": "omphacite",
-      "status": "StatusConverged \u00b7 20 iterationsFit detailsSSE1.352e+9Reduced5,453,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "model-comparison",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "transmission-overlays",
       "spectrum": "Synthetic singlet reference",
       "status": "StatusOpened 1 spectra with all models and saved fit results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "source-calibration",
       "spectrum": "Synthetic singlet reference",
       "status": "StatusOpened 1 spectra with all models and saved fit results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-distributions",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-correlation",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-map",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "iteration-limit",
       "spectrum": "Synthetic iron mixture",
-      "status": "StatusStopped \u00b7 1 iterations \u00b7 14 ms\u25be Fit details \u00b7 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusStopped · 1 iterations · 14 ms▾ Fit details · 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "../first-fit",
@@ -136,7 +106,7 @@
   "sms": {
     "context": "Actual local browser workflow; original measured SMS files; example browser refits, unresolved pressure labels retained.",
     "browser": {
-      "buildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build \u2014 click for changelog",
+      "buildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build — click for changelog",
       "scripts": [
         "http://127.0.0.1:4175/MossA/assets/index-DzSRhK_3.js"
       ]
@@ -155,47 +125,47 @@
       {
         "name": "sms-final-fit",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-two-sextets",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
+        "status": "StatusConverged · 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
       },
       {
         "name": "sms-two-sextets-qs",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
+        "status": "StatusConverged · 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
       },
       {
         "name": "sms-three-sextets",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 17 iterations\u25b8 Fit detailsSSE4.115e+6Reduced8,296.9"
+        "status": "StatusConverged · 17 iterations▸ Fit detailsSSE4.115e+6Reduced8,296.9"
       },
       {
         "name": "sms-intensity-links",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-velocity-calibration",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-reference-columns",
         "spectrum": "singleLineBefore.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
       },
       {
         "name": "sms-source-before",
         "spectrum": "singleLineBefore.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
       },
       {
         "name": "sms-source-after",
         "spectrum": "singleLineAfter.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
       }
     ]
   },
@@ -243,17 +213,6 @@
           720
         ],
         "sha256": "8c6db0aac1fb702e26d9bbba230a352200fa492ab4f2af2b455a6c19dfe6895a"
-      },
-      {
-        "name": "augite-two-doublets",
-        "file": "public/screenshots/dark/augite-two-doublets.jpg",
-        "theme": "dark",
-        "capturedAt": "2026-11-07T04:03:27.724Z",
-        "dimensions": [
-          1280,
-          720
-        ],
-        "sha256": "b0a906023319f63473d6b51b3f384a63596be1907fab0d033083bf70835d953e"
       },
       {
         "name": "bounds-and-links",
@@ -311,17 +270,6 @@
         "sha256": "2739bdb6ed74d4e01d784d6e96ff81b21c762ae7eddb9314e5c5980df3bd975c"
       },
       {
-        "name": "importing-raw-counts",
-        "file": "public/screenshots/dark/importing-raw-counts.jpg",
-        "theme": "dark",
-        "capturedAt": "2026-11-07T04:03:29.006Z",
-        "dimensions": [
-          1280,
-          720
-        ],
-        "sha256": "d4b2ee449daaf01fbfc3576ea03456541afd803e02cf46145842c211d5464f90"
-      },
-      {
         "name": "iteration-limit",
         "file": "public/screenshots/dark/iteration-limit.jpg",
         "theme": "dark",
@@ -342,28 +290,6 @@
           720
         ],
         "sha256": "2dfac87e288e4a0d15450bd1ecb2e20db400102ab74c2547275ebc8071f30614"
-      },
-      {
-        "name": "omphacite-two-doublets",
-        "file": "public/screenshots/dark/omphacite-two-doublets.jpg",
-        "theme": "dark",
-        "capturedAt": "2026-11-07T04:03:28.061Z",
-        "dimensions": [
-          1280,
-          720
-        ],
-        "sha256": "9aa744a865b0affe6a8a996e2ef050f950524306116f896a97ff59b0c376779e"
-      },
-      {
-        "name": "pyroxene-folding",
-        "file": "public/screenshots/dark/pyroxene-folding.jpg",
-        "theme": "dark",
-        "capturedAt": "2026-11-07T04:03:28.372Z",
-        "dimensions": [
-          1280,
-          720
-        ],
-        "sha256": "03cd33031b11c2f9de6695ff4c0eb997b82f96efabbe9f3fd2b319ee565f9a7b"
       },
       {
         "name": "sms-final-fit",
@@ -509,17 +435,6 @@
         "sha256": "533f7e77772173e845f71687fa95a4b91e94857099f5c3410687858fe4e5fd23"
       },
       {
-        "name": "workspace",
-        "file": "public/screenshots/dark/workspace.jpg",
-        "theme": "dark",
-        "capturedAt": "2026-11-07T04:03:05.057Z",
-        "dimensions": [
-          1280,
-          720
-        ],
-        "sha256": "8c6db0aac1fb702e26d9bbba230a352200fa492ab4f2af2b455a6c19dfe6895a"
-      },
-      {
         "name": "xvbf-correlation",
         "file": "public/screenshots/dark/xvbf-correlation.jpg",
         "theme": "dark",
@@ -557,7 +472,7 @@
   "syncmoss": {
     "context": "Actual local browser UI; original pinned SYNCmoss measured CMS/SMS standards; new MossA worked fits, with empirical CMS and deliberate fixed-source control limits described in the chapter.",
     "upstreamCommit": "b712fbc1521004a47409b964b9ab012fe5c5e255",
-    "browserBuildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-06T23:02:48.671Z\nLocal build \u2014 click for changelog",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T23:02:48.671Z\nLocal build — click for changelog",
     "records": [
       {
         "name": "syncmoss-import",
@@ -783,6 +698,134 @@
           720
         ],
         "sha256": "fe4331951c9038bd4de7cec58895ce4f44148cd78164fd743df80e9f63153998"
+      }
+    ]
+  },
+  "comparison_lesson": {
+    "context": "Actual completed local browser comparison tests; original synthetic fixed-shape singlet examples generated by scripts/prepare-comparison-tutorial.ts. Gaussian noise, 199 simulations, seed 12345, one worker. Separate runs in each app theme; no image recoloring. The weak-line observed one-line fit retains its stationary-solver warning.",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:33:00.987Z\nLocal build — click for changelog",
+    "records": [
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:50:44.076411+00:00",
+        "file": "src/assets/screenshots/comparison-no-extra-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "ff6dd89c1ab3362a82cdd9bc521d23dba6bdb0f73a01c1407f2bc07134f493b2"
+      },
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:50:27.804754+00:00",
+        "file": "public/screenshots/dark/comparison-no-extra-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "bb8357d9971bdbfd5c41dd17a4290af98220b12a0335569e618206168fb1fdac"
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "light",
+        "capturedAt": "2026-11-07T04:50:54.545153+00:00",
+        "file": "src/assets/screenshots/comparison-borderline-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "0800e9a788348ebd9b20df7bca7541a2919cb2c55c3da94babc90a0954bae340"
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "dark",
+        "capturedAt": "2026-11-07T04:51:05.200145+00:00",
+        "file": "public/screenshots/dark/comparison-borderline-result.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "404c527cd4ed9a49eb8195eaaecb828a2ddad480950f0641bc0cedd006c4c8ab"
+      }
+    ]
+  },
+  "almandine_only_refresh": {
+    "context": "Actual local app, almandine-only project with four saved model stages; replacements for workspace, raw-count import controls, and folding diagnostic. Separate classroom exercises are excluded. No pixel recoloring.",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:56:45.507Z\nLocal build — click for changelog",
+    "records": [
+      {
+        "name": "workspace",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:35.059420+00:00",
+        "file": "src/assets/screenshots/workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "481dadc5c56877292fd7d79d6b756b22392cdb92842722fbff4facc98b7c0d26"
+      },
+      {
+        "name": "workspace",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:34.773633+00:00",
+        "file": "public/screenshots/dark/workspace.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "1b5cc991a72dcf9a18c9adf28ea1c2d9589cfd2c44390b0bed18d768b475d7ca"
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:41.370911+00:00",
+        "file": "src/assets/screenshots/importing-raw-counts.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "286c8429172dad4807e45655b448d8fd4bfbde6fcc744113ce9c6f7d174a8fa3"
+      },
+      {
+        "name": "importing-raw-counts",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:41.640625+00:00",
+        "file": "public/screenshots/dark/importing-raw-counts.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "127c8797e30a2fbac407fd6c28ec94d780e9d6733e18225b3500bede4e2c21c8"
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "light",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:51.288131+00:00",
+        "file": "src/assets/screenshots/almandine-folding.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "64446b762c5e2e5ea698a8ab92f622b61d23ed00db2a2f76537a5cabf6e2733e"
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "dark",
+        "spectrum": "almandine",
+        "capturedAt": "2026-11-07T04:58:50.448797+00:00",
+        "file": "public/screenshots/dark/almandine-folding.jpg",
+        "dimensions": [
+          1280,
+          720
+        ],
+        "sha256": "e576086bf4a17c1d06331f7241f18eee1a2968bb15e4c8f3bb42a944c3ad30d5"
       }
     ]
   }

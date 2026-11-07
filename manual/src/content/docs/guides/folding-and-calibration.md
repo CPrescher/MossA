@@ -20,7 +20,7 @@ Click a symmetry bar to inspect another center, or enter a center manually. Comp
 
 **Pair RMS** measures the left-minus-right mismatch over independent pairs. Its percentage is relative to the average counts per half. The symmetry percentage is relative to the current scan window. Neither number is a probability or a calibrated uncertainty; noise and drift can contribute to the mismatch.
 
-![Measured omphacite folding diagnostic with manually selected center 256.5 and the automatic refinement shown separately.](../../../assets/screenshots/pyroxene-folding.png)
+![Measured almandine folding diagnostic with manually selected center 256.5 and the automatic refinement shown separately.](../../../assets/screenshots/almandine-folding.jpg)
 
 *The practical's manual choice and the automatic estimate are separate. Inspecting a center does not change the sample until Apply folding is used.*
 

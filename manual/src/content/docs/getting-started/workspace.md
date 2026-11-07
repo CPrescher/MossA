@@ -5,7 +5,7 @@ description: Navigate projects, spectra, models, sites, fitting options, plots, 
 
 The workspace keeps observations, model controls, and results visible together. Panels can be resized or collapsed to give the graph more room.
 
-![Expanded project sidebar showing three measured spectra and four almandine models, with the selected model's sites, spectrum, and fitted parameters.](../../../assets/screenshots/workspace.png)
+![Expanded project sidebar showing the measured almandine spectrum and four alternative models, with the selected model's sites, spectrum, and fitted parameters.](../../../assets/screenshots/workspace.jpg)
 
 *Read from left to right: project and model selection, site controls, spectrum/residuals, and fitting options. The parameter table spans the area below. This is the measured Freiburg worked example.*
 

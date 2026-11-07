@@ -18,3 +18,19 @@ test('preview manual links, tutorial downloads, and dark images stay in the prev
   assert.equal(tree.children[2].properties.href, 'https://cprescher.github.io/MossA/preview/');
   assert.equal(tree.children[3].properties.href, 'https://github.com/CPrescher/MossA/blob/develop/README.md');
 });
+
+
+test('bootstrap replay data follows its manual base without changing external URLs', () => {
+  const tree = { children: [
+    { type: 'element', properties: { dataSrc: '/MossA/manual/tutorial-data/site-comparison/replay.json' } },
+    { type: 'element', properties: { 'data-src': '/MossA/manual/tutorial-data/site-comparison/replay.json' } },
+    { type: 'element', properties: { href: 'https://example.org/reference' } },
+  ] };
+  const stable = structuredClone(tree);
+  rebaseLinks()(stable);
+  assert.deepEqual(stable, tree);
+  rebaseLinks({ appBase: '/MossA/preview', sourceRef: 'develop' })(tree);
+  assert.equal(tree.children[0].properties.dataSrc, '/MossA/preview/manual/tutorial-data/site-comparison/replay.json');
+  assert.equal(tree.children[1].properties['data-src'], '/MossA/preview/manual/tutorial-data/site-comparison/replay.json');
+  assert.equal(tree.children[2].properties.href, 'https://example.org/reference');
+});
