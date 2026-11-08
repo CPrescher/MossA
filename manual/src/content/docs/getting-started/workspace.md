@@ -20,7 +20,7 @@ The workspace has four main tasks: choose a spectrum and model, prepare the meas
 | Sites editor | Select and edit sites, choose type and profile in **Site settings**, or define peaks on the graph |
 | Center | Inspect observations, the total model, site curves, and residuals |
 | Fitting options | **General**, **Bounds**, **xVBF**, and **Fit options**, described below. This is a right panel on wide screens and shares the editor on smaller screens |
-| Fit controls | **Fit spectrum**, **Results**, and fit status, beneath the editor. Warning counts open diagnostics; **Fit details** opens iteration and objective information |
+| Fit controls | **Fit spectrum**, **Results**, and fit status, beneath the editor. Warning counts open diagnostics; **Fit details** shows iteration and objective information, automatically when space permits or on opening its disclosure |
 | Results, below the graph | Toggle with **Results** beside Fit spectrum. Inspect site parameters, fractions, and approximate 1 std; export parameters or expand the table |
 | Footer | Running version, update status, privacy, publisher information, and legal notes |
 
@@ -48,7 +48,7 @@ The project browser starts collapsed in a fresh session. On tablets it opens ove
 
 | Tab | Controls and purpose |
 | --- | --- |
-| **General** | **Folding & calibration** first: presets, velocity-reference calibration, and inspection of an unfolded sample. Then **Spectrum model**, **Background**, **Velocity direction**, and, for full transmission, **Source profile** |
+| **General** | **Folding & calibration** first: presets, velocity-reference calibration, and inspection of a raw sample with folding enabled. Then **Spectrum model**, **Background**, **Velocity direction**, and, for full transmission, **Source profile** |
 | **Bounds** | Limits and proportional links for the selected site's parameters. Use its **Site** selector to change the site being edited |
 | **xVBF** | CS/QS distributions and their correlation for a distribution model. This changes the selected site's model; see [xVBF distributions](/MossA/manual/guides/xvbf/) |
 | **Fit options** | Numerical refinement settings, including **Residual weighting**, **Starting models**, and iteration limits |
@@ -91,7 +91,7 @@ Counts and the velocity axis belong to the spectrum. Folding or calibration chan
 | Double right click | Reset the view |
 | Mouse wheel | Zoom velocity around the pointer, retaining vertical limits |
 
-These gestures remain available while defining a site. An undragged left click places a definition point. Selecting a site emphasizes its outline. Dashed site curves remain distinct from the solid total model even when their colors are similar. Small solid data dots sit above the site curves. The orange total-model line is drawn last, so neither a selected component nor overlapping data markers can obscure it. The lower panel is labeled Residual.
+While defining a site, an undragged click or tap places a point. Left drag, including Ctrl/Command + left drag or touch drag, instead zooms; right drag still pans. Cancel placement to return to normal touch panning. The plot buttons **Zoom in**, **Zoom out**, **Unzoom**, and **Reset view** are also available. Selecting a site emphasizes its outline. Dashed site curves remain distinct from the solid total model even when their colors are similar. Small solid data dots sit above the site curves. The orange total-model line is drawn last, so neither a selected component nor overlapping data markers can obscure it. The lower panel is labeled Residual.
 
 ## Edit values and undo changes
 
@@ -110,7 +110,7 @@ Numeric inputs accept signed values and scientific notation. Touch devices recei
 
 ## Readable controls on smaller screens
 
-**Save project** and **Export** stay visible in the header. Save project keeps the complete editable MossA workspace. Export groups **Spectrum data (CSV)**, **Parameter table (CSV)** and **Figure (SVG/PNG/EPS/PDF)** for use outside MossA. The panel identifies the current spectrum and model. Parameter tables require a current fit. Text size and theme remain inline where they fit; smaller screens group them with Manual and Help under the three-dot control. Arrow Down enters a panel, and Escape closes it.
+**Save project** and **Export** stay visible in the header; narrow windows shorten Save project to **Save** and Add spectra to **Add**. Save project keeps the complete editable MossA workspace. Export groups **Spectrum data (CSV)**, **Parameter table (CSV)**, **Figure (SVG/PNG/EPS/PDF)**, and **Fit report (PDF)** for use outside MossA. The panel identifies the current spectrum and model. Parameter tables require a current fit. Text size and theme remain inline where they fit; smaller screens group them with Manual and Help under the three-dot control. The three-dot control is named **Manual and help** or **Display and help**, depending on the available space. Arrow Down enters a menu, and Escape closes it.
 
 The site name and collapsed Site settings share one line. When the full site list would hide primary parameter fields, a compact Site selector is used. The numbered count button can restore the full list. This changes the view, not the model. CS, FWHM, Intensity, QS, and BHF appear before the intensity ratios throughout the editor and tables.
 

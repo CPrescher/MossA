@@ -124,7 +124,7 @@ Duplicate the fitted SMS model. In **Fitting options → General → Source prof
 
 The example reaches reduced objective ≈ **3.09719**, CS ≈ −0.02344 mm/s, and BHF ≈ 32.95147 T. The squared-source number is the [legacy width parameter](/MossA/manual/foundations/line-shapes/#lorentzian-squared-has-a-legacy-width-convention), whose actual FWHM is about 0.12872 mm/s. It is not an equal-FWHM replacement for the asymmetric mixture.
 
-This is a controlled illustration with an arbitrarily fixed approximate source, **not** an optimized alternative source calibration or a formal statistical preference test. Use the model tabs to inspect it; the simulation-comparison tool requires matching fixed source assumptions and rejects this comparison. Extra absorber sites should not be used automatically to compensate for an incorrect instrumental function.
+This is a controlled illustration with an arbitrarily fixed approximate source, **not** an optimized alternative source calibration or a formal statistical preference test. Select it in the **Models** list in the expanded project sidebar; the simulation-comparison tool requires matching fixed source assumptions and rejects this comparison. Extra absorber sites should not be used automatically to compensate for an incorrect instrumental function.
 
 ## 8. Inspect, save, and report the worked examples
 

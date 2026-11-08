@@ -8,10 +8,10 @@ xVBF represents a Lorentzian doublet using Gaussian distributions of center shif
 ## Enable and edit distributions
 
 1. Select a **Lorentzian doublet**.
-2. Open **Fitting options → xVBF** and enable the distribution model. On a wide screen the panel is on the right; on a laptop or tablet, select Fitting options above the editor.
+2. Open **Fitting options → xVBF** and check **xVBF** (**Enable for selected site**). On a wide screen the panel is on the right; on a laptop or tablet, select Fitting options above the editor.
 3. Use **CS** and **QS** to edit component centers, widths, weights, and fit flags.
 4. Open a component's gear to edit its bounds.
-5. Use **Corr** to inspect coupling and the joint CS–QS map. Click the map to enlarge it and export SVG.
+5. Use **Corr** to inspect coupling and the joint CS–QS map. Click the map or **Enlarge correlation plot** to open **CS–QS correlation**, then choose **Export SVG**.
 
 The spectrum stays visible beside the editor on desktops and laptops, or above it on tall portrait tablets. On shorter narrow screens, return to **Spectrum** to inspect the graph. Edits update its model curve and participate in Undo/Redo.
 

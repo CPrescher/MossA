@@ -20,17 +20,19 @@ Under **General → Background**, select a constant or polynomial of order 1–3
 
 ## Add a site on the graph
 
-1. Choose + in the site panel.
-2. Select the new site type and line profile, then choose **Define on graph**.
+1. Choose **＋ Add** in **Sites** to open **New site**.
+2. Choose **Site type** and **Line profile** in the two dropdowns, then choose **Define on graph**.
 3. Click the first line's position and depth.
 4. Click to set its half-width.
 5. For a doublet, click the other line. For a sextet, click the opposite outer line.
 
-The moving preview helps you estimate the starting values. Escape or **Cancel** leaves the model unchanged. Graph navigation remains available while placing points.
+The moving preview helps you estimate the starting values. Escape or **Cancel** leaves the model unchanged. While placing points, left drag zooms and right drag pans; an undragged click places a point. See [graph navigation](/MossA/manual/getting-started/workspace/#navigate-the-graph) for touch behavior.
+
+To create a site without clicking the graph, choose **Add with starting values** in New site, then edit its parameters.
 
 **Redefine** repeats this workflow for the selected site while retaining its name, profile, fit flags, bounds, and links. Linked parameters continue following their sources; inconsistent bounds are rejected.
 
-Available site types are **Singlet**, **Doublet**, and **Sextet**. Profiles are **Lorentzian**, **Gaussian**, **PseudoVoigt**, and **LorSquared**. Open **Site settings** to inspect type and profile settings. The duplicate icon beside Redefine copies the selected site. The app supports up to 16 sites. Up to four sites appear in a vertical list with a draggable divider below it; longer lists use a compact Site selector. The larger color swatch opens a color picker. Site colors are saved with the project and retained through fitting, and appear in the spectrum, results, and initial figure-export settings. Color changes preserve completed fit results.
+Available site types are **Singlet**, **Doublet**, and **Sextet**. Profiles are **Lorentzian**, **Gaussian**, **PseudoVoigt**, and **LorSquared**. Open **Site settings** to inspect type and profile settings. The **Duplicate site** icon beside Redefine copies the selected site. The app supports up to 16 sites. When space permits, up to four sites appear in a vertical list with a draggable divider below it. Longer lists or limited editor height use a compact **Site** selector; the numbered count button restores the full list. The larger color swatch opens a color picker. Site colors are saved with the project and retained through fitting, and appear in the spectrum, results, and initial figure-export settings. Color changes preserve completed fit results.
 
 ## Understand the parameters
 
@@ -65,9 +67,9 @@ Supported commands and braced scripts can also be entered directly. Names render
 
 ## Fix, bound, or link a parameter
 
-A checked fit box lets a parameter vary. Uncheck it to hold the value fixed. In **Bounds**, enter lower and upper limits; an empty bound means no user limit, subject to the model's physical restrictions.
+A checked fit box lets a parameter vary. Uncheck it to hold the value fixed. In **Fitting options → Bounds**, select the intended **Site** and enter lower and upper limits; an empty bound means no user limit, subject to the model's physical restrictions.
 
-For a proportional link, select a target in the current site, choose a source parameter and factor, then choose **Apply link**:
+For a proportional link, choose **Target in selected site**, **Source parameter**, and **Factor**, then choose **Apply link**:
 
 $$
 p_{\mathrm{target}} = f\,p_{\mathrm{source}}.
@@ -81,12 +83,12 @@ The target follows its source instead of being optimized independently. Target b
 
 ## Choose fitting options
 
-Under **Fitting options → Fit options**, set residual weighting, starting-model search, and the iteration limit.
+Under **Fitting options → Fit options**, set **Residual weighting**, **Starting models**, and **Max. iterations**.
 
 - **Unweighted** minimizes the sum of squared observed-minus-model residuals.
 - **1 / observed counts** minimizes squared residuals divided by the observations. Every observation must be strictly positive.
 - **1 · Current model** refines the current starting parameters.
-- **4–32 starts** explores deterministic alternative starts and retains the lowest objective found. Fixed values, bounds, links, and site types are preserved.
+- **4 · Explore alternatives** through **32 · Explore alternatives** explore deterministic alternative starts and retain the lowest objective found. Fixed values, bounds, links, and site types are preserved.
 
 More starts cost more time and can reduce dependence on starting estimates. They do not prove a global optimum or identify a physically correct model.
 

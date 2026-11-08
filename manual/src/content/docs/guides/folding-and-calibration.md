@@ -33,7 +33,7 @@ For a first raw sample, create a preset from the iron standard, save it, then us
 
 ## Inspect folding
 
-For a raw sample, open **General → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
+For a raw sample with folding enabled, open **Fitting options → General → Folding & calibration → Inspect this spectrum’s folding…**. This action is hidden when folding is off; edit and apply a folding-enabled preset first if the raw channels need folding. The diagnostic view shows:
 
 - Original channels and the chosen center.
 - Reversed-left and right counts overlaid.
@@ -42,7 +42,7 @@ For a raw sample, open **General → Folding & calibration → Inspect this spec
 
 Fold centers use the original MossA **1-based integer or half-integer channel convention**. The continuous fitted center and the rounded half-channel center are different quantities; both are displayed.
 
-Click a symmetry bar to inspect another center, or enter a center manually. Compare the halves across the whole pattern rather than relying on a single score. **Apply folding** commits the selected center and refolded data as one undoable change. Closing the sample diagnostic without applying leaves the sample unchanged.
+In **Folding alignment**, click a symmetry bar to inspect another center, enter **Fold center** manually, or choose **Find automatically**. Compare the halves across the whole pattern rather than relying on a single score. **Apply folding** commits the selected center and refolded data as one undoable change. Closing the sample diagnostic without applying leaves the sample unchanged.
 
 **Pair RMS** measures the left-minus-right mismatch over independent pairs. Its percentage is relative to the average counts per half. The symmetry percentage is relative to the current scan window. Neither number is a probability or a calibrated uncertainty; noise and drift can contribute to the mismatch.
 
@@ -53,12 +53,12 @@ Click a symmetry bar to inspect another center, or enter a center manually. Comp
 ## Fit an α-Fe velocity reference
 
 1. Under **Fitting options → General → Folding & calibration**, select + (**Add calibration preset**) → **From reference file…** to create a preset from an α-Fe reference.
-2. Load the reference as one column of counts, or use the current raw spectrum if it is the standard. Loading a reference here does not replace the sample.
+2. In **Velocity calibration**, choose **Open reference spectrum** and load the reference as one column of counts, or choose **Use current raw spectrum** if it is the standard. Loading a reference here does not replace the sample.
 3. Enable **Fold reference channels** for an unfolded reference. Leave it off for an already folded spectrum.
-4. Select the acquisition's **linear or sinusoidal drive** and enter an approximate initial maximum velocity.
-5. Enter the reference magnetic field appropriate to the standard and measurement conditions. The default is **33 T**, retained from the MATLAB workflow; it is an input assumption, not a field measured by the calibration fit.
+4. Enable **Sinusoidal drive** for a sinusoidal acquisition; leave it unchecked for a linear drive. Enter an approximate **Initial max. velocity**.
+5. Enter **Reference BHF (T)** appropriate to the standard and measurement conditions. The default is **33 T**, retained from the MATLAB workflow; it is an input assumption, not a field measured by the calibration fit.
 6. Choose **Fit reference** and inspect the six-line curve, residuals, fitted maximum velocity, center shift, and warnings.
-7. Accept and save the preset when the reference fit is satisfactory.
+7. Choose **Continue with calibration** when the reference fit is satisfactory. In the preset editor, enter **Preset name** and choose **Save preset**. Then apply it to the sample or set the import default as described below.
 
 The reference model is a Lorentzian sextet with zero QS and a linear background. Partial six-line patterns can be fitted, but an unsuitable initial velocity range can lead to incorrect line assignments. The workflow does not support arbitrary calibration materials or a nonlinear correction from individually assigned peaks.
 
@@ -75,8 +75,10 @@ Changing a reference's folding center invalidates its previous reference fit. Re
 | Select a preset | Preview its saved settings and reference provenance |
 | **Apply to this spectrum** | Apply its velocity and folding settings to the current raw-count spectrum |
 | **Use for new imports** | Set the default for subsequent raw-count imports |
-| **Edit preset…** | Open a separate editor; save explicitly to update the preset |
-| **Recalibrate from reference…** | Refit the saved standard or load a replacement reference |
+| **Edit preset…** | Open the editor; **Save changes to preset** updates the saved preset |
+| **Edit preset… → Recalibrate from reference…** | Refit the saved standard or load a replacement; choose **Use revised calibration**, then **Save changes to preset** |
+
+The ⋯ control (**Manage calibration presets**) opens **Calibration presets**, where you can rename, **Edit**, or **Remove** presets. When the selected settings already match the raw spectrum, the apply button reads **Applied to spectrum**. For a velocity-column file it reads **File velocity axis retained** and is disabled.
 
 Applying a changed calibration clears obsolete fits in every model of that spectrum. Reapplying an identical scale retains matching completed fits. Other spectra remain unchanged.
 

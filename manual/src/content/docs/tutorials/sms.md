@@ -42,11 +42,11 @@ Velocity-scale calibration is in **General**. The **Fit options** tab contains s
 
 1. Save your existing project and start a tutorial project.
 2. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
-3. Load `Iron foil calibration.txt` in the velocity-reference dialog.
+3. In **Velocity calibration**, choose **Open reference spectrum** and load `Iron foil calibration.txt`.
 4. Enable **Sinusoidal drive**, **Fold reference channels**, and **Automatic fold center**.
 5. Set the initial maximum velocity to **8 mm/s**, as specified in the original tutorial.
 6. Use **33 T** as the fixed iron-reference field for this worked example, then choose **Fit reference**.
-7. Inspect the six-line fit, residuals, fitted scale, and warnings. Accept the calibration and save a named **SMS · sinusoidal · iron reference** preset.
+7. Inspect the six-line fit, residuals, fitted scale, and warnings. Choose **Continue with calibration**, enter **SMS · sinusoidal · iron reference** in **Preset name**, then **Save preset**.
 8. Select **Use for new imports** before loading raw sample channels.
 
 ![SMS iron-foil calibration with sinusoidal drive, automatic folding, an 8 mm/s initial range, and the completed reference fit.](../../../assets/screenshots/sms-velocity-calibration.png)
@@ -81,7 +81,7 @@ Under **Fitting options → General → Spectrum model**, choose **Full transmis
 2. Set **Known absorber FWHM** to **0.215 mm/s**, the reference-width assumption specified in the source tutorial.
 3. Select **Lorentzian-squared** as the source model and use an initial source width around **0.4 mm/s**.
 4. Choose **Fit source reference**.
-5. Inspect the reference curve, residuals, source shape, source width, and approximate 1 std. Record the width before applying it.
+5. Inspect the reference curve, residuals, source shape, source width, and approximate 1 std. Record the width, then choose **Apply source profile**.
 
 ![Completed Lorentzian-squared source calibration using the measured before standard and a fixed absorber width of 0.215 mm/s.](../../../assets/screenshots/sms-source-before.png)
 
@@ -140,7 +140,7 @@ Reversed analyses use single-spectrum project format **3** and collection/autosa
 
 1. Remove any inherited singlet or unrelated sites from the selected sample model.
 2. Select **Full transmission integral**, a **Constant** background, **Unweighted** residuals, and the mean squared-source width.
-3. Define two **Lorentzian sextets** on the graph: outer line position/depth, half-width, then the opposite outer line.
+3. In **Sites**, choose **＋ Add**, set **Site type → Sextet** and **Line profile → Lorentzian**, then **Define on graph**. Repeat for the second sextet. Place each site with outer line position/depth, half-width, then the opposite outer line.
 4. Useful starting fields for this supplied spectrum are about **16.5 T** and **21.5 T**, with CS around **0.25 mm/s** and widths around **0.3 mm/s**. These are starting estimates for the example, not reference measurements.
 5. Initially hold QS at zero. Keep **A12 = 1.5** and **A13 = 3** fixed, then fit.
 6. Duplicate that model. Check **Fit QS** for both sextets and fit again.
@@ -165,14 +165,14 @@ The source tutorial uses a three-iron-site structural interpretation of Fe₇C�
 
 ## 9. Link intensities in the ratio 3:3:1
 
-The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Bounds → Parameter links**, define the targets explicitly:
+The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Fitting options → Bounds → Parameter links**, define the targets explicitly:
 
 | Selected target | Source | Factor |
 | --- | --- | --- |
 | Site 2, Intensity | Site 1, Intensity | `1` |
 | Site 3, Intensity | Site 1, Intensity | `0.3333333333333333` |
 
-For each target, select **Intensity**, choose the source **1 · Fe site 1 · Intensity**, enter the factor, and choose **Apply link**. The convention is **target = factor × source**. Do not reverse the factor when changing which site is selected.
+For each target, choose its **Site** in Bounds, set **Target in selected site → Intensity**, choose **Source parameter → 1 · Fe site 1 · Intensity**, enter **Factor**, and choose **Apply link**. The convention is **target = factor × source**. Do not reverse the factor when changing which site is selected.
 
 ![Proportional intensity-link controls for the SMS model, with site 3 following one third of site 1's intensity.](../../../assets/screenshots/sms-intensity-links.png)
 

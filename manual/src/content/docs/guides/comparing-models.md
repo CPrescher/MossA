@@ -3,7 +3,7 @@ title: Comparing models
 description: Compare alternative fits and test an added site with a parametric bootstrap.
 ---
 
-Create at least two models for one spectrum, expand the project sidebar, and choose **Compare models** below its model list. The dialog overlays total curves and residuals and lists site counts, independent parameters, objectives, and fit status. Visual comparison is available even for unfitted models.
+Create at least two models for one spectrum, expand the project sidebar, and choose **Compare models** below its model list. Choose the pair with **Simpler model** and **Larger model**. The dialog overlays total curves and residuals and lists site counts, independent parameters, objectives, and fit status. Visual comparison is available even for unfitted models.
 
 For the reasoning, begin with **[More sites? Understanding the F-test](/MossA/manual/foundations/model-comparison/)**. It explains why adding a site lowers the error even for noise, works through the F formula, and includes a step-through animation of actual MossA bootstrap fits. This guide covers the controls.
 
@@ -27,8 +27,8 @@ MossA checks these restrictions and verifies that setting the added intensities 
 
 | Noise model | Appropriate input and assumptions |
 | --- | --- |
-| **Poisson** | Actual nonnegative integer counts under the stated count model; no normalization or background subtraction |
-| **Gaussian** | Unweighted fitting with independent noise of common std, estimated from the simpler fit |
+| **Poisson · raw counting statistics** | Actual nonnegative integer counts under the stated count model; no normalization or background subtraction |
+| **Gaussian · common residual std** | Unweighted fitting with independent noise of common std, estimated from the simpler fit |
 
 The built-in synthetic example uses Gaussian noise and continuous intensities. Use the Gaussian option for it. For integer-center raw-count folding, the self-paired turnaround is simulated as twice a Poisson count with half the fitted mean. Reversal moves that observation from the first to the last data point; the simulation uses its saved direction.
 
@@ -36,7 +36,7 @@ Count-weighted simulations require positive counts in every simulated observatio
 
 ## Run and interpret the simulation
 
-Set the random seed and number of simulations, then choose **Run simulation test**. The dialog first refits both observed models in an isolated worker, then generates spectra from the fitted simpler model and refits both models to every simulation. Your project's models remain unchanged.
+Choose **Measurement noise**, **Simulated spectra**, **Random seed**, and **CPU workers**, then choose **Run simulation test**. The dialog first refits both observed models in an isolated worker, then generates spectra from the fitted simpler model and refits both models to every simulation. Your project's models remain unchanged.
 
 For B simulations and k simulated improvements at least as large as the observed improvement, the reported p-value is
 
@@ -61,6 +61,8 @@ For a reproducible first test, open the [synthetic no-extra-line project](/MossA
 ## Retain diagnostics
 
 Every requested fit pair must succeed under the app's numerical acceptance checks. Stalled fits retry on the same dataset using bounded recovery starts or continuation, with up to 2,000 iterations per attempt. Recovery does not replace a simulated spectrum. If no acceptable pair is found, the run is invalid; failed spectra do not disappear from the denominator. Inspect convergence, iteration limits, rank, active bounds, recovery attempts, and starting-model-search warnings. Stationarity checks and multiple starts do not guarantee global optimization.
+
+Open **Calculation and recovery details** to inspect the numerical diagnostics. When offered, **Check Gaussian noise sensitivity** or **Check Poisson noise sensitivity** runs the alternate noise assumption for the same pair. Inspect both results and their stated assumptions.
 
 Use **Export comparison report** to save the fitted observed models, observations and preparation, noise assumptions, seed, improvements, and diagnostics. Results remain in the dialog only until it closes. **Cancel simulation** or closing the dialog terminates its worker.
 

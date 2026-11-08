@@ -13,7 +13,7 @@ MossA 2 fits Mössbauer spectra in a browser or the desktop app. You can prepare
 
 For raw channels, check the velocity scale, drive type, and folding before building or fitting a sample model. Folding combines the two acquisition halves when your file contains both directions of the drive. Already folded data should not be folded again. A two-column velocity/count file keeps its supplied axis; MossA's raw-channel controls do not recalibrate it.
 
-The **Fitting options** panel contains preparation and model controls. Its **Fit options** tab contains solver settings such as weighting and starting models. Velocity calibration is in **General**. **Calibrate source**, also in General when using full transmission, determines a source profile and is a separate procedure.
+The **Fitting options** panel contains preparation and model controls. Its **Fit options** tab contains solver settings such as weighting and starting models. Velocity calibration is in **General**. **Calibrate source…**, also in General when using full transmission, determines a source profile and is a separate procedure.
 
 ![Current wide-screen MossA workspace with the synthetic iron mixture, site editor, results table, and folding and calibration at the top of General.](../../assets/screenshots/workspace-wide.png)
 

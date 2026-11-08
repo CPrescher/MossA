@@ -27,7 +27,7 @@ Read Status and Fit details. Inspect the starting positions, widths, background,
 
 ## Errors are missing
 
-**Fit to estimate std** means the current model needs fitting. **Fixed** parameters have no fitted symmetric uncertainty. **(—)** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
+**Not fitted · fit to estimate std** means the current model needs fitting. **fixed** parameters have no fitted symmetric uncertainty. **(—)** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
 
 ## An intensity percentage is undefined or has zero std
 
@@ -55,4 +55,4 @@ Open **Fitting options → General → Folding & calibration**, the first sectio
 
 ## The app reports an update
 
-Save the project before reloading. The app checks build metadata but never reloads automatically. Use the version control in the footer to inspect the changelog and reload when ready. Include the version and source commit when reporting a reproducible issue through the [repository](https://github.com/CPrescher/MossA/issues).
+Save the project before reloading. The deployed browser app checks build metadata but never reloads automatically. The offline native app does not perform these deployment checks. Use the version control in the footer to inspect the changelog and reload when ready. Include the version and source commit when reporting a reproducible issue through the [repository](https://github.com/CPrescher/MossA/issues).

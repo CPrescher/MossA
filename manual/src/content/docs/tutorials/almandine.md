@@ -39,12 +39,12 @@ The similarly named **Fit options** tab contains solver settings such as residua
 *On a laptop: select **Fitting options** above the editor, then **General** and the + beside Preset. **From reference file…** opens velocity-scale calibration.*
 
 1. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
-2. In the preset editor, open the reference calibration if it is not already visible, then load `almandine-iron-foil.dat`.
-3. Select the **linear** drive; leave sinusoidal drive off.
+2. In **Velocity calibration**, choose **Open reference spectrum** and load `almandine-iron-foil.dat`.
+3. Leave **Sinusoidal drive** unchecked for this **linear** acquisition.
 4. Enable **Fold reference channels**. Disable **Automatic fold center** and enter **256.5**, following this practical's specified manual-folding workflow.
 5. Use an initial maximum velocity of **5 mm/s** and a reference field of **33 T** for this worked example. The reference field is a fixed calibration input; use a value established for your own standard in research analyses.
 6. Choose **Fit reference**. Inspect the line positions, residuals, and warnings. Some outer lines lie at or beyond the measured range; MossA fits the complete sextet model.
-7. Accept the reference result, name the preset **Almandine reference**, and save it. Select **Use for new imports** before importing the sample.
+7. Choose **Continue with calibration**, enter **Almandine reference** in **Preset name**, and choose **Save preset**. Select **Use for new imports** before importing the sample.
 
 ![Velocity-reference dialog after fitting the almandine iron foil, with manual folding, the linear drive, fitted curve, and calibration result.](../../../assets/screenshots/almandine-calibration.png)
 
@@ -61,7 +61,7 @@ The dominant absorption pair has a center near 1.3 mm/s and a splitting near 3.5
 ## 3. Fit one Lorentzian doublet
 
 1. Remove inherited sites from the tutorial's selected model if necessary.
-2. Choose **+ → Doublet → Lorentzian → Define on graph**.
+2. In **Sites**, choose **＋ Add**. In **New site**, choose **Site type → Doublet**, **Line profile → Lorentzian**, then **Define on graph**.
 3. Click one line's position and depth, set its half-width with the second click, and click the other line.
 4. Keep **A12 = 0.5 fixed**, so the two lines have equal areas.
 5. Choose **Fit spectrum**.
