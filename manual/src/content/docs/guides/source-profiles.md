@@ -9,7 +9,7 @@ For the equations and convolution direction, read [the full transmission integra
 
 ## Use a simple source
 
-In **Fitting options → General → Spectrum model**, select **Full transmission integral**. Scroll down to **Source profile** and set **FWHM (mm/s)** and, if appropriate, enable **Lorentzian-squared source**. The squared profile uses the original MossA width convention; do not assume its width parameter has the same interpretation as a Lorentzian's.
+In **Fitting options → General → Spectrum model**, select **Full transmission integral**. Scroll down to **Source profile**. If the model already uses a Gaussian mixture, choose **Use simple source** to expose the simple-source controls. Set **FWHM (mm/s)** and, if appropriate, enable **Lorentzian-squared source**. The squared profile uses the original MossA width convention; do not assume its width parameter has the same interpretation as a Lorentzian's.
 
 ## Calibrate from a singlet reference
 
