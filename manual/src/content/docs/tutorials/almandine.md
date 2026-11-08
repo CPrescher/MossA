@@ -1,5 +1,5 @@
 ---
-title: Almandine — from calibration to a two-doublet fit
+title: Almandine — from velocity calibration to a two-doublet fit
 description: Follow the Freiburg practical's conventional-source tutorial with measured garnet data in MossA 2.
 ---
 
@@ -14,7 +14,7 @@ The required part corresponds to **steps 1–7 of the original tutorial**, as sp
 | [Almandine iron foil](/MossA/manual/tutorial-data/freiburg/almandine-iron-foil.dat) | `Alm Fe-Foil.dat` | 512 raw count channels |
 | [Almandine sample](/MossA/manual/tutorial-data/freiburg/almandine.dat) | `Alm sample.dat` | 512 raw count channels |
 
-The download names are simplified; the file contents are unchanged. Both are **one-column raw-count files**. Load the foil in the calibration dialog and the sample with Add spectra. Do not import them as already calibrated velocity/count pairs.
+The download names are simplified; the file contents are unchanged. Both are **one-column raw-count files**. Load the foil in the velocity-scale calibration dialog and the sample with Add spectra. Do not import them as already calibrated velocity/count pairs.
 
 :::note[Keep your current work]
 Save any existing project before starting. You can begin with **New project**, or retain other spectra and give the tutorial a clearly named model. Existing sample sites are copied to newly imported spectra, so remove unwanted sites from the tutorial model before building its doublets.
@@ -22,7 +22,15 @@ Save any existing project before starting. You can begin with **New project**, o
 
 ## 1. Calibrate the velocity scale
 
-1. Open **General → Folding & calibration → + → From reference file…**.
+This step uses the iron foil to determine the **velocity scale in mm/s** and its center-shift correction for the sample. It also sets up folding of the raw channels.
+
+:::tip[Where to find velocity-scale calibration]
+Open **Fitting options → General → Folding & calibration**. On a wide screen, Fitting options is the panel on the **right**; if hidden, use **Show fitting options** at the edge of the graph. On a laptop, select **Fitting options** above the editor shared with Sites. On a tablet or narrow screen, select the **Fitting options** view, then the **General** tab.
+
+The similarly named **Fit options** tab contains solver settings such as residual weighting. Velocity-scale calibration is in **General**.
+:::
+
+1. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
 2. In the preset editor, open the reference calibration if it is not already visible, then load `almandine-iron-foil.dat`.
 3. Select the **linear** drive; leave sinusoidal drive off.
 4. Enable **Fold reference channels**. Disable **Automatic fold center** and enter **256.5**, following this practical's specified manual-folding workflow.
@@ -38,7 +46,7 @@ With the current browser implementation, the 33 T reference assumption, modern m
 
 ## 2. Load the sample
 
-Use **Add spectra** to import `almandine.dat`. Confirm that the intended preset is the import default and that manual folding remains enabled at **256.5**. In **General**, choose **Thin absorber** and a **Constant** background. In **Fit options**, use **Unweighted** residuals.
+Use **Add spectra** to import `almandine.dat`. Under **Fitting options → General → Folding & calibration**, confirm that the intended velocity-calibration preset is the import default and that manual folding remains enabled at **256.5**. In **General**, choose **Thin absorber** and a **Constant** background. In **Fitting options → Fit options**, use **Unweighted** residuals.
 
 The dominant absorption pair has a center near 1.3 mm/s and a splitting near 3.5 mm/s. These are starting estimates from this example, not constraints that should replace an inspection of the graph.
 

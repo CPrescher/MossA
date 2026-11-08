@@ -1,6 +1,6 @@
 ---
 title: SMS Fe₇C₃ — source calibration and transmission fitting
-description: Follow the synchrotron-source tutorial with original SPEC MCA data, sinusoidal calibration, velocity reversal, three sextets, and proportional intensity links.
+description: Follow the synchrotron-source tutorial with original SPEC MCA data, sinusoidal velocity-scale calibration, source-profile calibration, velocity reversal, three sextets, and proportional intensity links.
 ---
 
 This advanced tutorial adapts **MossA tutorial SMS.pdf** from the Freiburg teaching materials. It uses the supplied synchrotron Mössbauer source (SMS) measurements: an iron foil, singlet standards measured before and after the experiment, and a magnetic Fe₇C₃ spectrum. You will calibrate the velocity scale, determine a Lorentzian-squared source width, reverse the sample's velocity direction, and fit progressively constrained full-transmission models.
@@ -24,8 +24,16 @@ All four downloads retain the original filenames and bytes. Hashes, format selec
 
 ## 1. Calibrate the sinusoidal velocity scale
 
+This first calibration determines the **velocity scale in mm/s** and its center-shift correction from the iron foil. The **source-profile calibration** in step 3 separately determines the source width from a singlet standard.
+
+:::tip[Where to find velocity-scale calibration]
+Open **Fitting options → General → Folding & calibration**. On a wide screen, use the Fitting options panel on the **right**, or **Show fitting options** if it is collapsed. On a laptop, select **Fitting options** above the editor shared with Sites. On a tablet or narrow screen, select the **Fitting options** view, then the **General** tab.
+
+Velocity-scale calibration is in **General**. The **Fit options** tab contains solver settings such as weighting; **General → Source profile → Calibrate source…** is the separate source-profile procedure used later.
+:::
+
 1. Save your existing project and start a tutorial project.
-2. Open **General → Folding & calibration → + → From reference file…**.
+2. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
 3. Load `Iron foil calibration.txt` in the velocity-reference dialog.
 4. Enable **Sinusoidal drive**, **Fold reference channels**, and **Automatic fold center**.
 5. Set the initial maximum velocity to **8 mm/s**, as specified in the original tutorial.
@@ -59,7 +67,7 @@ The reference files retain their supplied velocity values. The raw-channel sinus
 
 ## 3. Calibrate the source before the experiment
 
-Under **General**, choose **Full transmission integral**, then open **Source profile → Calibrate source…**. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
+Under **Fitting options → General → Spectrum model**, choose **Full transmission integral**, then open **Fitting options → General → Source profile → Calibrate source…**. Scroll down within General to reach Source profile. This calibrates the source profile using the reference's existing velocity axis; it does not determine a new velocity scale. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
 
 1. Choose **Open source reference** and select `singleLineBefore.dat`, or choose **Use current spectrum** if that standard is already selected.
 2. Set **Known absorber FWHM** to **0.215 mm/s**, the reference-width assumption specified in the source tutorial.
@@ -102,7 +110,7 @@ The original header is retained under **General → Velocity direction → Impor
 
 *Check the applied sinusoidal preset and the original header. The worked data are not reassigned a pressure during import.*
 
-If you loaded the sample before setting the import default, choose the SMS preset and **Apply to this spectrum**. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
+If you loaded the sample before setting the import default, open **Fitting options → General → Folding & calibration**, choose the SMS velocity-calibration preset, and select **Apply to this spectrum**. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
 
 ## 6. Reverse this sample's velocity axis
 
