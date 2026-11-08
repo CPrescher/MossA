@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type {FitSummary} from './session';
 import type { Evaluation, Project } from './types';
 import { defaultFigureOptions, figureFilename, figurePng, renderFigure, saveFigureBlob, type FigureOptions } from './figure';
 import './figure-export.css';
 
-export function FigureExportDialog({ project, evaluation, fitted, name, viewRange, onClose }: {
-  project: Project; evaluation: Evaluation; fitted: boolean; name: string; viewRange: [number, number] | null; onClose: () => void;
+export function FigureExportDialog({ project, evaluation, fitted, result = null, name, viewRange, onClose }: {
+  project: Project; evaluation: Evaluation; fitted: boolean; result?: FitSummary | null; name: string; viewRange: [number, number] | null; onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [options, setOptions] = useState(() => defaultFigureOptions(project));
@@ -12,9 +13,9 @@ export function FigureExportDialog({ project, evaluation, fitted, name, viewRang
   const [filename, setFilename] = useState(() => figureFilename(name));
   useEffect(() => { dialog.current?.showModal(); }, []);
   const preview = useMemo(() => {
-    try { return { svg: renderFigure(project, evaluation, options, fitted), error: '' }; }
+    try { return { svg: renderFigure(project, evaluation, options, fitted, result), error: '' }; }
     catch (e) { return { svg: '', error: (e as Error).message }; }
-  }, [project, evaluation, options, fitted]);
+  }, [project, evaluation, options, fitted, result]);
   function change<K extends keyof FigureOptions>(key: K, value: FigureOptions[K]) { setOptions(o => ({ ...o, [key]: value })); setError(''); }
   function move(index: number, direction: number) {
     const sites = options.sites.slice(), next = index + direction;
@@ -44,6 +45,8 @@ export function FigureExportDialog({ project, evaluation, fitted, name, viewRang
           <label className="stack-label">Title (optional)<input aria-label="Figure title" value={options.title} maxLength={100} onChange={e => change('title', e.target.value)}/></label>
           <div className="figure-control-pair"><label className="stack-label">Velocity range<select aria-label="Export velocity range" value={options.range ? 'view' : 'full'} onChange={e => change('range', e.target.value === 'view' ? viewRange : null)}><option value="full">Full spectrum</option><option value="view" disabled={!viewRange}>Current view</option></select></label><label className="stack-label">Legend<select aria-label="Legend position" value={options.legend} onChange={e => change('legend', e.target.value as FigureOptions['legend'])}><option value="auto">Inside · Auto placement</option><option value="top-right">Inside · Upper right</option><option value="top-left">Inside · Upper left</option><option value="bottom-right">Inside · Lower right</option><option value="bottom-left">Inside · Lower left</option><option value="above">Above figure</option><option value="below">Below figure</option><option value="right">To the right</option><option value="none">Hidden</option></select></label></div>
           <label className="check-label"><input type="checkbox" aria-label="Include data and fit in legend" checked={options.legendDataFit} disabled={options.legend === 'none'} onChange={e => change('legendDataFit', e.target.checked)}/>Include data and fit in legend</label>
+          <label className="check-label"><input type="checkbox" aria-label="Include site fractions (%)" checked={options.legendFractions} disabled={options.legend === 'none'} onChange={e => change('legendFractions', e.target.checked)}/>Include site fractions (%)</label>
+          {options.legendFractions && <p className="figure-control-note">Intensity fractions of all model sites, including hidden sites. Fit std appear in parentheses in the last quoted digits.{project.mode === 'transmission' && ' Absorber intensity fractions, not phase abundances.'}</p>}
           {options.legend === 'auto' && <p className="figure-control-note">Finds open space inside the axes. Moves above the figure if there is no room.</p>}
         </section>
         <section><h3>Residual</h3><div className="figure-segments" role="group" aria-label="Residual position">{(['above', 'below', 'none'] as const).map(value => <button key={value} aria-pressed={options.residual === value} onClick={() => change('residual', value)}>{value === 'none' ? 'Hidden' : value === 'above' ? 'Above' : 'Below'}</button>)}</div>

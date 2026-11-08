@@ -1,3 +1,5 @@
+import {formatParenthetical,formatResult,intensityFractions} from './results';
+import type {FitSummary} from './session';
 import { saveBlob } from './file-save';
 import { colors, type Project, type Evaluation } from './types';
 import { formatTick } from './axes.mjs';
@@ -10,10 +12,11 @@ export type FigureOptions = {
   order: 'depth' | 'custom'; residual: 'above' | 'below' | 'none';
   sign: 'data-model' | 'model-data'; legend: 'auto' | 'above' | 'below' | 'right' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'none';
   legendDataFit: boolean;
+  legendFractions: boolean;
   range: [number, number] | null; sites: FigureSite[];
 };
 export function defaultFigureOptions(project: Project): FigureOptions {
-  return { width: 180, height: 120, title: '', style: 'filled', order: 'depth', residual: 'below', sign: 'data-model', legend: 'auto', legendDataFit: false, range: null,
+  return { width: 180, height: 120, title: '', style: 'filled', order: 'depth', residual: 'below', sign: 'data-model', legend: 'auto', legendDataFit: false, legendFractions:false, range: null,
     sites: project.sites.map((s, index) => ({ index, name: s.name, color: colors[index % colors.length], visible: true })) };
 }
 const escape = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' }[c]!));
@@ -31,7 +34,7 @@ function wrap(text: string, width: number): string[] {
 }
 
 /** A standalone, white-page figure. Preview and downloads use these exact SVG bytes. */
-export function renderFigure(project: Project, evaluation: Evaluation, options: FigureOptions, fitted: boolean): string {
+export function renderFigure(project: Project, evaluation: Evaluation, options: FigureOptions, fitted: boolean, result: FitSummary | null = null): string {
   if (!Number.isFinite(options.width) || !Number.isFinite(options.height) || options.width < 70 || options.width > 300 || options.height < 60 || options.height > 300) throw new Error('Use a width of 70–300 mm and a height of 60–300 mm.');
   const W = options.width * 4, H = options.height * 4, xs = project.spectrum.x, ys = project.spectrum.y;
   const range = options.range ?? [xs[0], xs.at(-1)!];
@@ -50,13 +53,24 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
     return { ...s, curve, depth };
   });
   if (options.order === 'depth') sites.sort((a, b) => b.depth - a.depth || a.index - b.index);
-  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site' })) ];
+  const fractions=intensityFractions(project,evaluation,fitted?result:null);
+  const fractionLabel = (index:number) => {
+    const {value,error}=fractions[index];
+    if(value==null)return '—';
+    if(fitted && error!=null && Number.isFinite(error) && error>=0) {
+      const formatted=formatParenthetical(value,error);
+      return formatted.value+formatted.suffix;
+    }
+    const displayed=value>0&&value<.1?formatResult(value,2):value.toFixed(1);
+    return displayed+(fitted?' (—)':'');
+  };
+  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data',annotation:'' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model',annotation:'' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site',annotation:options.legendFractions?` · ${fractionLabel(s.index)}%`:'' })) ];
   const inside = options.legend === 'auto' || /^(top|bottom)-(left|right)$/.test(options.legend);
   const horizontalLegend = options.legend === 'above' || options.legend === 'below';
   const legendWidth = options.legend === 'right' ? Math.min(180, W * .29) : 0;
   const insideWidth = Math.max(100, Math.min(220, (W - 100) * .4));
   const columns = W >= 600 ? 3 : 2, cellWidth = (W - 36 - (columns - 1) * 24) / columns;
-  const legendLines = legendItems.map(item => layoutLabel(item.name, (inside ? insideWidth : options.legend === 'right' ? legendWidth : cellWidth) - 32));
+  const legendLines = legendItems.map(item => layoutLabel(item.name, (inside ? insideWidth : options.legend === 'right' ? legendWidth : cellWidth) - 32,11,item.annotation));
   const legendHeights = legendLines.map(lines => lines.reduce((height, line) => height + Math.max(15, line.ascent + line.descent + 3), 0));
   const rowHeights: number[] = [];
   if (horizontalLegend) for (let i = 0; i < legendItems.length; i += columns) {
@@ -64,7 +78,8 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
     rowHeights.push(Math.max(...legendHeights.slice(i, i + columns).map((height, j) => height + ascent - legendLines[i + j][0].ascent)) + 9);
   }
   const legendHeight = rowHeights.reduce((sum, h) => sum + h, 0);
-  const noteLines = project.mode === 'transmission' && sites.length ? wrap('Sites: display-scaled absorber profiles; not additive transmission components.', W - 36) : [];
+  const fractionBasis=options.legendFractions&&options.legend!=='none'&&sites.length ? `Legend percentages: ${project.mode==='transmission'?'absorber ':''}intensity fractions of all model sites, including hidden sites${!fitted?' (unfitted starting parameters)':''}.${fitted?' Parentheses: approximate 1 std in the last quoted digits; (—): std unavailable.':''}${project.mode==='transmission'?' Not phase abundances.':''}` : '';
+  const noteLines = [project.mode === 'transmission' && sites.length ? 'Sites: display-scaled absorber profiles; not additive transmission components.' : '',fractionBasis].filter(Boolean).flatMap(note=>wrap(note,W-36));
   const noteHeight = noteLines.length ? noteLines.length * 12 + 16 : 0;
   const titleLines = options.title ? wrap(options.title, W - 130 - legendWidth) : [];
   const titleBottom = titleLines.length ? 26 + titleLines.length * 18 : 20;
@@ -131,13 +146,13 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       if (options.residual !== 'none') segment(L, pr(0), R, pr(0));
       legendRect = legendSpace(plot, width, height, occupied);
       // Never cover scientific content when no free interior rectangle exists.
-      if (!legendRect) return renderFigure(project, evaluation, { ...options, legend: 'above' }, fitted);
+      if (!legendRect) return renderFigure(project, evaluation, { ...options, legend: 'above' }, fitted, result);
     } else {
       if (width > plot.width - 24 || height > plot.height - 24) throw new Error('Place the legend above or below, or increase the figure size to fit these labels.');
       legendRect = { x: options.legend.endsWith('right') ? R - width - 12 : L + 12, y: options.legend.startsWith('top') ? mainTop + 12 : mainBottom - height - 12, width, height };
     }
   }
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${options.width}mm" height="${options.height}mm" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="figure-title figure-description"><title id="figure-title">${escape(options.title || 'Mössbauer spectrum')}</title><desc id="figure-description">${escape(`${fitted ? 'Fitted spectrum' : 'Unfitted model'}. ${options.residual === 'none' ? 'Residual hidden.' : `Residual: ${options.sign === 'data-model' ? 'data minus model' : 'model minus data'}, offset ${options.residual} the spectrum on the same intensity scale. The reference line marks zero residual.`} ${project.mode === 'transmission' ? 'Site overlays are display-scaled absorber profiles, not additive transmission components.' : 'Sites filled to the evaluated background.'}`)}</desc><metadata>${escape(JSON.stringify({ application: 'MossA 2', fitted, mode: project.mode, componentScale: scale, residualOffset: options.residual === 'none' ? null : residualOffset, options }))}</metadata><rect width="${W}" height="${H}" fill="white"/><g font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#30343a" color="#30343a" stroke-linejoin="round"><defs><clipPath id="figure-main"><rect x="${L}" y="${mainTop}" width="${R - L}" height="${mainBottom - mainTop}"/></clipPath></defs>`;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${options.width}mm" height="${options.height}mm" viewBox="0 0 ${W} ${H}" role="img" aria-labelledby="figure-title figure-description"><title id="figure-title">${escape(options.title || 'Mössbauer spectrum')}</title><desc id="figure-description">${escape(`${fitted ? 'Fitted spectrum' : 'Unfitted model'}. ${options.residual === 'none' ? 'Residual hidden.' : `Residual: ${options.sign === 'data-model' ? 'data minus model' : 'model minus data'}, offset ${options.residual} the spectrum on the same intensity scale. The reference line marks zero residual.`} ${project.mode === 'transmission' ? 'Site overlays are display-scaled absorber profiles, not additive transmission components.' : 'Sites filled to the evaluated background.'}`)}</desc><metadata>${escape(JSON.stringify({ application: 'MossA 2', fitted, mode: project.mode, componentScale: scale, residualOffset: options.residual === 'none' ? null : residualOffset, fractionBasis: fractionBasis || null, options }))}</metadata><rect width="${W}" height="${H}" fill="white"/><g font-family="Arial, Helvetica, sans-serif" font-size="12" fill="#30343a" color="#30343a" stroke-linejoin="round"><defs><clipPath id="figure-main"><rect x="${L}" y="${mainTop}" width="${R - L}" height="${mainBottom - mainTop}"/></clipPath></defs>`;
   titleLines.forEach((title, i) => { svg += text((L + R) / 2, 23 + i * 18, title, 'data-figure-title="true" text-anchor="middle" font-size="14" font-weight="600"'); });
   svg += `<g clip-path="url(#figure-main)">`;
   for (const s of sites) {
@@ -175,7 +190,7 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       const baseline = y + ascent;
       svg += item.type === 'data' ? `<circle cx="${x + 7}" cy="${baseline - 4}" r="1.6" fill="${color}"/>` : item.type === 'site' && options.style === 'filled' ? `<rect x="${x}" y="${baseline - 11}" width="15" height="10" fill="${color}"/>` : line(x, baseline - 4, x + 15, baseline - 4, `stroke="${color}" stroke-width="1.7"`);
       let lineY = baseline;
-      svg += `<g data-scientific-label="true" role="img" aria-label="${escape(item.name)}">`;
+      svg += `<g data-scientific-label="true" role="img" aria-label="${escape(item.name+item.annotation)}">`;
       legendLines[i].forEach((label, j) => {
         if (j) lineY += Math.max(15, legendLines[i][j - 1].descent + label.ascent + 3);
         svg += svgLabelLine(label, x + 23, lineY);

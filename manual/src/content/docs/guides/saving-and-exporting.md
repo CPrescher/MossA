@@ -52,3 +52,5 @@ Figure settings do not change observations, fitted parameters, or the analysis o
 *Check the preview before downloading. Figure labels, colors, and layout are export settings; they do not alter the fit.*
 
 Full-transmission figures identify site curves as display-scaled absorber profiles. Preserve that distinction in captions and subsequent figure editing.
+
+With **Include site fractions (%)**, figure legends show intensity fractions normalized across all model sites, including hidden sites. Fitted fractions include approximate 1 std in parentheses in the last quoted digits, as in Results (for example, `25.00(25)%`); `(—)` marks unavailable std. In full-transmission mode these are absorber-intensity fractions, not phase abundances.
