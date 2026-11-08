@@ -15,7 +15,7 @@ export function ResultsTable({ project, evaluation, result, selected, onSelect }
     {key:'cs',label:'CS',unit:'mm/s'}, {key:'fwhm',label:'FWHM',unit:'mm/s'},
     {key:'intensity',label:'Intensity',unit:'raw',title:'Raw MossA intensity parameter, before percentage normalization'},
     {key:'qs',label:'QS',unit:'mm/s'}, {key:'bhf',label:'BHF',unit:'T'}, {key:'a12',label:'A12'}, {key:'a13',label:'A13'},
-    {key:'mix',label:'Lorentz mix',title:'Pseudo-Voigt Lorentzian mixing fraction (0–1); not the site intensity percentage'},
+    {key:'mix',label:'Lorentz mix',title:'Pseudo-Voigt Lorentzian mixing fraction (L fraction in the editor, 0–1); not the site intensity percentage'},
   ].filter(column => column.key === 'fraction' || project.sites.some(site => keys(site).includes(column.key) || !!site.xvbf && ['cs','qs'].includes(column.key)));
 
   return <table ref={table} className="parameter-results" aria-label="Site parameters"><caption className="visually-hidden">Values with approximate 1 std in parentheses in the last quoted digits; fixed means held fixed. A dash in parentheses means std unavailable after fitting. Linked parameters follow their source.</caption><thead title="Values with approximate 1 std in parentheses, in the last quoted digits; (—) means std unavailable, fixed means the parameter was held fixed"><tr><th scope="col">Site</th><th scope="col">Type</th>{columns.map(column => <th scope="col" key={column.key} title={column.title}>{column.label}{column.unit && <> <small>{column.unit}</small></>}</th>)}</tr></thead>

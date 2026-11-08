@@ -12,7 +12,7 @@ export function AddSiteMenu({ disabled, kind, profile, onKind, onProfile, onDefi
     return () => document.removeEventListener('pointerdown', outside);
   }, [open]);
   return <div className="add-site-control" ref={root} onBlur={e => { if (e.relatedTarget && !e.currentTarget.contains(e.relatedTarget as Node)) setOpen(false); }} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setOpen(false); trigger.current?.focus(); } }}>
-    <button ref={trigger} title="Add a site" aria-label="Add site" aria-haspopup="dialog" aria-expanded={open} disabled={disabled} onClick={() => setOpen(v => !v)}>＋ Add</button>
+    <button ref={trigger} title="Open New site to choose Site type and Line profile" aria-label="Add site" aria-haspopup="dialog" aria-expanded={open} disabled={disabled} onClick={() => setOpen(v => !v)}>＋ Add</button>
     {open && <div className="add-site-popover" role="dialog" aria-label="New site">
       <label className="stack-label">Site type<select ref={first} aria-label="New site type" value={kind} onChange={e => onKind(e.target.value as Site['kind'])}>{['Singlet','Doublet','Sextet'].map(v => <option key={v}>{v}</option>)}</select></label>
       <label className="stack-label">Line profile<select aria-label="New line profile" value={profile} onChange={e => onProfile(e.target.value as Site['profile'])}>{['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].map(v => <option key={v}>{v}</option>)}</select></label>
