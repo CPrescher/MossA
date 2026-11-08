@@ -50,7 +50,7 @@ export function CalibrationPresetEditor({ initial, raw, onSave, onCancel }: { in
       </fieldset>
       {error && <p className="calibration-error" role="alert">{error}</p>}
     </div>
-    <div className="preset-editor-footer"><p aria-live="polite">{editing && modified ? 'Unsaved changes. ' : ''}Saves this preset. Existing spectra keep their calibration.</p><div><button onClick={onCancel}>Cancel</button><button className="calibration-preset-save" disabled={!modified} onClick={save}>{editing ? 'Save changes to preset' : 'Save preset'}</button></div></div>
+    <div className="preset-editor-footer"><p aria-live="polite">{editing && modified ? 'Unsaved changes. ' : ''}{raw ? 'Saving applies this calibration to the current spectrum. Undo restores its previous calibration and fit.' : 'Saves this preset for raw-count imports.'}</p><div><button onClick={onCancel}>Cancel</button><button className="calibration-preset-save" title={raw ? 'Save and immediately calibrate the current raw spectrum' : 'Save this calibration preset'} disabled={!modified} onClick={save}>{editing ? 'Save changes to preset' : 'Save preset'}</button></div></div>
     {referenceOpen && <VelocityCalibrationDialog cal={draft} raw={raw} purpose={editing ? 'update-preset' : 'preset'} onClose={() => setReferenceOpen(false)} onApply={result => {
       setDraft(calibrationFromReference(draft, result));
       if (!name.trim()) setName(result.reference.name.replace(/\.[^.]+$/, '') || 'Iron reference');

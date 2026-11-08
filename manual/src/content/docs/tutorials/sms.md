@@ -102,7 +102,7 @@ The original header is retained under **Gen → Velocity direction → Import de
 
 *Check the applied sinusoidal preset and the original header. The worked data are not reassigned a pressure during import.*
 
-If you loaded the sample before setting the import default, choose the SMS preset and **Apply to this spectrum**. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
+If you loaded the sample before setting the import default, choose the SMS velocity-calibration preset. It applies immediately. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
 
 ## 6. Reverse this sample's velocity axis
 

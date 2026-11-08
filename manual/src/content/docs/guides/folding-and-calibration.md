@@ -5,9 +5,11 @@ description: Inspect channel alignment, fit an iron reference, and apply named c
 
 Folding and velocity calibration operate on **raw count channels**. They determine the observations and axis shared by all models of that spectrum. Save the project before revising a calibration used for an important analysis.
 
+Folding is enabled by default for raw-count imports. Use **Fold spectrum** directly in this panel to enable or disable it for the current spectrum. Turning it off restores the original loaded counts without reimporting the file.
+
 ## Inspect folding
 
-For a raw sample, open **Gen → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
+For a raw sample with folding enabled, open **Gen → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
 
 - Original channels and the chosen center.
 - Reversed-left and right counts overlaid.
@@ -16,13 +18,13 @@ For a raw sample, open **Gen → Folding & calibration → Inspect this spectrum
 
 Fold centers use the original MossA **1-based integer or half-integer channel convention**. The continuous fitted center and the rounded half-channel center are different quantities; both are displayed.
 
-Click a symmetry bar to inspect another center, or enter a center manually. Compare the halves across the whole pattern rather than relying on a single score. **Apply folding** commits the selected center and refolded data as one undoable change. Closing the sample diagnostic without applying leaves the sample unchanged.
+In **Folding alignment**, click a symmetry bar to select another center, enter **Fold center** manually, or choose **Find automatically**. Compare the halves across the whole pattern rather than relying on a single score. Each center change immediately refolds the current spectrum as an undoable change. Choose **Done** to close. Opening the diagnostic computes the automatic estimate without changing the current center; **Find automatically** selects and applies that estimate. After closing, Undo restores the previous folding and fit.
 
 **Pair RMS** measures the left-minus-right mismatch over independent pairs. Its percentage is relative to the average counts per half. The symmetry percentage is relative to the current scan window. Neither number is a probability or a calibrated uncertainty; noise and drift can contribute to the mismatch.
 
 ![Measured almandine folding diagnostic with manually selected center 256.5 and the automatic refinement shown separately.](../../../assets/screenshots/almandine-folding.jpg)
 
-*The practical's manual choice and the automatic estimate are separate. Inspecting a center does not change the sample until Apply folding is used.*
+*The practical's manual choice and the automatic estimate are separate. Selecting a center immediately updates the sample.*
 
 ## Fit an α-Fe velocity reference
 
@@ -32,7 +34,7 @@ Click a symmetry bar to inspect another center, or enter a center manually. Comp
 4. Select the acquisition's **linear or sinusoidal drive** and enter an approximate initial maximum velocity.
 5. Enter the reference magnetic field appropriate to the standard and measurement conditions. The default is **33 T**, retained from the MATLAB workflow; it is an input assumption, not a field measured by the calibration fit.
 6. Choose **Fit reference** and inspect the six-line curve, residuals, fitted maximum velocity, center shift, and warnings.
-7. Accept and save the preset when the reference fit is satisfactory.
+7. Accept and save the preset when the reference fit is satisfactory. Saving immediately applies it to the current raw spectrum. Set the import default separately with **Use for new imports**.
 
 The reference model is a Lorentzian sextet with zero QS and a linear background. Partial six-line patterns can be fitted, but an unsuitable initial velocity range can lead to incorrect line assignments. The workflow does not support arbitrary calibration materials or a nonlinear correction from individually assigned peaks.
 
@@ -46,19 +48,19 @@ Changing a reference's folding center invalidates its previous reference fit. Re
 
 | Action | Effect |
 | --- | --- |
-| Select a preset | Preview its saved settings and reference provenance |
-| **Apply to this spectrum** | Apply its velocity and folding settings to the current raw-count spectrum |
+| Select a preset | Immediately apply its saved velocity and folding settings to the current raw-count spectrum |
+| **Fold spectrum** | Immediately enable or disable folding for the current raw spectrum |
 | **Use for new imports** | Set the default for subsequent raw-count imports |
-| **Edit preset…** | Open a separate editor; save explicitly to update the preset |
+| **Edit preset…** | Open the editor; saving updates the preset and immediately calibrates the current raw spectrum |
 | **Recalibrate from reference…** | Refit the saved standard or load a replacement reference |
 
 Applying a changed calibration clears obsolete fits in every model of that spectrum. Reapplying an identical scale retains matching completed fits. Other spectra remain unchanged.
 
-Applied spectra retain their own copy of the calibration and the preset name at application time. Editing or deleting the preset does not retroactively change them. If an edited preset is the import default, its saved changes affect future imports. Apply it separately to recalibrate an existing spectrum.
+Applied spectra retain their own copy of the calibration and the preset name at application time. Saving an edited preset updates the current raw spectrum; other spectra keep their copies. Renaming or deleting a preset preserves applied calibrations. If an edited preset is the import default, its saved changes also affect future imports. Saving and applying to the current spectrum form one Undo/Redo step.
 
 ![Calibration preset editor with separate velocity scale, folding controls, reference-calibration action, and Save/Cancel controls.](../../../assets/screenshots/calibration-preset.png)
 
-*Saving a preset and applying it to a spectrum are different actions. The editor identifies the saved reference used for this measured teaching example.*
+*Saving a preset immediately calibrates the current raw spectrum. The editor identifies the saved reference used for this measured teaching example.*
 
 Automatic sample fold centers are found afresh for each import. They do not simply reuse the reference's measured automatic center. A manual preset center is retained when automatic centering is disabled.
 

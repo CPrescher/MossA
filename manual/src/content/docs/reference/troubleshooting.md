@@ -9,7 +9,7 @@ Check that the file contains one count column, two velocity/count columns, a rec
 
 ## The velocity axis is wrong
 
-For raw channels, check maximum velocity, drive type, center shift, folding state, and the preset selected for imports. A two-column file retains its supplied axis. Selecting a preset previews it; choose **Apply to this spectrum** to change the current raw-count spectrum. Inspect a reference fit before applying its scale.
+For raw channels, check maximum velocity, drive type, center shift, folding state, and the preset selected for imports. A two-column file retains its supplied axis. Selecting or saving a preset immediately calibrates the current raw-count spectrum. Use **Fold spectrum** to enable or disable folding; Undo restores previous data and fits. Inspect a reference fit before applying its scale.
 
 Also inspect **Gen → Velocity direction → Reverse velocity axis**. The SMS sample needs reversal after calibration. Reversal is a saved property of that spectrum and remains applied after recalibration; toggling it again restores the other direction and invalidates obsolete fits.
 

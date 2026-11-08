@@ -33,13 +33,13 @@ Use a single column of counts when you want MossA to construct the velocity axis
 99800
 ```
 
-Do not sort raw channels by count value. Their order carries the acquisition information. Configure the drive and velocity scale under **Gen → Folding & calibration**. Inspect the folding before fitting an unfamiliar raw spectrum.
+Do not sort raw channels by count value. Their order carries the acquisition information. Configure the drive and velocity scale under **Gen → Folding & calibration**. Folding is enabled by default. Uncheck **Fold spectrum** for counts that are already folded. Inspect the folding before fitting an unfamiliar raw spectrum.
 
-Raw-count imports use the calibration preset selected with **Use for new imports**. Choosing a preset for inspection or applying it to an existing spectrum does not automatically make it the import default.
+Raw-count imports use the calibration preset selected with **Use for new imports**. Choosing a preset for an existing spectrum does not automatically make it the import default.
 
 ![Measured almandine with its raw-count calibration controls visible in Gen and its reference preset selected for subsequent imports.](../../../assets/screenshots/importing-raw-counts.jpg)
 
-*Check the preset and its import-default checkbox before adding the next raw-count file. The selected spectrum retains its own applied calibration.*
+*Selecting a preset immediately applies it to the current raw spectrum. Check the preset and its import-default checkbox before adding the next raw-count file. The selected spectrum retains its own applied calibration.*
 
 ## SPEC MCA and SMS reference files
 
