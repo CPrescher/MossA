@@ -12,7 +12,7 @@ export function AppFooter() {
   const dialog = useRef<HTMLDialogElement>(null);
   const open = (next: Notice) => { setNotice(next); dialog.current?.showModal(); };
   return <footer className="app-footer">
-    <span className="footer-privacy">No spectra or projects are uploaded. All processing runs on your device.</span>
+    <span className="footer-privacy"><span className="footer-privacy-full">Nothing is uploaded. Processing stays on your device.</span><span className="footer-privacy-short">Local processing · no uploads</span></span>
     <nav className="footer-links" aria-label="Legal information">
       <button onClick={() => open('privacy')} aria-haspopup="dialog">Privacy</button>
       <button onClick={() => open('impressum')} aria-haspopup="dialog">Impressum</button>

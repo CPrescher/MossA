@@ -1,0 +1,322 @@
+{
+  "runtime": "v22.18.0",
+  "platform": "darwin/arm64",
+  "cpu": "Apple M4 Pro",
+  "repetitions": 5,
+  "wasm_sha256": "dd629aa7f292a740b301d1e9680266b81c8647f5efa6b8118e5f876de73bec33",
+  "fixture_sha256": "267596968cb9fe65627317641cfb0c6af89eb2d2453136d0f7acb3d0c8e7eaa9",
+  "rows": [
+    {
+      "id": "singlet-lorentzian-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 68.02187500000002,
+      "evaluation_ms": 2.4592895999999995,
+      "fit_samples_ms": [
+        69.189291,
+        68.02187500000002,
+        68.119958,
+        67.32524999999998,
+        67.62650000000008
+      ],
+      "evaluation_samples_ms": [
+        2.4735770999999986,
+        2.4598687499999983,
+        2.454081249999999,
+        2.4592895999999995,
+        2.3931645500000003
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "three-sites-lorentzian-source",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 13,
+      "fit_ms": 711.0807089999998,
+      "evaluation_ms": 6.436962500000027,
+      "fit_samples_ms": [
+        705.5811250000002,
+        710.7084590000004,
+        711.0807089999998,
+        717.6610409999998,
+        713.7887500000006
+      ],
+      "evaluation_samples_ms": [
+        6.341908349999994,
+        6.4817437500000095,
+        6.4745124999999915,
+        6.344516699999986,
+        6.436962500000027
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "singlet-squared-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 67.67870799999946,
+      "evaluation_ms": 2.4388416499999948,
+      "fit_samples_ms": [
+        67.35500000000047,
+        67.58708300000035,
+        68.54495900000074,
+        67.67870799999946,
+        68.51241699999991
+      ],
+      "evaluation_samples_ms": [
+        2.41482289999999,
+        2.411018749999994,
+        2.4468854500000363,
+        2.439818749999995,
+        2.4388416499999948
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "three-sites-squared-source",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 13,
+      "fit_ms": 703.5669999999991,
+      "evaluation_ms": 6.386810400000013,
+      "fit_samples_ms": [
+        714.7688330000001,
+        714.4078329999993,
+        703.5669999999991,
+        699.0927499999998,
+        701.7287500000002
+      ],
+      "evaluation_samples_ms": [
+        7.065764549999995,
+        6.423512500000015,
+        6.331893750000018,
+        6.386810400000013,
+        6.241554149999956
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "mixed-absorber-profiles-counts",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 12,
+      "fit_ms": 611.8258330000008,
+      "evaluation_ms": 4.723274999999921,
+      "fit_samples_ms": [
+        611.8258330000008,
+        608.3409579999989,
+        611.6094590000012,
+        672.0728749999998,
+        636.5583750000005
+      ],
+      "evaluation_samples_ms": [
+        4.665270849999979,
+        4.638339599999926,
+        4.815197900000021,
+        5.281343749999996,
+        4.723274999999921
+      ],
+      "iterations": 8,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "asymmetric-gaussian-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 5,
+      "fit_ms": 96.49370900000031,
+      "evaluation_ms": 2.80848960000003,
+      "fit_samples_ms": [
+        96.5049999999992,
+        98.71587499999987,
+        96.49370900000031,
+        96.22270800000115,
+        96.1961250000004
+      ],
+      "evaluation_samples_ms": [
+        2.9831396000000496,
+        2.8368395999999847,
+        2.80848960000003,
+        2.7962375000000064,
+        2.802045799999996
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "xvbf-transmission",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 6,
+      "fit_ms": 87.34299999999712,
+      "evaluation_ms": 2.0901874999999563,
+      "fit_samples_ms": [
+        87.42858400000114,
+        87.33729200000016,
+        87.34299999999712,
+        87.30770900000061,
+        87.94016700000066
+      ],
+      "evaluation_samples_ms": [
+        2.0901874999999563,
+        2.089806250000038,
+        2.1114979000001766,
+        2.1472353999999543,
+        2.0891125000000104
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "linked-parameters",
+      "sites": 2,
+      "channels": 256,
+      "free_parameters": 7,
+      "fit_ms": 207.6231250000019,
+      "evaluation_ms": 4.112229149999985,
+      "fit_samples_ms": [
+        210.442583,
+        207.31366600000183,
+        207.92929100000038,
+        207.09045799999876,
+        207.6231250000019
+      ],
+      "evaluation_samples_ms": [
+        4.070162499999969,
+        4.112560399999893,
+        4.167554150000069,
+        4.112229149999985,
+        4.10210834999998
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "active-width-bound",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 189.56904099999883,
+      "evaluation_ms": 2.400439600000027,
+      "fit_samples_ms": [
+        190.7445000000007,
+        190.31516700000066,
+        188.89241700000275,
+        188.89337499999965,
+        189.56904099999883
+      ],
+      "evaluation_samples_ms": [
+        2.4088520999999674,
+        2.400439600000027,
+        2.4097999999999957,
+        2.3865812500000176,
+        2.3847437500000526
+      ],
+      "iterations": 18,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "thin-control",
+      "sites": 2,
+      "channels": 256,
+      "free_parameters": 9,
+      "fit_ms": 37.434041000000434,
+      "evaluation_ms": 0.33086874999989957,
+      "fit_samples_ms": [
+        38.557207999998354,
+        37.434041000000434,
+        37.583834000000934,
+        37.34283399999913,
+        37.2711249999993
+      ],
+      "evaluation_samples_ms": [
+        0.35905000000002474,
+        0.3342416499999672,
+        0.3148750000000291,
+        0.30891670000000887,
+        0.33086874999989957
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "source-calibration-lorentzian",
+      "sites": 1,
+      "channels": 257,
+      "free_parameters": 6,
+      "fit_ms": 108.23837500000081,
+      "evaluation_ms": 2.6914771000001565,
+      "fit_samples_ms": [
+        108.86916700000074,
+        107.73212500000227,
+        107.7645420000008,
+        108.23837500000081,
+        108.57695899999817
+      ],
+      "evaluation_samples_ms": [
+        2.6914771000001565,
+        2.6779625000001035,
+        2.6986042000000454,
+        2.7141708500001185,
+        2.683341699999983
+      ],
+      "iterations": 4,
+      "termination": "SolverConverged",
+      "converged": true,
+      "comparison": null
+    },
+    {
+      "id": "source-calibration-squared",
+      "sites": 1,
+      "channels": 257,
+      "free_parameters": 6,
+      "fit_ms": 109.57066699999996,
+      "evaluation_ms": 2.717908350000107,
+      "fit_samples_ms": [
+        110.67587500000081,
+        110.87979099999939,
+        109.16929200000232,
+        109.57066699999996,
+        109.08283299999675
+      ],
+      "evaluation_samples_ms": [
+        2.775041699999929,
+        2.75340625000008,
+        2.7072437499999067,
+        2.7116167000000133,
+        2.717908350000107
+      ],
+      "iterations": 4,
+      "termination": "SolverConverged",
+      "converged": true,
+      "comparison": null
+    }
+  ]
+}

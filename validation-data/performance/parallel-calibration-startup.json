@@ -1,0 +1,200 @@
+{
+  "date": "2026-11-07",
+  "cpu": "Apple M4 Pro",
+  "node": "v22.18.0",
+  "repetitions": 3,
+  "paired": true,
+  "wasm_sha256": "a1543c86507b9523f09f72ad7f5cfdf8936b6d74f15490c1e9b1b3884f582773",
+  "results": [
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "requested_workers": "auto",
+      "rows": [
+        {
+          "id": "source-calibration-lorentzian",
+          "cold_ms": 48.53999999999999,
+          "samples_ms": [
+            20.720000000000027,
+            19.399999999999977,
+            20.099999999999966
+          ],
+          "compute_ms": [
+            20.460000000000008,
+            19.159999999999997,
+            19.860000000000014
+          ],
+          "median_ms": 20.099999999999966,
+          "serial_samples_ms": [
+            35.85999999999996,
+            37.54000000000002,
+            35.78000000000003
+          ],
+          "serial_median_ms": 35.85999999999996,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.6999999999999886,
+                "solver_ms": 0,
+                "derivative_wait_ms": 8.45999999999998,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "source-calibration-squared",
+          "cold_ms": 19.799999999999955,
+          "samples_ms": [
+            19.159999999999968,
+            19.200000000000045,
+            19.24000000000001
+          ],
+          "compute_ms": [
+            18.939999999999998,
+            19.02000000000004,
+            19.039999999999964
+          ],
+          "median_ms": 19.200000000000045,
+          "serial_samples_ms": [
+            35.22000000000003,
+            35.34000000000003,
+            34.93999999999994
+          ],
+          "serial_median_ms": 35.22000000000003,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.5,
+                "solver_ms": 0,
+                "derivative_wait_ms": 8.420000000000016,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        }
+      ],
+      "hardwareConcurrency": 8,
+      "crossOriginIsolated": true
+    },
+    {
+      "browser": "chromium",
+      "version": "156.0.8078.4",
+      "requested_workers": "auto",
+      "rows": [
+        {
+          "id": "source-calibration-lorentzian",
+          "cold_ms": 30.9549999833107,
+          "samples_ms": [
+            18.735000014305115,
+            18.455000042915344,
+            18.514999985694885
+          ],
+          "compute_ms": [
+            18.585000038146973,
+            18.344999969005585,
+            18.37999999523163
+          ],
+          "median_ms": 18.514999985694885,
+          "serial_samples_ms": [
+            35.69999998807907,
+            35.62999999523163,
+            35.63499999046326
+          ],
+          "serial_median_ms": 35.63499999046326,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.38999998569488525,
+                "solver_ms": 0,
+                "derivative_wait_ms": 7.564999997615814,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "source-calibration-squared",
+          "cold_ms": 18.759999990463257,
+          "samples_ms": [
+            18.144999980926514,
+            19.165000021457672,
+            18.80000001192093
+          ],
+          "compute_ms": [
+            18.00499999523163,
+            18.214999973773956,
+            18.665000021457672
+          ],
+          "median_ms": 18.80000001192093,
+          "serial_samples_ms": [
+            35.74000000953674,
+            35.64500004053116,
+            36.68000000715256
+          ],
+          "serial_median_ms": 35.74000000953674,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.20999997854232788,
+                "solver_ms": 0,
+                "derivative_wait_ms": 7.534999907016754,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        }
+      ],
+      "hardwareConcurrency": 14,
+      "crossOriginIsolated": true
+    }
+  ]
+}

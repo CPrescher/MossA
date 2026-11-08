@@ -1,0 +1,1310 @@
+{
+  "date": "2026-11-07",
+  "cpu": "Apple M4 Pro",
+  "node": "v22.18.0",
+  "repetitions": 5,
+  "wasm_sha256": "a1543c86507b9523f09f72ad7f5cfdf8936b6d74f15490c1e9b1b3884f582773",
+  "results": [
+    {
+      "browser": "webkit",
+      "version": "27.2",
+      "requested_workers": "auto",
+      "rows": [
+        {
+          "id": "singlet-lorentzian-source",
+          "cold_ms": 22.140000000000043,
+          "samples_ms": [
+            21.060000000000002,
+            21,
+            20.819999999999993,
+            20.100000000000023,
+            20.100000000000023
+          ],
+          "compute_ms": [
+            20.86,
+            20.75999999999999,
+            20.5,
+            19.80000000000001,
+            19.839999999999975
+          ],
+          "median_ms": 20.819999999999993,
+          "serial_samples_ms": [
+            21.319999999999993,
+            20.620000000000005,
+            20.299999999999955,
+            20.379999999999995,
+            19.699999999999932
+          ],
+          "serial_median_ms": 20.379999999999995,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "three-sites-lorentzian-source",
+          "cold_ms": 125.53999999999996,
+          "samples_ms": [
+            88.84000000000015,
+            87.83999999999992,
+            88.77999999999997,
+            88.20000000000005,
+            87.17999999999984
+          ],
+          "compute_ms": [
+            88.5,
+            87.51999999999998,
+            88.44000000000005,
+            87.94000000000005,
+            86.86000000000013
+          ],
+          "median_ms": 88.20000000000005,
+          "serial_samples_ms": [
+            136.77999999999997,
+            138.33999999999992,
+            137.1400000000001,
+            136.20000000000005,
+            137.55999999999995
+          ],
+          "serial_median_ms": 137.1400000000001,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 1.0799999999999272,
+                "solver_ms": 0,
+                "derivative_wait_ms": 21.23999999999978,
+                "batches": 7,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "singlet-squared-source",
+          "cold_ms": 20.299999999999955,
+          "samples_ms": [
+            20.420000000000073,
+            20.779999999999973,
+            20.019999999999982,
+            19.81999999999971,
+            20.019999999999982
+          ],
+          "compute_ms": [
+            20.159999999999854,
+            20.539999999999964,
+            19.800000000000182,
+            19.539999999999964,
+            19.700000000000045
+          ],
+          "median_ms": 20.019999999999982,
+          "serial_samples_ms": [
+            20.100000000000136,
+            20.080000000000382,
+            20.23999999999978,
+            20.33999999999969,
+            20
+          ],
+          "serial_median_ms": 20.100000000000136,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "three-sites-squared-source",
+          "cold_ms": 85.59999999999991,
+          "samples_ms": [
+            84.7800000000002,
+            85.61999999999989,
+            86.65999999999985,
+            85.86000000000013,
+            85.82000000000016
+          ],
+          "compute_ms": [
+            84.5,
+            85.32000000000016,
+            86.34000000000015,
+            85.55999999999995,
+            85.53999999999996
+          ],
+          "median_ms": 85.82000000000016,
+          "serial_samples_ms": [
+            136.76000000000022,
+            136.23999999999978,
+            136.94000000000005,
+            136.01999999999998,
+            136.5
+          ],
+          "serial_median_ms": 136.5,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.5799999999999272,
+                "solver_ms": 0,
+                "derivative_wait_ms": 21.500000000000455,
+                "batches": 7,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "mixed-absorber-profiles-counts",
+          "cold_ms": 95.57999999999993,
+          "samples_ms": [
+            97.03999999999996,
+            95.82000000000016,
+            95.02000000000044,
+            95.9399999999996,
+            94.30000000000018
+          ],
+          "compute_ms": [
+            96.69999999999982,
+            95.51999999999998,
+            94.71999999999935,
+            95.65999999999985,
+            94.02000000000044
+          ],
+          "median_ms": 95.82000000000016,
+          "serial_samples_ms": [
+            149.8399999999997,
+            158.09999999999945,
+            153.78000000000065,
+            149.80000000000018,
+            148.66000000000076
+          ],
+          "serial_median_ms": 149.8399999999997,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.8400000000001455,
+                "solver_ms": 0,
+                "derivative_wait_ms": 19.11999999999898,
+                "batches": 9,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 8
+        },
+        {
+          "id": "asymmetric-gaussian-source",
+          "cold_ms": 26.0600000000004,
+          "samples_ms": [
+            27.360000000000582,
+            25.800000000000182,
+            25.800000000000182,
+            25.480000000000473,
+            25.920000000000073
+          ],
+          "compute_ms": [
+            27.140000000000327,
+            25.579999999999927,
+            25.5600000000004,
+            25.23999999999978,
+            25.68000000000029
+          ],
+          "median_ms": 25.800000000000182,
+          "serial_samples_ms": [
+            25.460000000000036,
+            25.3799999999992,
+            25.600000000000364,
+            25.800000000000182,
+            25.9399999999996
+          ],
+          "serial_median_ms": 25.600000000000364,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "xvbf-transmission",
+          "cold_ms": 25.300000000000182,
+          "samples_ms": [
+            24.699999999999818,
+            24.88000000000011,
+            24.639999999999418,
+            24.220000000000255,
+            23.980000000000473
+          ],
+          "compute_ms": [
+            24.4399999999996,
+            24.640000000000327,
+            24.400000000000546,
+            23.960000000000036,
+            23.75999999999931
+          ],
+          "median_ms": 24.639999999999418,
+          "serial_samples_ms": [
+            43.35999999999967,
+            44.0600000000004,
+            43.69999999999982,
+            44.159999999999854,
+            43.460000000000036
+          ],
+          "serial_median_ms": 43.69999999999982,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.5199999999995271,
+                "solver_ms": 0,
+                "derivative_wait_ms": 10.319999999999709,
+                "batches": 6,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "linked-parameters",
+          "cold_ms": 25.26000000000022,
+          "samples_ms": [
+            24.23999999999978,
+            24.23999999999978,
+            24.800000000000182,
+            24.220000000000255,
+            24.160000000000764
+          ],
+          "compute_ms": [
+            24.020000000000437,
+            23.900000000000546,
+            24.460000000000036,
+            23.980000000000473,
+            23.920000000000073
+          ],
+          "median_ms": 24.23999999999978,
+          "serial_samples_ms": [
+            42.81999999999971,
+            42.47999999999956,
+            42.57999999999993,
+            42.5,
+            42.400000000000546
+          ],
+          "serial_median_ms": 42.5,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.48000000000047294,
+                "solver_ms": 0,
+                "derivative_wait_ms": 7.920000000000982,
+                "batches": 6,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "active-width-bound",
+          "cold_ms": 55.82000000000062,
+          "samples_ms": [
+            57.32000000000062,
+            56.099999999999454,
+            57.840000000000146,
+            56.960000000000036,
+            56.18000000000029
+          ],
+          "compute_ms": [
+            56.960000000000036,
+            55.720000000000255,
+            57.600000000000364,
+            56.720000000000255,
+            55.92000000000007
+          ],
+          "median_ms": 56.960000000000036,
+          "serial_samples_ms": [
+            56.57999999999993,
+            57.099999999999454,
+            56.9399999999996,
+            55.94000000000051,
+            55.23999999999978
+          ],
+          "serial_median_ms": 56.57999999999993,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 18
+        },
+        {
+          "id": "thin-control",
+          "cold_ms": 23.55999999999949,
+          "samples_ms": [
+            23.55999999999949,
+            23.860000000000582,
+            23.81999999999971,
+            24.23999999999978,
+            24.67999999999938
+          ],
+          "compute_ms": [
+            23.31999999999971,
+            23.61999999999989,
+            23.539999999999964,
+            23.9399999999996,
+            24.4399999999996
+          ],
+          "median_ms": 23.860000000000582,
+          "serial_samples_ms": [
+            23.779999999999745,
+            23.859999999999673,
+            23.719999999999345,
+            23.460000000000036,
+            24.600000000000364
+          ],
+          "serial_median_ms": 23.779999999999745,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "source-calibration-lorentzian",
+          "cold_ms": 19.5600000000004,
+          "samples_ms": [
+            18.74000000000069,
+            18.420000000000073,
+            19.279999999999745,
+            19.0600000000004,
+            19.039999999999964
+          ],
+          "compute_ms": [
+            18.519999999999527,
+            18.220000000000255,
+            19.079999999999927,
+            18.699999999999818,
+            18.780000000000655
+          ],
+          "median_ms": 19.039999999999964,
+          "serial_samples_ms": [
+            35.85999999999967,
+            36,
+            35.69999999999982,
+            35.599999999999454,
+            35.68000000000029
+          ],
+          "serial_median_ms": 35.69999999999982,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.47999999999956344,
+                "solver_ms": 0,
+                "derivative_wait_ms": 8.240000000000691,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "source-calibration-squared",
+          "cold_ms": 19.0600000000004,
+          "samples_ms": [
+            19.079999999999927,
+            19.139999999999418,
+            19.220000000000255,
+            18.899999999999636,
+            18.800000000000182
+          ],
+          "compute_ms": [
+            18.900000000000546,
+            18.5600000000004,
+            19,
+            18.68000000000029,
+            18.599999999999454
+          ],
+          "median_ms": 19.079999999999927,
+          "serial_samples_ms": [
+            35.85999999999967,
+            35.659999999999854,
+            35.92000000000007,
+            35.38000000000011,
+            36.159999999999854
+          ],
+          "serial_median_ms": 35.85999999999967,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.38000000000010914,
+                "solver_ms": 0,
+                "derivative_wait_ms": 8.139999999999418,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "MS_Fe2O3_transmission",
+          "cold_ms": 25.079999999999927,
+          "samples_ms": [
+            24.779999999999745,
+            24.640000000000327,
+            24,
+            24.779999999999745,
+            25.76000000000022
+          ],
+          "compute_ms": [
+            24.539999999999964,
+            24.44000000000051,
+            23.800000000000182,
+            24.359999999999673,
+            25.519999999999527
+          ],
+          "median_ms": 24.779999999999745,
+          "serial_samples_ms": [
+            44.159999999999854,
+            42.460000000000036,
+            43.159999999999854,
+            42.64000000000033,
+            42.61999999999989
+          ],
+          "serial_median_ms": 42.64000000000033,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.7199999999993452,
+                "solver_ms": 0,
+                "derivative_wait_ms": 11.400000000000546,
+                "batches": 8,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 7
+        },
+        {
+          "id": "MS_MexicanMagnetite_transmission",
+          "cold_ms": 438.2399999999998,
+          "samples_ms": [
+            438.14000000000124,
+            436.7000000000007,
+            439.7600000000002,
+            440.8799999999992,
+            440.60000000000036
+          ],
+          "compute_ms": [
+            437.8600000000006,
+            436.39999999999964,
+            439.4599999999991,
+            440.6399999999994,
+            440.3399999999983
+          ],
+          "median_ms": 439.7600000000002,
+          "serial_samples_ms": [
+            635.8199999999997,
+            641.5,
+            638.7399999999998,
+            639.380000000001,
+            642.9400000000005
+          ],
+          "serial_median_ms": 639.380000000001,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.5400000000008731,
+                "solver_ms": 0,
+                "derivative_wait_ms": 71.55999999999585,
+                "batches": 21,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 20
+        }
+      ],
+      "hardwareConcurrency": 8,
+      "crossOriginIsolated": true
+    },
+    {
+      "browser": "chromium",
+      "version": "156.0.8078.4",
+      "requested_workers": "auto",
+      "rows": [
+        {
+          "id": "singlet-lorentzian-source",
+          "cold_ms": 23.014999985694885,
+          "samples_ms": [
+            21.555000007152557,
+            22.165000021457672,
+            21.585000038146973,
+            21.560000002384186,
+            21.225000023841858
+          ],
+          "compute_ms": [
+            21.394999980926514,
+            21.94999998807907,
+            21.435000002384186,
+            21.384999990463257,
+            21.049999952316284
+          ],
+          "median_ms": 21.560000002384186,
+          "serial_samples_ms": [
+            21.37999999523163,
+            21.755000054836273,
+            21.2950000166893,
+            21.49500000476837,
+            21.060000002384186
+          ],
+          "serial_median_ms": 21.37999999523163,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "three-sites-lorentzian-source",
+          "cold_ms": 106.39500004053116,
+          "samples_ms": [
+            94.86500000953674,
+            93,
+            94.1350000500679,
+            96.58500003814697,
+            95.16499996185303
+          ],
+          "compute_ms": [
+            94.64999997615814,
+            92.78000003099442,
+            93.96000003814697,
+            96.38499999046326,
+            94.98000001907349
+          ],
+          "median_ms": 94.86500000953674,
+          "serial_samples_ms": [
+            154.4549999833107,
+            154.91000002622604,
+            154.60999995470047,
+            155.53500002622604,
+            156.87000000476837
+          ],
+          "serial_median_ms": 154.91000002622604,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.35500001907348633,
+                "solver_ms": 0,
+                "derivative_wait_ms": 24.48499995470047,
+                "batches": 7,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "singlet-squared-source",
+          "cold_ms": 20.939999997615814,
+          "samples_ms": [
+            20.834999978542328,
+            21.110000014305115,
+            20.85499995946884,
+            21.069999992847443,
+            22.64000004529953
+          ],
+          "compute_ms": [
+            20.660000026226044,
+            20.9549999833107,
+            20.669999957084656,
+            20.90499997138977,
+            22.490000009536743
+          ],
+          "median_ms": 21.069999992847443,
+          "serial_samples_ms": [
+            21.125,
+            20.660000026226044,
+            20.980000019073486,
+            21.430000007152557,
+            22.464999973773956
+          ],
+          "serial_median_ms": 21.125,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "three-sites-squared-source",
+          "cold_ms": 98.81499999761581,
+          "samples_ms": [
+            91.94499999284744,
+            91.5450000166893,
+            93.13499999046326,
+            91.88499999046326,
+            94.33499997854233
+          ],
+          "compute_ms": [
+            91.78500002622604,
+            91.37999999523163,
+            92.87999999523163,
+            91.71499997377396,
+            94.1700000166893
+          ],
+          "median_ms": 91.94499999284744,
+          "serial_samples_ms": [
+            154.05000001192093,
+            152.28000003099442,
+            153.61500000953674,
+            153.29499995708466,
+            153.54000002145767
+          ],
+          "serial_median_ms": 153.54000002145767,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.30000001192092896,
+                "solver_ms": 0,
+                "derivative_wait_ms": 24.789999902248383,
+                "batches": 7,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "mixed-absorber-profiles-counts",
+          "cold_ms": 100.40000003576279,
+          "samples_ms": [
+            101.06000000238419,
+            101.43000000715256,
+            100.25500005483627,
+            100.41000002622604,
+            100.4549999833107
+          ],
+          "compute_ms": [
+            100.89999997615814,
+            101.26999998092651,
+            100.0900000333786,
+            100.23500001430511,
+            100.2849999666214
+          ],
+          "median_ms": 100.4549999833107,
+          "serial_samples_ms": [
+            165.79999995231628,
+            163.05000001192093,
+            162.8550000190735,
+            163.24500000476837,
+            161.98499995470047
+          ],
+          "serial_median_ms": 163.05000001192093,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.2900000214576721,
+                "solver_ms": 0,
+                "derivative_wait_ms": 20.994999945163727,
+                "batches": 9,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 8
+        },
+        {
+          "id": "asymmetric-gaussian-source",
+          "cold_ms": 26.785000026226044,
+          "samples_ms": [
+            26.630000054836273,
+            26.939999997615814,
+            26.87000000476837,
+            26.389999985694885,
+            27.985000014305115
+          ],
+          "compute_ms": [
+            26.444999992847443,
+            26.77999997138977,
+            26.724999964237213,
+            26.225000023841858,
+            27.8299999833107
+          ],
+          "median_ms": 26.87000000476837,
+          "serial_samples_ms": [
+            26.310000002384186,
+            26.650000035762787,
+            26.7049999833107,
+            26.5,
+            26.789999961853027
+          ],
+          "serial_median_ms": 26.650000035762787,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "xvbf-transmission",
+          "cold_ms": 22.9549999833107,
+          "samples_ms": [
+            22.935000002384186,
+            22.615000009536743,
+            23.2950000166893,
+            22.7950000166893,
+            22.849999964237213
+          ],
+          "compute_ms": [
+            22.80000001192093,
+            22.48499995470047,
+            23.14000004529953,
+            22.665000021457672,
+            22.680000007152557
+          ],
+          "median_ms": 22.849999964237213,
+          "serial_samples_ms": [
+            43.060000002384186,
+            43.87999999523163,
+            44.46000003814697,
+            43.060000002384186,
+            42.93000000715256
+          ],
+          "serial_median_ms": 43.060000002384186,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.24000000953674316,
+                "solver_ms": 0,
+                "derivative_wait_ms": 9.170000076293945,
+                "batches": 6,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "linked-parameters",
+          "cold_ms": 24.72000002861023,
+          "samples_ms": [
+            24.290000021457672,
+            24.225000023841858,
+            25.57499998807907,
+            25.67500001192093,
+            25.42500001192093
+          ],
+          "compute_ms": [
+            24.144999980926514,
+            24.069999992847443,
+            25.37999999523163,
+            25.4549999833107,
+            25.259999990463257
+          ],
+          "median_ms": 25.42500001192093,
+          "serial_samples_ms": [
+            46.15499997138977,
+            46.330000042915344,
+            45.41500002145767,
+            45.91500002145767,
+            46.46000003814697
+          ],
+          "serial_median_ms": 46.15499997138977,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.2799999713897705,
+                "solver_ms": 0,
+                "derivative_wait_ms": 8.259999930858612,
+                "batches": 6,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 5
+        },
+        {
+          "id": "active-width-bound",
+          "cold_ms": 57.68000000715256,
+          "samples_ms": [
+            59.5,
+            57.94999998807907,
+            56.93000000715256,
+            56.74500000476837,
+            58.75499999523163
+          ],
+          "compute_ms": [
+            59.31999999284744,
+            57.785000026226044,
+            56.76500004529953,
+            56.58500003814697,
+            58.589999973773956
+          ],
+          "median_ms": 57.94999998807907,
+          "serial_samples_ms": [
+            56.97000002861023,
+            56.75,
+            57.00499999523163,
+            57.78999996185303,
+            58.669999957084656
+          ],
+          "serial_median_ms": 57.00499999523163,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 18
+        },
+        {
+          "id": "thin-control",
+          "cold_ms": 27.985000014305115,
+          "samples_ms": [
+            25.2950000166893,
+            25.5799999833107,
+            25.26500004529953,
+            25.305000007152557,
+            24.990000009536743
+          ],
+          "compute_ms": [
+            25.07499998807907,
+            25.430000007152557,
+            25.115000009536743,
+            25.165000021457672,
+            24.865000009536743
+          ],
+          "median_ms": 25.2950000166893,
+          "serial_samples_ms": [
+            25.985000014305115,
+            25.105000019073486,
+            25.334999978542328,
+            25.110000014305115,
+            24.87999999523163
+          ],
+          "serial_median_ms": 25.110000014305115,
+          "execution": {
+            "derivative_workers": 1,
+            "transport": "serial"
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 6
+        },
+        {
+          "id": "source-calibration-lorentzian",
+          "cold_ms": 18.530000030994415,
+          "samples_ms": [
+            18.560000002384186,
+            17.75,
+            18.4099999666214,
+            18.365000009536743,
+            17.930000007152557
+          ],
+          "compute_ms": [
+            18.435000002384186,
+            17.644999980926514,
+            18.2950000166893,
+            18.2150000333786,
+            17.814999997615814
+          ],
+          "median_ms": 18.365000009536743,
+          "serial_samples_ms": [
+            36.3299999833107,
+            35.894999980926514,
+            35.73499995470047,
+            36.05000001192093,
+            36.125
+          ],
+          "serial_median_ms": 36.05000001192093,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.13499999046325684,
+                "solver_ms": 0,
+                "derivative_wait_ms": 7.514999985694885,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "source-calibration-squared",
+          "cold_ms": 18.105000019073486,
+          "samples_ms": [
+            18.524999976158142,
+            18.1599999666214,
+            18.725000023841858,
+            18.87999999523163,
+            18.469999969005585
+          ],
+          "compute_ms": [
+            18.40499997138977,
+            18.040000021457672,
+            18.57499998807907,
+            18.75499999523163,
+            18.3299999833107
+          ],
+          "median_ms": 18.524999976158142,
+          "serial_samples_ms": [
+            36.17500001192093,
+            37.03999996185303,
+            36.844999969005585,
+            36.185000002384186,
+            36.0349999666214
+          ],
+          "serial_median_ms": 36.185000002384186,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.16500002145767212,
+                "solver_ms": 0,
+                "derivative_wait_ms": 7.634999990463257,
+                "batches": 5,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 4
+        },
+        {
+          "id": "MS_Fe2O3_transmission",
+          "cold_ms": 26.429999947547913,
+          "samples_ms": [
+            24.87999999523163,
+            24.980000019073486,
+            24.884999990463257,
+            25.7950000166893,
+            26.139999985694885
+          ],
+          "compute_ms": [
+            24.730000019073486,
+            24.84500002861023,
+            24.709999978542328,
+            25.62999999523163,
+            26.009999990463257
+          ],
+          "median_ms": 24.980000019073486,
+          "serial_samples_ms": [
+            46.830000042915344,
+            46.05500000715256,
+            45.72500002384186,
+            47.36500000953674,
+            47.91500002145767
+          ],
+          "serial_median_ms": 46.830000042915344,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.35499995946884155,
+                "solver_ms": 0,
+                "derivative_wait_ms": 11.184999942779541,
+                "batches": 8,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 7
+        },
+        {
+          "id": "MS_MexicanMagnetite_transmission",
+          "cold_ms": 464.24000000953674,
+          "samples_ms": [
+            464.164999961853,
+            469.2300000190735,
+            465.9399999976158,
+            464.72999995946884,
+            464.42500001192093
+          ],
+          "compute_ms": [
+            463.97999995946884,
+            469.0849999785423,
+            465.7649999856949,
+            464.60499995946884,
+            464.2900000214577
+          ],
+          "median_ms": 464.72999995946884,
+          "serial_samples_ms": [
+            704.6850000023842,
+            724.1450000405312,
+            704.7250000238419,
+            703.7400000095367,
+            704.0300000309944
+          ],
+          "serial_median_ms": 704.6850000023842,
+          "execution": {
+            "derivative_workers": 4,
+            "transport": "shared",
+            "timings": [
+              {
+                "prepare_ms": 0.2399999499320984,
+                "solver_ms": 0,
+                "derivative_wait_ms": 78.65500003099442,
+                "batches": 21,
+                "advances": 0
+              }
+            ]
+          },
+          "comparison": {
+            "max_curve_abs": 0,
+            "max_parameter_abs": 0,
+            "max_parameter_in_std": 0,
+            "max_std_relative": 0,
+            "bitwise_equal": true,
+            "failures": []
+          },
+          "iterations": 20
+        }
+      ],
+      "hardwareConcurrency": 14,
+      "crossOriginIsolated": true
+    }
+  ],
+  "equivalence": "Complete fit outputs passed Node assert.deepStrictEqual before each row was saved; object-key serialization order is ignored."
+}

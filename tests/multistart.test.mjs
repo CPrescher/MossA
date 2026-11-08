@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import init,{fit_json,evaluate_json} from '../src/wasm/mossa_core.js';
-import {fitMultiStart,searchCandidate} from '../src/multistart.mjs';
+import {fitMultiStart,fitMultiStartAsync,searchCandidate} from '../src/multistart.mjs';
 await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm',import.meta.url))});
 const local=p=>JSON.parse(fit_json(JSON.stringify(p)));
 const evaluate=p=>JSON.parse(evaluate_json(JSON.stringify(p)));

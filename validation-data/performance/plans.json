@@ -1,0 +1,394 @@
+{
+  "runtime": "v22.18.0",
+  "platform": "darwin/arm64",
+  "cpu": "Apple M4 Pro",
+  "repetitions": 5,
+  "wasm_sha256": "bd2d477b0464cb6fe527478a0cf0aafcd500adff4b2860748b8942b44bb43d44",
+  "fixture_sha256": "267596968cb9fe65627317641cfb0c6af89eb2d2453136d0f7acb3d0c8e7eaa9",
+  "rows": [
+    {
+      "id": "singlet-lorentzian-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 45.73750000000001,
+      "evaluation_ms": 1.5733166499999995,
+      "fit_samples_ms": [
+        48.085459,
+        45.531542,
+        45.73750000000001,
+        45.62662499999999,
+        46.52720799999997
+      ],
+      "evaluation_samples_ms": [
+        1.6442875000000001,
+        1.5733166499999995,
+        1.5463020999999997,
+        1.5490437500000014,
+        1.608541649999998
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "three-sites-lorentzian-source",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 13,
+      "fit_ms": 628.9391249999999,
+      "evaluation_ms": 5.346347949999995,
+      "fit_samples_ms": [
+        644.302625,
+        635.397416,
+        628.9391249999999,
+        619.5152499999999,
+        617.5526659999996
+      ],
+      "evaluation_samples_ms": [
+        5.623731250000003,
+        5.40473750000001,
+        5.3144354000000025,
+        5.346347949999995,
+        5.328258349999987
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "singlet-squared-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 44.9502080000002,
+      "evaluation_ms": 1.519879149999997,
+      "fit_samples_ms": [
+        45.235624999999345,
+        45.18708400000014,
+        44.843958000000384,
+        44.9502080000002,
+        44.76500000000033
+      ],
+      "evaluation_samples_ms": [
+        1.517639549999967,
+        1.535564549999981,
+        1.5248083499999665,
+        1.5115604000000076,
+        1.519879149999997
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "three-sites-squared-source",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 13,
+      "fit_ms": 615.7034999999996,
+      "evaluation_ms": 5.379245850000006,
+      "fit_samples_ms": [
+        612.9091669999998,
+        615.7034999999996,
+        617.2337499999994,
+        616.4709999999995,
+        613.8427919999995
+      ],
+      "evaluation_samples_ms": [
+        5.436337499999991,
+        5.379245850000006,
+        5.3433916500000125,
+        5.36136875000002,
+        5.4113521000000215
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "mixed-absorber-profiles-counts",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 12,
+      "fit_ms": 521.0419170000005,
+      "evaluation_ms": 3.777122900000086,
+      "fit_samples_ms": [
+        530.3685420000002,
+        526.6138750000009,
+        521.0419170000005,
+        517.738625,
+        518.3510829999996
+      ],
+      "evaluation_samples_ms": [
+        3.9473396000000323,
+        3.7640125000000806,
+        3.7962916500000574,
+        3.7436812500000087,
+        3.777122900000086
+      ],
+      "iterations": 8,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "asymmetric-gaussian-source",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 5,
+      "fit_ms": 69.18166699999892,
+      "evaluation_ms": 1.9139208499999767,
+      "fit_samples_ms": [
+        69.62233399999968,
+        69.80833399999938,
+        68.8018749999992,
+        68.8385419999995,
+        69.18166699999892
+      ],
+      "evaluation_samples_ms": [
+        1.9027437499999906,
+        1.901745849999952,
+        1.9139208499999767,
+        1.927995800000008,
+        1.933391649999976
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "xvbf-transmission",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 6,
+      "fit_ms": 56.20179199999984,
+      "evaluation_ms": 1.2398229000000356,
+      "fit_samples_ms": [
+        57.08433399999922,
+        55.91841699999895,
+        55.76695800000016,
+        56.70350000000144,
+        56.20179199999984
+      ],
+      "evaluation_samples_ms": [
+        1.2564041499999803,
+        1.2390625,
+        1.2333771000000524,
+        1.2398229000000356,
+        1.2427082999999584
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "linked-parameters",
+      "sites": 2,
+      "channels": 256,
+      "free_parameters": 7,
+      "fit_ms": 169.77499999999964,
+      "evaluation_ms": 3.169768750000003,
+      "fit_samples_ms": [
+        169.77499999999964,
+        168.01891699999942,
+        170.34250000000065,
+        171.39804200000071,
+        167.1513329999998
+      ],
+      "evaluation_samples_ms": [
+        3.169768750000003,
+        3.160143750000043,
+        3.2056770500000313,
+        3.1640374999999947,
+        3.1715312499999526
+      ],
+      "iterations": 5,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "active-width-bound",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 4,
+      "fit_ms": 128.13545800000065,
+      "evaluation_ms": 1.5356333499999892,
+      "fit_samples_ms": [
+        129.7202500000003,
+        128.13545800000065,
+        127.22108300000036,
+        128.89008300000023,
+        128.02641699999913
+      ],
+      "evaluation_samples_ms": [
+        1.548035400000026,
+        1.526635449999958,
+        1.5560270499999205,
+        1.5356333499999892,
+        1.5121354500000053
+      ],
+      "iterations": 18,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "thin-control",
+      "sites": 2,
+      "channels": 256,
+      "free_parameters": 9,
+      "fit_ms": 36.186209000003146,
+      "evaluation_ms": 0.3173979000001054,
+      "fit_samples_ms": [
+        36.159583000000566,
+        36.186209000003146,
+        36.176040999998804,
+        36.296875,
+        36.254667000001064
+      ],
+      "evaluation_samples_ms": [
+        0.31835000000000946,
+        0.315381250000064,
+        0.3205582999999024,
+        0.31475625000002766,
+        0.3173979000001054
+      ],
+      "iterations": 6,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "source-calibration-lorentzian",
+      "sites": 1,
+      "channels": 257,
+      "free_parameters": 6,
+      "fit_ms": 66.15066699999807,
+      "evaluation_ms": 1.6194708000000901,
+      "fit_samples_ms": [
+        65.76904099999956,
+        66.15066699999807,
+        65.60154200000034,
+        66.4553339999984,
+        66.21358300000065
+      ],
+      "evaluation_samples_ms": [
+        1.6183812499999477,
+        1.6355104000000211,
+        1.6138916500000051,
+        1.6194708000000901,
+        1.648497899999893
+      ],
+      "iterations": 4,
+      "termination": "SolverConverged",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    },
+    {
+      "id": "source-calibration-squared",
+      "sites": 1,
+      "channels": 257,
+      "free_parameters": 6,
+      "fit_ms": 67.37495800000033,
+      "evaluation_ms": 1.6461771000000227,
+      "fit_samples_ms": [
+        66.27162500000122,
+        66.68820899999992,
+        67.37495800000033,
+        67.61141700000007,
+        67.75720899999942
+      ],
+      "evaluation_samples_ms": [
+        1.6298583000001599,
+        1.6289708499998596,
+        1.6647917000000234,
+        1.6847146000000066,
+        1.6461771000000227
+      ],
+      "iterations": 4,
+      "termination": "SolverConverged",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true
+      }
+    }
+  ]
+}

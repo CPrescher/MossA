@@ -1,0 +1,14 @@
+{
+  "execution": {
+    "derivative_workers": 1,
+    "transport": "serial"
+  },
+  "identical": true,
+  "isolated": false,
+  "origin": "tauri://localhost",
+  "parallel_ms": 1377,
+  "secure": true,
+  "serial_ms": 673.0000000000001,
+  "sharedArrayBuffer": "undefined",
+  "purpose": "Native Tauri capability and exact-output probe; one-shot timing is not a benchmark."
+}

@@ -34,7 +34,7 @@ test('weight std is displayed in percentage points while stored weights remain f
  const p=demo();const site=enableXvbf(newSite(0));site.xvbf=addDistribution(site.xvbf!,'qs');p.sites=[site];
  const fit={converged:true,termination:'test',iterations:1,free_parameters:1,dof:100,rank:1,reduced_objective:1,errors:{'site:0:qsd:0:weight':.01},warnings:[]};
  const html=renderToStaticMarkup(<XvbfDistributions project={p} selected={0} result={fit} onSite={()=>{}} view="qs"/>);
- assert.match(html,/Displayed in percentage points\.[^>]*>± 1\.0<\/small>/);
+ assert.match(html,/Displayed in percentage points\.[^>]*>std 1\.0<\/small>/);
  assert.equal(p.sites[0].xvbf!.qs[0].weight.value,.5);
 });
 
@@ -50,4 +50,12 @@ test('sidebar keyboard tabs select CS, QS, and correlation without changing the 
   await key('End');assert.equal(document.activeElement,tabs[2]);assert.ok(container.querySelector('[aria-label="Joint CS–QS distribution"]'));assert.ok(container.querySelector('[aria-label="xVBF coupling"]'));assert.equal(container.querySelector('table'),null);
   await key('ArrowRight');assert.equal(document.activeElement,tabs[0]);assert.ok(container.querySelector('[aria-label="CS distribution parameters"]'));assert.deepEqual(p,before);
  } finally {await act(async()=>root.unmount());dom.window.close();}
+});
+
+
+test('switching the editing site retains selector focus and leaves model data unchanged',async()=>{
+ const dom=new JSDOM('<div id="root"></div>');Object.assign(globalThis,{window:dom.window,document:dom.window.document,IS_REACT_ACT_ENVIRONMENT:true});
+ const root=createRoot(document.getElementById('root')!),project=demo();project.sites=[enableXvbf(newSite(0)),enableXvbf(newSite(1))];const before=structuredClone(project);
+ function Harness(){const[selected,setSelected]=useState(0);return <XvbfEditor project={project} selected={selected} onSelect={setSelected} result={null} onSite={()=>assert.fail('Selection must not edit the model')}/>;}
+ try{await act(async()=>root.render(<Harness/>));const picker=document.querySelector<HTMLSelectElement>('[aria-label="Editing site"]')!;picker.focus();await act(async()=>{picker.value='1';picker.dispatchEvent(new dom.window.Event('change',{bubbles:true}));});assert.equal(document.querySelector('[aria-label="Editing site"]'),picker);assert.equal(document.activeElement,picker);assert.equal(picker.value,'1');assert.deepEqual(project,before);}finally{await act(async()=>root.unmount());dom.window.close();}
 });

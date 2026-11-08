@@ -50,8 +50,8 @@ export function VersionIndicator({ build = buildInfo, reload = () => window.loca
   const message = desktop ? 'Offline desktop app' : !deployed ? 'Local build' : status === 'current' ? 'Latest deployed version' : status === 'update' ? 'Update available' : status === 'unavailable' ? 'Could not check for updates' : 'Checking latest deployment…';
   const title = `${label}\n${build.builtAt ? `Built ${build.builtAt}\n` : ''}${message} — click for changelog`;
   return <div className={`version-indicator ${deployed ? status : 'local'}`}>
-    <button className="version-button" title={title} aria-label={`${label}. ${message}. Open changelog`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { dialog.current?.showModal(); setOpen(true); void check(); }}>
-      <span className="version-dot" aria-hidden="true"/>{label}{preview && ' · develop preview'}{!deployed && (desktop ? ' · desktop' : ' · local')}{deployed && status === 'update' && <strong>Update available ↻</strong>}
+    <button className="version-button" title={title} aria-label={`About MossA. ${label}. ${message}. Open changelog`} aria-haspopup="dialog" aria-expanded={open} onClick={() => { dialog.current?.showModal(); setOpen(true); void check(); }}>
+      <span className="version-full-label"><span className="version-dot" aria-hidden="true"/>{label}{preview && ' · develop preview'}{!deployed && (desktop ? ' · desktop' : ' · local')}{deployed && status === 'update' && <strong>Update available ↻</strong>}</span><span className="version-short-label" aria-hidden="true">{deployed&&status==='update'?'Update available':'About'}</span>
     </button>
     <dialog className="changelog-dialog" ref={dialog} aria-labelledby="changelog-heading" onClose={() => setOpen(false)} onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
       <div className="changelog-heading"><h2 id="changelog-heading">What’s new in MossA 2</h2><form method="dialog"><button aria-label="Close changelog">×</button></form></div>

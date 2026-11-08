@@ -144,8 +144,12 @@ fn main() {
             }
         })
         .setup(|app| {
+            let title = app.config().product_name.as_deref()
+                .filter(|name| name.contains("Review"))
+                .map(|name| format!("{name} — Mössbauer analysis"))
+                .unwrap_or_else(|| "MossA 2 — Mössbauer analysis".to_owned());
             WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
-                .title("MossA 2 — Mössbauer analysis")
+                .title(title)
                 .inner_size(1440.0, 940.0)
                 .min_inner_size(960.0, 640.0)
                 .initialization_script(BRIDGE)

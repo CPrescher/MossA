@@ -5,11 +5,37 @@ description: Inspect channel alignment, fit an iron reference, and apply named c
 
 Folding and velocity calibration operate on **raw count channels**. They determine the observations and axis shared by all models of that spectrum. Save the project before revising a calibration used for an important analysis.
 
+## Find calibration first
+
+Open **Fitting options → General → Folding & calibration**. It is the first section in General, above Spectrum model and Background.
+
+- **Wide screen:** use the right panel. If it is hidden, select **Show fitting options** at the right edge of the graph.
+- **Laptop:** choose **Fitting options** above the editor shared with Sites, then **General**.
+- **Tablet or narrow window:** choose the **Fitting options** view, then **General**. Return to **Spectrum** for the larger graph and results.
+
+**Fit options** is the solver tab. Velocity calibration is in **General**. **Calibrate source…**, under Source profile in full-transmission mode, determines the source line shape; it does not calibrate velocity.
+
+![Current General panel with Folding & calibration first and the folding diagnostic available for newly imported almandine raw channels.](../../../assets/screenshots/importing-raw-counts.jpg)
+
+*A newly imported teaching spectrum before fitting. Check or replace this initial preset using your measurement's reference; the shown import scale is not a calibration result.*
+
+## Decide whether the file needs folding
+
+| Your file contains… | Preparation |
+| --- | --- |
+| Raw channels containing both acquisition directions | Enable **Fold spectrum** and inspect the alignment of the two halves |
+| Raw channels already folded by acquisition software | Uncheck **Fold spectrum** and choose the appropriate velocity scale |
+| Two columns of calibrated velocity and counts | Keep the supplied axis; raw-channel folding and calibration do not apply |
+
+Folding combines corresponding channels from the two acquisition halves. Whether it is needed depends on what was exported by the acquisition software. Verify that before applying it; do not fold already folded data again.
+
 Folding is enabled by default for raw-count imports. Use **Fold spectrum** directly in this panel to enable or disable it for the current spectrum. Turning it off restores the original loaded counts without reimporting the file.
+
+For a first raw sample, create a preset from the iron standard and save it. Saving or selecting a preset immediately applies its settings to the current raw spectrum. Use **Use for new imports** if subsequent raw files should use the same preset; the import default is a separate choice.
 
 ## Inspect folding
 
-For a raw sample with folding enabled, open **Gen → Folding & calibration → Inspect this spectrum’s folding…**. The diagnostic view shows:
+For a raw sample with folding enabled, open **Fitting options → General → Folding & calibration → Inspect this spectrum’s folding…**. This action is hidden when folding is off; check **Fold spectrum** first if the raw channels need folding. The diagnostic view shows:
 
 - Original channels and the chosen center.
 - Reversed-left and right counts overlaid.
@@ -28,13 +54,13 @@ In **Folding alignment**, click a symmetry bar to select another center, enter *
 
 ## Fit an α-Fe velocity reference
 
-1. Under **Gen → Folding & calibration**, use + to create a preset from an α-Fe reference.
-2. Load the reference as one column of counts, or use the current raw spectrum if it is the standard. Loading a reference here does not replace the sample.
+1. Under **Fitting options → General → Folding & calibration**, select + (**Add calibration preset**) → **From reference file…** to create a preset from an α-Fe reference.
+2. In **Velocity calibration**, choose **Open reference spectrum** and load the reference as one column of counts, or choose **Use current raw spectrum** if it is the standard. Loading a reference here does not replace the sample.
 3. Enable **Fold reference channels** for an unfolded reference. Leave it off for an already folded spectrum.
-4. Select the acquisition's **linear or sinusoidal drive** and enter an approximate initial maximum velocity.
-5. Enter the reference magnetic field appropriate to the standard and measurement conditions. The default is **33 T**, retained from the MATLAB workflow; it is an input assumption, not a field measured by the calibration fit.
+4. Enable **Sinusoidal drive** for a sinusoidal acquisition; leave it unchecked for a linear drive. Enter an approximate **Initial max. velocity**.
+5. Enter **Reference BHF (T)** appropriate to the standard and measurement conditions. The default is **33 T**, retained from the MATLAB workflow; it is an input assumption, not a field measured by the calibration fit.
 6. Choose **Fit reference** and inspect the six-line curve, residuals, fitted maximum velocity, center shift, and warnings.
-7. Accept and save the preset when the reference fit is satisfactory. Saving immediately applies it to the current raw spectrum. Set the import default separately with **Use for new imports**.
+7. Choose **Continue with calibration** when the reference fit is satisfactory. In the preset editor, enter **Preset name** and choose **Save preset**. Saving immediately applies it to the current raw sample. Set the import default separately as described below.
 
 The reference model is a Lorentzian sextet with zero QS and a linear background. Partial six-line patterns can be fitted, but an unsuitable initial velocity range can lead to incorrect line assignments. The workflow does not support arbitrary calibration materials or a nonlinear correction from individually assigned peaks.
 
@@ -51,8 +77,10 @@ Changing a reference's folding center invalidates its previous reference fit. Re
 | Select a preset | Immediately apply its saved velocity and folding settings to the current raw-count spectrum |
 | **Fold spectrum** | Immediately enable or disable folding for the current raw spectrum |
 | **Use for new imports** | Set the default for subsequent raw-count imports |
-| **Edit preset…** | Open the editor; saving updates the preset and immediately calibrates the current raw spectrum |
-| **Recalibrate from reference…** | Refit the saved standard or load a replacement reference |
+| **Edit preset…** | Open the editor; **Save changes to preset** updates the saved preset and immediately calibrates the current raw spectrum |
+| **Edit preset… → Recalibrate from reference…** | Refit the saved standard or load a replacement; choose **Use revised calibration**, then **Save changes to preset** |
+
+The ⋯ control (**Manage calibration presets**) opens **Calibration presets**, where you can rename, **Edit**, or **Remove** presets. The panel identifies the applied calibration. For a velocity-column file it shows **File velocity axis retained**; folding is disabled and selecting a preset preserves the supplied axis.
 
 Applying a changed calibration clears obsolete fits in every model of that spectrum. Reapplying an identical scale retains matching completed fits. Other spectra remain unchanged.
 
@@ -66,7 +94,7 @@ Automatic sample fold centers are found afresh for each import. They do not simp
 
 ## Reverse a sample's velocity direction
 
-Use **Gen → Velocity direction → Reverse velocity axis** when the acquisition requires the opposite direction, as in the [SMS exercise](/MossA/manual/tutorials/sms/). It negates the complete calibrated velocity, including the applied center-shift correction, and preserves count/velocity pairs while ordering the result by increasing velocity.
+Use **General → Velocity direction → Reverse velocity axis** when the acquisition requires the opposite direction, as in the [SMS exercise](/MossA/manual/tutorials/sms/). It negates the complete calibrated velocity, including the applied center-shift correction, and preserves count/velocity pairs while ordering the result by increasing velocity.
 
 The direction belongs to the selected spectrum, applies to all its models, and survives later folding or recalibration. Other spectra and import defaults retain their own settings. Changing it invalidates that spectrum's completed fits and can be undone. Site starting values are not transformed; inspect them before refitting.
 

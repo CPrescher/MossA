@@ -1,0 +1,33 @@
+{
+  "date": "2026-11-07",
+  "baseline": "Previous scalar optimization; original complete numeric fixtures frozen at 281a032",
+  "benchmarked_wasm_sha256": "a1543c86507b9523f09f72ad7f5cfdf8936b6d74f15490c1e9b1b3884f582773",
+  "node_for_builds_and_tests": "v26.12.1",
+  "sha256": {
+    "rust-core/src/lib.rs": "ccc4a05b58b1adde51f66c0f12f9a03be9a3e8e01f40a53ca00f5acb1caa5da3",
+    "rust-core/src/parallel.rs": "ac60a3428692d28f46935c482117b495d4a0f392b5ea38f2ad31560b75962739",
+    "rust-core/src/tests.rs": "800809ad192509b1c3c0211eb3cdd6ca02d7442ad50cb3e90a8712a88551f88c",
+    "rust-core/Cargo.toml": "9745105b9018baf97f8dadd0f1a90ac4af21de3b0deb8083f1cd5201bda73958",
+    "rust-core/Cargo.lock": "4c3b3f3e4c561cee905731d835814cf76eed2170f91199115000a78ec1955214",
+    "src/engine.ts": "fb39cbc805ae01561e0e096bfa8b4bf084b094d17f6a1c3b167a8ac00972ebab",
+    "src/worker.ts": "87ce6ef78b3be03fc0fe452430d1bca8d6b5d30abf9b27b8912c45532930ffd8",
+    "src/derivative-pool.ts": "3322b95bc32f47178f37a96aa79076479ea4642a99915ca32bdc12531aa9a747",
+    "src/derivative-worker.ts": "3f539f4856ef10546e7da5f02eafe5153a7e771e8933a6c80562a2a0f0158c39",
+    "src/parallel-fit.ts": "b0d4acde764560a97e89eda011e6d1185b12268b509b3d03e7588979702ea127",
+    "src/multistart.mjs": "858a048c97e0a067e4c4691a2fe5268806604d24305af6a67d145e3b8e0712a5",
+    "src/multistart.d.mts": "35a368144ba0cd783c372e30b88ef00d2ef0fce58e3385ace154af53e07d13d9",
+    "scripts/benchmark-parallel-derivatives.mjs": "905366d9b5643de8f1c8d7f17b3d8fedfb473de5ca5a1500f0ae1e8d0f08a18b",
+    "scripts/transmission-equivalence.mjs": "0ba8fb6ba7c3cabfb42ce652614fcd0027a0d2d82ea56596ef21f11af7510294",
+    "tests/parallel-derivatives.test.mjs": "2b12df57043e5ec01908b2e38155e0b604dc902a6c0ae9a306f76c32c521818e",
+    "tests/derivative-pool.test.tsx": "9b21892da3cff87ad2bb2476452807315e2d44ee325eef2cd91e832ffa1bff1f",
+    "tests/fixtures/transmission-performance.json": "267596968cb9fe65627317641cfb0c6af89eb2d2453136d0f7acb3d0c8e7eaa9",
+    "tests/fixtures/transmission-measured-performance.json": "df7f8ffbe9c5c7c4389905564d57ea684eb763ed01c7bcc5c55c22ee254e451e",
+    "src/wasm/mossa_core_bg.wasm": "a1543c86507b9523f09f72ad7f5cfdf8936b6d74f15490c1e9b1b3884f582773",
+    "src-tauri/tauri.conf.json": "4a382b2abf0ee9a98eecc01862457a9e3a735fa53669059bac6fa7563e834ca7",
+    "scripts/serve.mjs": "05db0ff6adc9ac3bfb8cc78738d49a68e61ed00f297f87b93c7362f872cce472",
+    "vite.config.ts": "7af5f234a6a5d4fc5ba06691b63e9949a4da17b4a39a50994b8b04a4757f80f9",
+    "src/useDialogKeyboardNavigation.ts": "4ab3a01adbadfebcb56ac187c42935ab9af969ab3b4da4e64945cd6e58f6b10a",
+    "README.md": "7aae2256d838c899ec018670f853eb8dc92a2a632586ecb85ed751402aa5fd99"
+  },
+  "current_wasm_matches_benchmark": true
+}

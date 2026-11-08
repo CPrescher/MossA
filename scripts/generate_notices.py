@@ -14,7 +14,7 @@ resolved = {node['id'] for node in metadata['resolve']['nodes']}
 for package in metadata['packages']:
     if package['source'] and package['id'] in resolved:
         packages.append((package['name'], package['version'], package['license'], Path(package['manifest_path']).parent))
-for name in ['react', 'react-dom', 'scheduler', '@mathjax/src', '@mathjax/mathjax-tex-font']:
+for name in ['react', 'react-dom', 'scheduler', '@mathjax/src', '@mathjax/mathjax-tex-font', 'jspdf', 'svg2pdf.js', 'opentype.js', 'fflate', 'fast-png', 'iobuffer', 'pako', 'rgbcolor', 'specificity', 'cssesc', 'svgpath', 'font-family-papandreou', '@babel/runtime', 'canvg', 'core-js', 'dompurify', 'html2canvas', 'raf', 'stackblur-canvas', 'text-segmentation', 'utrie', 'base64-arraybuffer', 'performance-now']:
     folder = root / 'node_modules' / name
     package = json.loads((folder / 'package.json').read_text())
     packages.append((name, package['version'], package['license'], folder))
@@ -43,13 +43,15 @@ header = '''MossA — Third-party notices
 
 MossA itself is licensed under the MIT License (see LICENSE.txt).
 Dependencies retain their upstream licenses. This inventory covers the resolved
-Rust dependency graph (including build-time support crates) and the React and MathJax runtimes.
+Rust dependency graph (including build-time support crates) and the interface, scientific labels, and figure export dependencies.
 Identical license texts are included once and referenced by text number.
 
 '''
 body = header + '\n'.join(entries) + '\n\n'
 for source, label in texts.items():
     body += f'{"=" * 72}\n{label}\n{"=" * 72}\n{source}\n\n'
+for name in ['LICENSE', 'NotoSans-LICENSE.txt']:
+    body += '\n' + '=' * 72 + '\nBundled PDF fonts — ' + name + '\n' + '=' * 72 + '\n' + (root / 'public/fonts' / name).read_text() + '\n'
 output = root / 'THIRD_PARTY_NOTICES.txt'
 output.write_text(body)
 print(f'{output.name}: {len(packages)} packages, {len(texts)} license texts, {output.stat().st_size} bytes')

@@ -5,13 +5,20 @@ use basin::{
     ObserverMode, Residual, State, TrustRegionReflective,
 };
 use nalgebra::{DMatrix, DVector};
-use rustfft::{num_complex::Complex, FftPlanner};
+use rustfft::{num_complex::Complex, Fft, FftPlanner};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, f64::consts::PI, sync::OnceLock};
+use std::{
+    cell::RefCell,
+    collections::BTreeMap,
+    f64::consts::PI,
+    rc::Rc,
+    sync::{Arc, OnceLock},
+};
 use wasm_bindgen::prelude::*;
 use web_time::Instant;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;
+mod parallel;
 mod xvbf;
 #[inline]
 fn cancellation_requested() -> bool {
@@ -34,6 +41,48 @@ fn check_cancellation() -> Result<(), String> {
 }
 pub use xvbf::{Component as DistributionComponent, Xvbf};
 
+const TRANSMISSION_FFT_LEN: usize = 16384;
+struct TransmissionFft {
+    forward: Arc<dyn Fft<f64>>,
+    inverse: Arc<dyn Fft<f64>>,
+}
+fn transmission_fft() -> &'static TransmissionFft {
+    // Plans are immutable and thread-safe. Reuse them across residuals, fits,
+    // source calibrations, and previews; buffers remain local to the calculation.
+    static FFT: OnceLock<TransmissionFft> = OnceLock::new();
+    FFT.get_or_init(|| {
+        let mut planner = FftPlanner::new();
+        TransmissionFft {
+            forward: planner.plan_fft_forward(TRANSMISSION_FFT_LEN),
+            inverse: planner.plan_fft_inverse(TRANSMISSION_FFT_LEN),
+        }
+    })
+}
+
+struct TransmissionWorkspace {
+    buffer: Vec<Complex<f64>>,
+    scratch: Vec<Complex<f64>>,
+}
+impl TransmissionWorkspace {
+    fn new() -> Self {
+        let fft = transmission_fft();
+        Self {
+            buffer: vec![Complex::default(); TRANSMISSION_FFT_LEN],
+            scratch: vec![
+                Complex::default();
+                fft.forward
+                    .get_inplace_scratch_len()
+                    .max(fft.inverse.get_inplace_scratch_len())
+            ],
+        }
+    }
+}
+thread_local! {
+    // One workspace per calling thread, never shared mutable fit state. Borrowed
+    // only during convolution, so progress callbacks can safely evaluate models.
+    static TRANSMISSION_WORKSPACE: RefCell<TransmissionWorkspace> = RefCell::new(TransmissionWorkspace::new());
+}
+
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Link {
     pub target: String,
@@ -51,6 +100,8 @@ pub struct Parameter {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Site {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
     pub kind: String,
     pub profile: String,
     pub params: BTreeMap<String, Parameter>,
@@ -208,14 +259,14 @@ impl<S: State<Param = Vec<f64>, Float = f64>> Observe<S> for ProgressObserver {
 pub fn profile(x: f64, center: f64, fwhm: f64, intensity: f64, shape: &str, mix: f64) -> f64 {
     let h = fwhm / 2.;
     let z = (x - center) / h;
-    let l = intensity / (PI * h * (1. + z * z));
+    let lorentzian = || intensity / (PI * h * (1. + z * z));
     // Retain the literal constants in gauss_curve.m, including their rounding.
-    let g = intensity * 0.8326 / (h * 1.7725) * (-(z * 0.8326).powi(2)).exp();
+    let gaussian = || intensity * 0.8326 / (h * 1.7725) * (-(z * 0.8326).powi(2)).exp();
     match shape {
-        "Gaussian" => g,
-        "PseudoVoigt" => mix * l + (1. - mix) * g,
+        "Gaussian" => gaussian(),
+        "PseudoVoigt" => mix * lorentzian() + (1. - mix) * gaussian(),
         "LorSquared" => intensity * 2. / (PI * h * (1. + z * z).powi(2)),
-        _ => l,
+        _ => lorentzian(),
     }
 }
 fn get(s: &Site, key: &str) -> f64 {
@@ -254,6 +305,74 @@ fn site_curve_with_coefficients(s: &Site, x: f64, coefficients: [f64; 3]) -> f64
                 + line(cs + b * middle - q, a * r2)
                 + line(cs + b * outer + q, a)
         }
+    }
+}
+
+// Resolve parameter maps and line geometry once per model evaluation, rather
+// than at each of the 6,001 integration points. Preserve line/summation order.
+struct SiteCurve<'a> {
+    site: &'a Site,
+    fwhm: f64,
+    mix: f64,
+    lines: [(f64, f64); 6],
+    count: usize,
+}
+impl<'a> SiteCurve<'a> {
+    fn new(site: &'a Site, coefficients: [f64; 3]) -> Self {
+        let mut curve = Self {
+            site,
+            fwhm: 0.,
+            mix: 0.,
+            lines: [(0., 0.); 6],
+            count: 0,
+        };
+        if site.xvbf.is_some() {
+            return curve;
+        }
+        curve.fwhm = get(site, "fwhm");
+        curve.mix = site.params.get("mix").map_or(0.5, |p| p.value);
+        let (cs, area) = (get(site, "cs"), get(site, "intensity"));
+        match site.kind.as_str() {
+            "Singlet" => {
+                curve.lines[0] = (cs, area);
+                curve.count = 1;
+            }
+            "Doublet" => {
+                let q = get(site, "qs") / 2.;
+                let r = get(site, "a12");
+                curve.lines[..2].copy_from_slice(&[(cs - q, r * area), (cs + q, (1. - r) * area)]);
+                curve.count = 2;
+            }
+            _ => {
+                let q = get(site, "qs") / 2.;
+                let b = get(site, "bhf");
+                let r2 = 1. / get(site, "a12");
+                let r3 = 1. / get(site, "a13");
+                let a = area * 3. / (6. + 6. * (r2 + r3));
+                let [outer, middle, inner] = coefficients;
+                curve.lines = [
+                    (cs - b * outer + q, a),
+                    (cs - b * middle - q, a * r2),
+                    (cs - b * inner - q, a * r3),
+                    (cs + b * inner - q, a * r3),
+                    (cs + b * middle - q, a * r2),
+                    (cs + b * outer + q, a),
+                ];
+                curve.count = 6;
+            }
+        }
+        curve
+    }
+    fn value(&self, x: f64) -> f64 {
+        if self.count == 0 {
+            return xvbf::curve(self.site, x);
+        }
+        self.lines[..self.count]
+            .iter()
+            .map(|&(center, area)| {
+                profile(x, center, self.fwhm, area, &self.site.profile, self.mix)
+            })
+            .sum()
     }
 }
 fn active_keys(s: &Site) -> Vec<&'static str> {
@@ -333,6 +452,7 @@ struct Prepared {
     source_calibration: bool,
     magnetic_coefficients: [f64; 3],
     simplexes: Vec<xvbf::Simplex>,
+    external_derivatives: Option<Rc<RefCell<parallel::DerivativeExchange>>>,
 }
 fn valid(p: &Project) -> Result<(), String> {
     if let Some(gs) = &p.source_gaussians {
@@ -622,6 +742,7 @@ impl Prepared {
             source_calibration,
             magnetic_coefficients,
             simplexes,
+            external_derivatives: None,
         })
     }
     fn expand(&self, x: &[f64]) -> Project {
@@ -639,8 +760,20 @@ impl Prepared {
         p
     }
     fn curves(&self, x: &[f64]) -> (Vec<f64>, Vec<f64>, Vec<Vec<f64>>) {
+        self.model_curves(x, true)
+    }
+    fn model_curves(
+        &self,
+        x: &[f64],
+        display_components: bool,
+    ) -> (Vec<f64>, Vec<f64>, Vec<Vec<f64>>) {
         let p = self.expand(x);
         let xs = &p.spectrum.x;
+        let site_curves: Vec<_> = p
+            .sites
+            .iter()
+            .map(|site| SiteCurve::new(site, self.magnetic_coefficients))
+            .collect();
         let background: Vec<_> = xs
             .iter()
             .map(|&v| {
@@ -650,75 +783,81 @@ impl Prepared {
                     .fold(0., |sum, b| sum * v + b.value)
             })
             .collect();
-        let components: Vec<Vec<f64>> = p
-            .sites
-            .iter()
-            .map(|s| {
-                xs.iter()
-                    .map(|&v| site_curve_with_coefficients(s, v, self.magnetic_coefficients))
-                    .collect()
-            })
-            .collect();
-        let changing_source = self.source_calibration.then(|| source_transform(&p));
-        let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_ref()) {
-            let mut a = vec![Complex::default(); source.len()];
-            for (i, z) in a.iter_mut().take(6001).enumerate() {
-                let v = -30. + i as f64 * 0.01;
-                let optical_depth = p
-                    .sites
-                    .iter()
-                    .map(|s| site_curve_with_coefficients(s, v, self.magnetic_coefficients))
-                    .sum::<f64>();
-                // A Gaussian kernel acts on the absorption deficit. Zero padding
-                // then represents an unabsorbed continuum, rather than zero transmission.
-                z.re = if p.source_gaussians.is_some() {
-                    (-optical_depth).exp_m1()
-                } else {
-                    (-optical_depth).exp()
-                };
-            }
-            let mut planner = FftPlanner::new();
-            planner.plan_fft_forward(a.len()).process(&mut a);
-            for (v, k) in a.iter_mut().zip(source) {
-                *v *= k;
-            }
-            let len = a.len() as f64;
-            planner.plan_fft_inverse(a.len()).process(&mut a);
-            // MATLAB conv(source, exp(-absorber), 'same'), then pchip; /100 is the original 0.01 grid step.
-            let continuum = if p.source_gaussians.is_some() { 1. } else { 0. };
-            let grid: Vec<_> = (0..6001)
-                .map(|i| continuum + a[i + 3000].re / len / 100.)
-                .collect();
-            let sampled: Vec<_> = if p.source_gaussians.is_some() {
-                // A Gaussian-convolved transmission is smooth. Six-point local
-                // interpolation avoids the O(h^3) off-grid error of PCHIP while
-                // retaining the original MATLAB interpolation for legacy sources.
-                xs.iter().map(|&v| smooth_grid_sample(&grid, v)).collect()
-            } else {
-                let slopes = pchip_slopes(&grid, 0.01);
-                xs.iter().map(|&v| pchip(&grid, &slopes, v)).collect()
-            };
-            // MossA.m src_calib_model normalizes AFTER interpolation at the
-            // observed velocities. Ordinary transmission fitting does not.
-            let norm = if self.source_calibration {
-                sampled.iter().copied().fold(f64::NEG_INFINITY, f64::max)
-            } else {
-                1.
-            };
-            sampled
+        let components: Vec<Vec<f64>> = if display_components {
+            site_curves
                 .iter()
-                .zip(&background)
-                .map(|(&v, &b)| p.background[0].value * v / norm + b - p.background[0].value)
+                .map(|s| xs.iter().map(|&v| s.value(v)).collect())
                 .collect()
         } else {
+            vec![]
+        };
+        let changing_source = self.source_calibration.then(|| source_transform(&p));
+        let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_ref()) {
+            TRANSMISSION_WORKSPACE.with(|workspace| {
+                let mut workspace = workspace.borrow_mut();
+                let TransmissionWorkspace { buffer: a, scratch } = &mut *workspace;
+                a.fill(Complex::default());
+                for (i, z) in a.iter_mut().take(6001).enumerate() {
+                    let v = -30. + i as f64 * 0.01;
+                    let optical_depth = site_curves.iter().map(|s| s.value(v)).sum::<f64>();
+                    // A Gaussian kernel acts on the absorption deficit. Zero padding
+                    // then represents an unabsorbed continuum, rather than zero transmission.
+                    z.re = if p.source_gaussians.is_some() {
+                        (-optical_depth).exp_m1()
+                    } else {
+                        (-optical_depth).exp()
+                    };
+                }
+                let fft = transmission_fft();
+                fft.forward.process_with_scratch(a, scratch);
+                for (v, k) in a.iter_mut().zip(source) {
+                    *v *= k;
+                }
+                let len = a.len() as f64;
+                fft.inverse.process_with_scratch(a, scratch);
+                // MATLAB conv(source, exp(-absorber), 'same'), then pchip; /100 is the original 0.01 grid step.
+                let continuum = if p.source_gaussians.is_some() { 1. } else { 0. };
+                let grid: Vec<_> = (0..6001)
+                    .map(|i| continuum + a[i + 3000].re / len / 100.)
+                    .collect();
+                let sampled: Vec<_> = if p.source_gaussians.is_some() {
+                    // A Gaussian-convolved transmission is smooth. Six-point local
+                    // interpolation avoids the O(h^3) off-grid error of PCHIP while
+                    // retaining the original MATLAB interpolation for legacy sources.
+                    xs.iter().map(|&v| smooth_grid_sample(&grid, v)).collect()
+                } else {
+                    let slopes = pchip_slopes(&grid, 0.01);
+                    xs.iter().map(|&v| pchip(&grid, &slopes, v)).collect()
+                };
+                // MossA.m src_calib_model normalizes AFTER interpolation at the
+                // observed velocities. Ordinary transmission fitting does not.
+                let norm = if self.source_calibration {
+                    sampled.iter().copied().fold(f64::NEG_INFINITY, f64::max)
+                } else {
+                    1.
+                };
+                sampled
+                    .iter()
+                    .zip(&background)
+                    .map(|(&v, &b)| p.background[0].value * v / norm + b - p.background[0].value)
+                    .collect()
+            })
+        } else {
             (0..xs.len())
-                .map(|i| background[i] - components.iter().map(|c| c[i]).sum::<f64>())
+                .map(|i| {
+                    background[i]
+                        - if display_components {
+                            components.iter().map(|c| c[i]).sum::<f64>()
+                        } else {
+                            site_curves.iter().map(|s| s.value(xs[i])).sum::<f64>()
+                        }
+                })
                 .collect()
         };
         (y, background, components)
     }
     fn residuals(&self, x: &[f64]) -> Vec<f64> {
-        let (y, _, _) = self.curves(x);
+        let (y, _, _) = self.model_curves(x, false);
         y.iter()
             .zip(&self.project.spectrum.y)
             .map(|(a, b)| {
@@ -743,6 +882,11 @@ impl Prepared {
         }
     }
     fn derivative(&self, x: &[f64]) -> DMatrix<f64> {
+        if let Some(exchange) = &self.external_derivatives {
+            if let Some(j) = exchange.borrow().get(x) {
+                return j.clone();
+            }
+        }
         let n = x.len();
         let m = self.project.spectrum.x.len();
         let mut j = DMatrix::zeros(m, n);
@@ -750,23 +894,25 @@ impl Prepared {
             if cancellation_requested() {
                 break;
             }
-            let h = 6e-6 * x[k].abs().max(1.);
-            let mut a = x.to_vec();
-            let mut b = x.to_vec();
-            a[k] = (x[k] + h).min(self.upper[k]);
-            b[k] = (x[k] - h).max(self.lower[k]);
-            let d = a[k] - b[k];
-            let ra = self.residuals(&a);
-            let rb = self.residuals(&b);
-            for i in 0..m {
-                j[(i, k)] = (ra[i] - rb[i]) / d;
-            }
+            j.column_mut(k)
+                .copy_from_slice(&self.derivative_column(x, k));
         }
         j
     }
+    fn derivative_column(&self, x: &[f64], k: usize) -> Vec<f64> {
+        let h = 6e-6 * x[k].abs().max(1.);
+        let mut a = x.to_vec();
+        let mut b = x.to_vec();
+        a[k] = (x[k] + h).min(self.upper[k]);
+        b[k] = (x[k] - h).max(self.lower[k]);
+        let d = a[k] - b[k];
+        let ra = self.residuals(&a);
+        let rb = self.residuals(&b);
+        ra.iter().zip(rb).map(|(a, b)| (a - b) / d).collect()
+    }
 }
 fn source_transform(p: &Project) -> Vec<Complex<f64>> {
-    let mut a = vec![Complex::default(); 16384];
+    let mut a = vec![Complex::default(); TRANSMISSION_FFT_LEN];
     if let Some(gs) = &p.source_gaussians {
         let weight: f64 = gs.iter().map(|g| g.weight).sum();
         let center: f64 = gs.iter().map(|g| g.weight * g.center).sum::<f64>() / weight;
@@ -785,7 +931,11 @@ fn source_transform(p: &Project) -> Vec<Complex<f64>> {
         for z in &mut a {
             z.re /= area;
         }
-        FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
+        TRANSMISSION_WORKSPACE.with(|workspace| {
+            transmission_fft()
+                .forward
+                .process_with_scratch(&mut a, &mut workspace.borrow_mut().scratch)
+        });
         return a;
     }
     for (i, z) in a.iter_mut().take(6001).enumerate() {
@@ -802,7 +952,11 @@ fn source_transform(p: &Project) -> Vec<Complex<f64>> {
             0.,
         );
     }
-    FftPlanner::new().plan_fft_forward(a.len()).process(&mut a);
+    TRANSMISSION_WORKSPACE.with(|workspace| {
+        transmission_fft()
+            .forward
+            .process_with_scratch(&mut a, &mut workspace.borrow_mut().scratch)
+    });
     a
 }
 fn smooth_grid_sample(y: &[f64], x: f64) -> f64 {
@@ -892,6 +1046,9 @@ impl Jacobian for Prepared {
     type Jacobian = DenseMatrix;
     fn jacobian(&self, x: &Vec<f64>) -> Result<DenseMatrix, String> {
         check_cancellation()?;
+        if self.external_derivatives.is_some() {
+            parallel::request_derivatives(self, x)?;
+        }
         let j = self.derivative(x);
         check_cancellation()?;
         if j.iter().any(|v| !v.is_finite()) {
@@ -916,7 +1073,20 @@ fn evaluate_prepared(m: &Prepared, x: &[f64]) -> Evaluation {
         .map(|(a, b)| a - b)
         .collect();
     let sse = residual.iter().map(|r| r * r).sum();
-    let objective = m.residuals(x).iter().map(|r| r * r).sum();
+    // Use the curve already evaluated above, rather than convolving it again.
+    let objective = residual
+        .iter()
+        .zip(&m.project.spectrum.y)
+        .map(|(&r, &observed)| {
+            let r = -r
+                / if m.project.weighting == "counts" {
+                    observed.sqrt()
+                } else {
+                    1.
+                };
+            r * r
+        })
+        .sum();
     let expanded = m.expand(x);
     let mut parameters: BTreeMap<String, f64> = m
         .entries
@@ -1078,7 +1248,6 @@ fn fit_prepared_with_solver(
     bounded_lm: bool,
 ) -> Result<FitResult, String> {
     let p = &m.project;
-    let mut warnings = vec![];
     let (x, iterations, converged, termination) = if m.free.is_empty() {
         (vec![], 0, true, "All parameters fixed".to_string())
     } else if bounded_lm {
@@ -1137,6 +1306,18 @@ fn fit_prepared_with_solver(
         )
     };
     check_cancellation()?;
+    finish_fit(&m, x, iterations, converged, termination)
+}
+fn finish_fit(
+    m: &Prepared,
+    x: Vec<f64>,
+    iterations: u64,
+    converged: bool,
+    termination: String,
+) -> Result<FitResult, String> {
+    check_cancellation()?;
+    let p = &m.project;
+    let mut warnings = vec![];
     if !converged {
         warnings.push("Solver stopped without satisfying its convergence criterion; inspect this fit before using the results.".into());
     }

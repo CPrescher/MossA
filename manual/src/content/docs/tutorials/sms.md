@@ -1,6 +1,6 @@
 ---
 title: SMS Fe₇C₃ — source calibration and transmission fitting
-description: Follow the synchrotron-source tutorial with original SPEC MCA data, sinusoidal calibration, velocity reversal, three sextets, and proportional intensity links.
+description: Follow the synchrotron-source tutorial with original SPEC MCA data, sinusoidal velocity-scale calibration, source-profile calibration, velocity reversal, three sextets, and proportional intensity links.
 ---
 
 This advanced tutorial adapts **MossA tutorial SMS.pdf** from the Freiburg teaching materials. It uses the supplied synchrotron Mössbauer source (SMS) measurements: an iron foil, singlet standards measured before and after the experiment, and a magnetic Fe₇C₃ spectrum. You will calibrate the velocity scale, determine a Lorentzian-squared source width, reverse the sample's velocity direction, and fit progressively constrained full-transmission models.
@@ -24,13 +24,29 @@ All four downloads retain the original filenames and bytes. Hashes, format selec
 
 ## 1. Calibrate the sinusoidal velocity scale
 
+This first calibration determines the **velocity scale in mm/s** and its center-shift correction from the iron foil. The **source-profile calibration** in step 3 separately determines the source width from a singlet standard.
+
+:::tip[Where to find velocity-scale calibration]
+Open **Fitting options → General → Folding & calibration**. On a wide screen, use the Fitting options panel on the **right**, or **Show fitting options** if it is collapsed. On a laptop, select **Fitting options** above the editor shared with Sites. On a tablet or narrow screen, select the **Fitting options** view, then the **General** tab.
+
+Velocity-scale calibration is in **General**. The **Fit options** tab contains solver settings such as weighting; **General → Source profile → Calibrate source…** is the separate source-profile procedure used later.
+:::
+
+![Current wide-screen SMS workspace with General in the right Fitting options panel and From reference file visible under the calibration preset plus menu.](../../../assets/screenshots/sms-velocity-location-wide.png)
+
+*Find velocity-scale calibration in the right-hand **Fitting options → General** panel. Under **Folding & calibration**, select + → **From reference file…**. The worked sample shown here provides context for locating the controls.*
+
+![Current laptop SMS workspace with the Fitting options view selected and the calibration preset menu open in General.](../../../assets/screenshots/sms-velocity-location-laptop.png)
+
+*The same controls share the editor with Sites on a laptop. Select **Fitting options → General**; velocity calibration is available from the + beside Preset.*
+
 1. Save your existing project and start a tutorial project.
-2. Open **Gen → Folding & calibration → + → From reference file…**.
-3. Load `Iron foil calibration.txt` in the velocity-reference dialog.
+2. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
+3. In **Velocity calibration**, choose **Open reference spectrum** and load `Iron foil calibration.txt`.
 4. Enable **Sinusoidal drive**, **Fold reference channels**, and **Automatic fold center**.
 5. Set the initial maximum velocity to **8 mm/s**, as specified in the original tutorial.
 6. Use **33 T** as the fixed iron-reference field for this worked example, then choose **Fit reference**.
-7. Inspect the six-line fit, residuals, fitted scale, and warnings. Accept the calibration and save a named **SMS · sinusoidal · iron reference** preset.
+7. Inspect the six-line fit, residuals, fitted scale, and warnings. Choose **Continue with calibration**, enter **SMS · sinusoidal · iron reference** in **Preset name**, then **Save preset**.
 8. Select **Use for new imports** before loading raw sample channels.
 
 ![SMS iron-foil calibration with sinusoidal drive, automatic folding, an 8 mm/s initial range, and the completed reference fit.](../../../assets/screenshots/sms-velocity-calibration.png)
@@ -59,13 +75,13 @@ The reference files retain their supplied velocity values. The raw-channel sinus
 
 ## 3. Calibrate the source before the experiment
 
-Under **Gen**, choose **Full transmission integral**, then open **Source profile → Calibrate source…**. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
+Under **Fitting options → General → Spectrum model**, choose **Full transmission integral**, then open **Fitting options → General → Source profile → Calibrate source…**. Scroll down within General to reach Source profile. This calibrates the source profile using the reference's existing velocity axis; it does not determine a new velocity scale. You need a spectrum loaded to expose these model controls; either load `singleLineBefore.dat` first or use the dialog from an existing tutorial spectrum.
 
 1. Choose **Open source reference** and select `singleLineBefore.dat`, or choose **Use current spectrum** if that standard is already selected.
 2. Set **Known absorber FWHM** to **0.215 mm/s**, the reference-width assumption specified in the source tutorial.
 3. Select **Lorentzian-squared** as the source model and use an initial source width around **0.4 mm/s**.
 4. Choose **Fit source reference**.
-5. Inspect the reference curve, residuals, source shape, source width, and approximate 1 std. Record the width before applying it.
+5. Inspect the reference curve, residuals, source shape, source width, and approximate 1 std. Record the width, then choose **Apply source profile**.
 
 ![Completed Lorentzian-squared source calibration using the measured before standard and a fixed absorber width of 0.215 mm/s.](../../../assets/screenshots/sms-source-before.png)
 
@@ -88,7 +104,7 @@ $$
 \approx 0.43598\ \mathrm{mm/s}.
 $$
 
-This reproduces the tutorial's quoted value of about **0.436 mm/s**. Enter that mean under **Gen → Source profile → FWHM (mm/s)** and retain **Lorentzian-squared source** for the sample model. The mean is held fixed in subsequent sample fits; the reported sample std does not propagate source drift, absorber-reference uncertainty, or uncertainty in this mean.
+This reproduces the tutorial's quoted value of about **0.436 mm/s**. Enter that mean under **General → Source profile → FWHM (mm/s)** and retain **Lorentzian-squared source** for the sample model. The mean is held fixed in subsequent sample fits; the reported sample std does not propagate source drift, absorber-reference uncertainty, or uncertainty in this mean.
 
 The individual widths are not automatically averaged by the app. Record both values and enter the mean explicitly. [Dedicated source-calibration results](/MossA/manual/tutorial-data/sms/source-calibrations.json) retain the two source fits separately.
 
@@ -96,17 +112,17 @@ The individual widths are not automatically averaged by the app. Record both val
 
 Use **Add spectra** and select `Fe7C3_01GPa.mca`. The import dialog now accepts `.mca` files. For this supported SPEC layout, MossA reads the single `@A` block, joins continued count rows in acquisition order, and verifies that their number matches `#@CHANN`. The sample contains **1,024** counts and folds to **512** points.
 
-The original header is retained under **Gen → Velocity direction → Import details**, including its conflicting internal filename. `#@CALIB` is preserved as acquisition metadata; it is not interpreted as a Mössbauer velocity calibration. Truncated files, extra counts, invalid values, and multiple count blocks are rejected.
+The original header is retained under **General → Velocity direction → Import details**, including its conflicting internal filename. `#@CALIB` is preserved as acquisition metadata; it is not interpreted as a Mössbauer velocity calibration. Truncated files, extra counts, invalid values, and multiple count blocks are rejected.
 
 ![The original SMS MCA file imported without conversion, with the detected format and preserved acquisition header available in Import details.](../../../assets/screenshots/sms-mca-import.png)
 
 *Check the applied sinusoidal preset and the original header. The worked data are not reassigned a pressure during import.*
 
-If you loaded the sample before setting the import default, choose the SMS velocity-calibration preset. It applies immediately. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
+If you loaded the sample before setting the import default, open **Fitting options → General → Folding & calibration**, choose the SMS velocity-calibration preset. It applies immediately. Confirm that the source profile for the sample model is Lorentzian-squared with the mean width. Imported spectra copy the active model's source settings; a calibration preset determines the velocity axis, not the source response.
 
 ## 6. Reverse this sample's velocity axis
 
-The original tutorial calls for **Flip Signs** because the sample measurement used a reversed velocity direction. In MossA 2, enable **Gen → Velocity direction → Reverse velocity axis** for the selected sample.
+The original tutorial calls for **Flip Signs** because the sample measurement used a reversed velocity direction. In MossA 2, enable **General → Velocity direction → Reverse velocity axis** for the selected sample.
 
 ![SMS sample after enabling Reverse velocity axis, with the applied direction shown beside its calibration and retained raw-count information.](../../../assets/screenshots/sms-reversed-axis.png)
 
@@ -124,7 +140,7 @@ Reversed analyses use single-spectrum project format **3** and collection/autosa
 
 1. Remove any inherited singlet or unrelated sites from the selected sample model.
 2. Select **Full transmission integral**, a **Constant** background, **Unweighted** residuals, and the mean squared-source width.
-3. Define two **Lorentzian sextets** on the graph: outer line position/depth, half-width, then the opposite outer line.
+3. In **Sites**, choose **＋ Add**, set **Site type → Sextet** and **Line profile → Lorentzian**, then **Define on graph**. Repeat for the second sextet. Place each site with outer line position/depth, half-width, then the opposite outer line.
 4. Useful starting fields for this supplied spectrum are about **16.5 T** and **21.5 T**, with CS around **0.25 mm/s** and widths around **0.3 mm/s**. These are starting estimates for the example, not reference measurements.
 5. Initially hold QS at zero. Keep **A12 = 1.5** and **A13 = 3** fixed, then fit.
 6. Duplicate that model. Check **Fit QS** for both sextets and fit again.
@@ -149,20 +165,20 @@ The source tutorial uses a three-iron-site structural interpretation of Fe₇C�
 
 ## 9. Link intensities in the ratio 3:3:1
 
-The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Bnds → Parameter links**, define the targets explicitly:
+The exercise imposes a **3:3:1** site-occupancy-based intensity model. In **Fitting options → Bounds → Parameter links**, define the targets explicitly:
 
 | Selected target | Source | Factor |
 | --- | --- | --- |
 | Site 2, Intensity | Site 1, Intensity | `1` |
 | Site 3, Intensity | Site 1, Intensity | `0.3333333333333333` |
 
-For each target, select **Intensity**, choose the source **1 · Fe site 1 · Intensity**, enter the factor, and choose **Apply link**. The convention is **target = factor × source**. Do not reverse the factor when changing which site is selected.
+For each target, choose its **Site** in Bounds, set **Target in selected site → Intensity**, choose **Source parameter → 1 · Fe site 1 · Intensity**, enter **Factor**, and choose **Apply link**. The convention is **target = factor × source**. Do not reverse the factor when changing which site is selected.
 
 ![Proportional intensity-link controls for the SMS model, with site 3 following one third of site 1's intensity.](../../../assets/screenshots/sms-intensity-links.png)
 
 *Linked targets are not independent optimization coordinates. The constraint applies to absorber-intensity parameters, not the visible areas of transmission overlays.*
 
-Choose **Gen → Background → Order 2** and refit. In this constrained model the intensity fractions are **42.857%, 42.857%, and 14.286%** by construction. Their fixed-ratio std may be zero within the model; that is not an independent determination of site occupancy. Equating spectral intensity ratios to populations also requires physical assumptions about the relevant recoil-free fractions and model adequacy.
+Choose **General → Background → Order 2** and refit. In this constrained model the intensity fractions are **42.857%, 42.857%, and 14.286%** by construction. Their fixed-ratio std may be zero within the model; that is not an independent determination of site occupancy. Equating spectral intensity ratios to populations also requires physical assumptions about the relevant recoil-free fractions and model adequacy.
 
 ## 10. Explore the sextet line ratios
 

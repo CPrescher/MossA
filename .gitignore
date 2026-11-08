@@ -14,3 +14,6 @@ src-tauri/gen/
 
 __pycache__/
 *.pyc
+
+# Local benchmark builds; timing summaries and numerical fixtures are retained.
+validation-data/performance/runtime/

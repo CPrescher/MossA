@@ -94,16 +94,16 @@ export function CalibrationPresetsPanel({ cal, raw, hasSpectrum = true, disabled
         {presets.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
       </select></label>
       <div className="calibration-preset-add" ref={add} onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenu(false); addButton.current?.focus(); } }}>
-        <button ref={addButton} className="calibration-preset-icon" aria-label="Add calibration preset" aria-expanded={menu} aria-controls="calibration-preset-add-menu" onClick={() => setMenu(v => !v)}>＋</button>
+        <button ref={addButton} className="calibration-preset-icon" aria-label="Add calibration preset" title="Create a velocity-calibration preset: define manually, fit an α-Fe reference, or copy current settings" aria-expanded={menu} aria-controls="calibration-preset-add-menu" onClick={() => setMenu(v => !v)}>＋</button>
         {menu && !disabled && createPortal(<div className="calibration-preset-menu" id="calibration-preset-add-menu" ref={addMenu} role="dialog" aria-label="New calibration preset" onKeyDown={e => { if (e.key === 'Escape') { e.stopPropagation(); setMenu(false); addButton.current?.focus(); } }}>
           <button ref={firstChoice} onClick={() => openEditor(null, 'manual')}><strong>Define manually…</strong><span>Enter a velocity scale and folding settings</span></button>
           <button onClick={() => openEditor(null, 'reference')}><strong>From reference file…</strong><span>Fit an α-Fe standard to determine the scale</span></button>
           <button onClick={() => openEditor(null, 'copy')}><strong>Save current settings…</strong><span>Keep these values as a separate preset</span></button>
         </div>, document.body)}
       </div>
-      <button className="calibration-preset-icon" aria-label="Manage calibration presets" onClick={() => setManaging(true)}>⋯</button>
+      <button className="calibration-preset-icon" aria-label="Manage calibration presets" title="Open Calibration presets to rename, Edit, or Remove presets" onClick={() => setManaging(true)}>⋯</button>
     </div>
-    <label className="check-label calibration-import-default"><input type="checkbox" aria-label="Use preset for new imports" checked={selectedId === defaultId} disabled={selectedId === defaultId || !selected} onChange={() => { if (selected) onChange({ calibrationPresets: presets, importCalibrationPresetId: selected.id }); }}/>Use for new imports</label>
+    <label className="check-label calibration-import-default" title={selectedId === defaultId ? 'Already the default for new raw-count imports' : 'Use this preset for future raw-count imports'}><input type="checkbox" aria-label="Use preset for new imports" checked={selectedId === defaultId} disabled={selectedId === defaultId || !selected} onChange={() => { if (selected) onChange({ calibrationPresets: presets, importCalibrationPresetId: selected.id }); }}/>Use for new imports</label>
     <div className="calibration-preset-summary"><div><span>Max. velocity</span><strong>{displayNumber(preview.max)} <small>mm/s</small></strong></div><div><span>Standard CS</span><strong>{displayNumber(preview.shift)} <small>mm/s</small></strong></div></div>
     <p className="calibration-preset-reference" title={preview.reference?.name}>{preview.reference ? `α-Fe · ${preview.reference.name}` : 'Manually defined scale'}</p>
     <button className="full-width calibration-preset-edit" title={selected ? 'Save changes to this preset and apply them to the current raw spectrum' : 'Save the current velocity and folding settings as a new preset'} onClick={() => openEditor(selected ?? null, selected ? 'edit' : 'copy')}>{selected ? 'Edit preset…' : 'Save as preset…'}</button>

@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import React, { act } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { scientificLabel, layoutLabel, svgLabelLine } from '../src/scientific-label';
+import { plainScientificLabel } from '../src/plain-label';
 import { ScientificLabel } from '../src/ScientificLabel';
 import { SiteNameEditor } from '../src/SiteNameEditor';
 import { SiteList } from '../src/site-list';
@@ -36,7 +37,7 @@ test('unfinished, invalid and unsafe input remains readable text', () => {
   const dom = new JSDOM(renderToStaticMarkup(<ScientificLabel name={name}/>));
   assert.equal(dom.window.document.querySelector('img'), null);
   assert.equal(dom.window.document.querySelector('[onerror]'), null);
-  assert.equal(dom.window.document.querySelector('.scientific-label')?.getAttribute('aria-label'), name);
+  assert.equal(dom.window.document.querySelector('.scientific-label')?.getAttribute('aria-label'), plainScientificLabel(name));
 });
 
 test('figure label wrapping preserves complete math and fits its allotted width', () => {
@@ -62,7 +63,7 @@ test('site list and results table render the same label; project files retain th
   const table = renderToStaticMarkup(<ResultsTable project={project} evaluation={null} result={null} selected={0} onSelect={() => {}}/>);
   for (const html of [list, table]) {
     const doc = new JSDOM(html).window.document;
-    assert.equal(doc.querySelector('.scientific-label')?.getAttribute('aria-label'), name);
+    assert.equal(doc.querySelector('.scientific-label')?.getAttribute('aria-label'), plainScientificLabel(name));
     assert.ok(doc.querySelector('.scientific-label svg path'));
   }
   const cal = { max: 10, shift: 0, folding: false, sinusoidal: false, center: 256.5 };
@@ -71,7 +72,7 @@ test('site list and results table render the same label; project files retain th
   assert.equal(restored.snapshot.project.sites[0].name, name);
 });
 
-test('name editor previews drafts, applies once on Enter/blur and restores on Escape', async () => {
+test('name editor keeps the panel compact, applies once on Enter/blur and restores on Escape', async () => {
   const dom = new JSDOM('<div id="root"></div><button id="outside">Outside</button>', { url: 'http://localhost' });
   Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
   Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
@@ -85,7 +86,7 @@ test('name editor previews drafts, applies once on Enter/blur and restores on Es
     const key = async (key: string) => act(async () => { input.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); });
     await act(async () => input.focus());
     await type('$\\alpha$-Fe');
-    assert.equal(document.querySelector('.site-name-preview .scientific-label')?.getAttribute('aria-label'), '$\\alpha$-Fe');
+    assert.equal(document.querySelector('.site-name-preview'),null);assert.equal(document.querySelector('.site-name-help'),null);assert.equal(input.value,'$\\alpha$-Fe');
     assert.deepEqual(commits, []);
     await key('Enter'); assert.deepEqual(commits, ['$\\alpha$-Fe']);
     await act(async () => input.focus()); await type('Canceled'); await key('Escape');
@@ -101,4 +102,19 @@ test('name editor previews drafts, applies once on Enter/blur and restores on Es
 
 test('site buttons form a named group with arrow selection and Delete, with accessible row actions',async()=>{
  const dom=new JSDOM('<div id="root"></div>');Object.assign(globalThis,{window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});const {createRoot}=await import('react-dom/client');const root=createRoot(document.getElementById('root')!);let selected=-1,removed=-1;try{await act(async()=>root.render(<SiteList sites={demo().sites} selected={0} disabled={false} onSelect={i=>selected=i} onDelete={i=>removed=i}/>));assert.ok(document.querySelector('[role=group][aria-label=Sites]'));const buttons=document.querySelectorAll<HTMLButtonElement>('.site-select');await act(async()=>buttons[0].dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true})));assert.equal(selected,1);assert.equal(document.activeElement,buttons[1]);await act(async()=>buttons[1].dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Delete',bubbles:true,cancelable:true})));assert.equal(removed,1);assert.ok([...document.querySelectorAll<HTMLButtonElement>('.site-trash')].every(b=>b.tabIndex===0));}finally{await act(async()=>root.unmount());dom.window.close();}
+});
+
+
+test('native selectors and accessible names use readable labels without changing editable source',()=>{
+ const cases=[['Fe$^{2+}$','Fe²⁺'],['High-spin Fe$^{3+}$','High-spin Fe³⁺'],['$\\alpha$-Fe','α-Fe'],['\\mathrm{Fe}^{3+}','Fe³⁺'],['$d_{xy}$','d_(xy)'],['$d_{x^2-y^2}$','d_(x²-y²)'],['$\\frac{1}{2}$','(1)/(2)'],['Ordinary site_1','Ordinary site_1'],['Fe$^{2+}','Fe$^{2+}']];
+ for(const [source,expected] of cases)assert.equal(plainScientificLabel(source),expected,source);
+ const project=demo();project.sites=Array.from({length:5},(_,i)=>({...project.sites[i%2],name:i===0?'Fe$^{2+}$':`Site ${i+1}`}));
+ const doc=new JSDOM(renderToStaticMarkup(<SiteList sites={project.sites} selected={0} disabled={false} onSelect={()=>{}} onDelete={()=>{}}/>)).window.document;
+ assert.match(doc.querySelector('option')!.textContent!,/Fe²⁺/);assert.equal(project.sites[0].name,'Fe$^{2+}$');
+});
+
+test('percentage annotations remain intact when a long legend label wraps',()=>{
+ const lines=layoutLabel('A long descriptive mineral label',65,11,' · 12.3%');
+ assert.ok(lines.some(line=>line.parts.some(({part})=>part.kind==='text'&&part.source===' · 12.3%')));
+ assert.ok(!lines.some(line=>line.parts.at(-1)?.part.source==='·'));
 });

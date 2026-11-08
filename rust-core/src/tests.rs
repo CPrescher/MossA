@@ -30,6 +30,7 @@ fn project(kind: &str, shape: &str) -> Project {
         },
         sites: vec![Site {
             name: "Test".into(),
+            color: None,
             kind: kind.into(),
             profile: shape.into(),
             params,
@@ -71,6 +72,76 @@ fn independent_reference_profiles() {
             );
         }
     }
+}
+
+#[test]
+fn prepared_lines_preserve_reference_arithmetic_for_every_profile_and_kind() {
+    for kind in ["Singlet", "Doublet", "Sextet"] {
+        for shape in ["Lorentzian", "Gaussian", "PseudoVoigt", "LorSquared"] {
+            let p = project(kind, shape);
+            for coefficients in [
+                [0.1613, 0.0934, 0.0255],
+                [0.1612785758490726, 0.09338354131598467, 0.02548850678289673],
+            ] {
+                let curve = SiteCurve::new(&p.sites[0], coefficients);
+                for i in 0..6001 {
+                    let x = -30. + i as f64 * 0.01;
+                    assert_eq!(
+                        curve.value(x),
+                        site_curve_with_coefficients(&p.sites[0], x, coefficients),
+                        "{kind} {shape} at {x}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn residual_workspace_does_not_leak_between_models_or_fit_callbacks() {
+    let mut first = project("Singlet", "Lorentzian");
+    first.mode = "transmission".into();
+    first.sites[0].params.get_mut("intensity").unwrap().value = 0.3;
+    let expected = evaluate(&first).unwrap();
+    let mut second = first.clone();
+    second.source_squared = true;
+    second.sites.clear();
+    evaluate(&second).unwrap();
+    assert_eq!(evaluate(&first).unwrap().y, expected.y);
+    first.spectrum.y = expected.y;
+    let reference = first.clone();
+    first.sites[0].params.get_mut("cs").unwrap().value += 0.03;
+    let fitted = fit_with_progress(
+        &first,
+        Some(Box::new(move |_| {
+            // The shared per-thread scratch borrow must end before callbacks run.
+            assert_eq!(evaluate(&reference).unwrap().y, reference.spectrum.y);
+        })),
+    )
+    .unwrap();
+    assert!(fitted.converged);
+    assert!(fitted.evaluation.sse < 1e-7);
+}
+
+#[test]
+fn prepared_xvbf_does_not_require_unused_line_width() {
+    let mut p = project("Doublet", "Lorentzian");
+    p.sites[0].xvbf = Some(Xvbf {
+        delta: par(0.3, false),
+        cs: vec![DistributionComponent {
+            center: par(0.2, true),
+            width: par(0.13, true),
+            weight: par(1., false),
+        }],
+        qs: vec![DistributionComponent {
+            center: par(1.5, true),
+            width: par(0.22, false),
+            weight: par(1., false),
+        }],
+    });
+    let expected = evaluate(&p).unwrap().y;
+    p.sites[0].params.remove("fwhm");
+    assert_eq!(evaluate(&p).unwrap().y, expected);
 }
 #[test]
 fn modern_zeeman_coefficients_reach_thin_and_transmission_models() {
@@ -477,4 +548,15 @@ fn xvbf_simplex_enforces_physical_bounds_and_fixed_weights_on_all_trials() {
                 .all(|v| v.is_finite()));
         }
     }
+}
+
+#[test]
+fn site_color_survives_fitting_without_changing_the_scientific_model() {
+    let mut p = project("Doublet", "Lorentzian");
+    let plain = fit(&p).unwrap();
+    p.sites[0].color = Some("#6633aa".into());
+    let colored = fit(&p).unwrap();
+    assert_eq!(colored.project.sites[0].color.as_deref(), Some("#6633aa"));
+    assert_eq!(colored.evaluation.y, plain.evaluation.y);
+    assert_eq!(colored.errors, plain.errors);
 }

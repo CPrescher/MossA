@@ -1,0 +1,76 @@
+{
+  "runtime": "v22.18.0",
+  "platform": "darwin/arm64",
+  "cpu": "Apple M4 Pro",
+  "repetitions": 5,
+  "wasm_sha256": "92eb7f4e8d98f6784bd8d15e3c9e1d9dba91df8028b0e3fb2adc7434189ee008",
+  "fixture_sha256": "df7f8ffbe9c5c7c4389905564d57ea684eb763ed01c7bcc5c55c22ee254e451e",
+  "rows": [
+    {
+      "id": "MS_Fe2O3_transmission",
+      "sites": 1,
+      "channels": 256,
+      "free_parameters": 6,
+      "fit_ms": 47.273458000000005,
+      "evaluation_ms": 0.5471416500000004,
+      "fit_samples_ms": [
+        49.84145800000002,
+        47.319874999999996,
+        47.07470799999999,
+        47.02249999999998,
+        47.273458000000005
+      ],
+      "evaluation_samples_ms": [
+        0.6131895999999998,
+        0.5465728999999996,
+        0.5471416500000004,
+        0.5359104000000002,
+        0.5500895499999985
+      ],
+      "iterations": 7,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true,
+        "failures": []
+      }
+    },
+    {
+      "id": "MS_MexicanMagnetite_transmission",
+      "sites": 3,
+      "channels": 256,
+      "free_parameters": 16,
+      "fit_ms": 739.6668749999999,
+      "evaluation_ms": 0.7563354000000118,
+      "fit_samples_ms": [
+        744.840958,
+        744.829583,
+        739.034334,
+        739.6668749999999,
+        737.6109590000005
+      ],
+      "evaluation_samples_ms": [
+        0.7724582999999938,
+        0.7700853999999936,
+        0.7563354000000118,
+        0.7549542000000201,
+        0.7509687499999927
+      ],
+      "iterations": 20,
+      "termination": "RelativeCostTolerance",
+      "converged": true,
+      "comparison": {
+        "max_curve_abs": 0,
+        "max_parameter_abs": 0,
+        "max_parameter_in_std": 0,
+        "max_std_relative": 0,
+        "bitwise_equal": true,
+        "failures": []
+      }
+    }
+  ]
+}

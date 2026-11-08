@@ -8,6 +8,12 @@ description = "MossA spectral models and bounded fitting for native Rust and Web
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+# Opt-in FFT algorithm experiment. Build with +simd128 as well (wasm:simd).
+# Its different rounding fails the strict curve-equivalence gate; keep scalar
+# FFTs as the default, preserving fitted parameters and std bit-for-bit.
+wasm-simd = ["rustfft/wasm_simd"]
+
 [dependencies]
 basin = "=3.2.0"
 nalgebra = "0.34"
