@@ -6,7 +6,7 @@ export function SiteListPane({ children, count, height: savedHeight, onHeightCha
   const clamp = (v: number) => Math.max(52, Math.min(maximum(), v));
   const height = clamp(savedHeight ?? localHeight);
   const setHeight = (next: number | ((height: number) => number)) => { const value = typeof next === 'function' ? next(height) : next; if (onHeightChange) onHeightChange(value); else setLocalHeight(value); };
-  return <><div className="site-list-pane" style={{ height: count ? Math.min(height, count * 26) : 0 }}>{children}</div><div className="site-list-splitter" role="separator" aria-label="Resize site list" aria-orientation="horizontal" aria-valuemin={52} aria-valuemax={maximum()} aria-valuenow={height} tabIndex={0} title="Drag to resize site list; double-click to reset"
+  return <><div className="site-list-pane" style={{ height: count ? Math.min(height, count * 36) : 0 }}>{children}</div><div className="site-list-splitter" role="separator" aria-label="Resize site list" aria-orientation="horizontal" aria-valuemin={52} aria-valuemax={maximum()} aria-valuenow={height} tabIndex={0} title="Drag to resize site list; double-click to reset"
     onPointerDown={e => { if (e.button !== 0) return; e.preventDefault(); drag.current = { y: e.clientY, height }; e.currentTarget.setPointerCapture(e.pointerId); }}
     onPointerMove={e => { if (drag.current) setHeight(clamp(drag.current.height + e.clientY - drag.current.y)); }}
     onPointerUp={e => { drag.current = null; if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); }}

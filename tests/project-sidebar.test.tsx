@@ -19,9 +19,10 @@ test('project sidebar split supports dragging, keyboard limits/reset, collapse, 
   const root = createRoot(document.getElementById('root')!);
   const snapshot = { project: demo(), raw: null, cal: { max: 10, shift: 0, folding: false, sinusoidal: false, center: 256.5 }, filename: 'First spectrum', selected: 0 };
   const initial = appendSpectra(workspaceFromSnapshot(snapshot), [{ ...snapshot, filename: 'Second spectrum' }]);
+  let removedId: string | undefined;
   function Harness() {
     const [workspace, setWorkspace] = useState(initial), [ratio, setRatio] = useState(.55), [collapsed, setCollapsed] = useState(false);
-    return <ProjectSidebar workspace={workspace} disabled={false} ratio={ratio} onRatio={setRatio} collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSelect={id => setWorkspace(w => selectEntry(w, id))} onImport={() => {}} onRename={() => {}} onRemove={() => {}}><div>{activeSpectrum(workspace).name} models</div></ProjectSidebar>;
+    return <ProjectSidebar workspace={workspace} disabled={false} ratio={ratio} onRatio={setRatio} collapsed={collapsed} onCollapse={() => setCollapsed(!collapsed)} onSelect={id => setWorkspace(w => selectEntry(w, id))} onImport={() => {}} onRename={() => {}} onRemove={id => { removedId = id; setWorkspace(w => removeSpectrum(w, id)); }}><div>{activeSpectrum(workspace).name} models</div></ProjectSidebar>;
   }
   const separator = () => document.querySelector<HTMLElement>('[aria-label="Resize spectra and models"]')!;
   const key = async (key: string) => act(async () => { separator().dispatchEvent(new dom.window.KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })); });
@@ -44,6 +45,11 @@ test('project sidebar split supports dragging, keyboard limits/reset, collapse, 
     await act(async () => rows[0].click()); assert.equal(rows[0].getAttribute('aria-current'), 'true');
     await act(async () => rows[0].dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true })));
     assert.equal(rows[1].getAttribute('aria-current'), 'true'); assert.equal(document.activeElement, rows[1]);
+    await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Delete spectrum: First spectrum"]')!.click());
+    assert.equal(removedId, initial.spectra[0].id);
+    assert.equal(document.querySelectorAll('.spectrum-row').length, 1);
+    assert.equal(document.querySelector('.spectrum-row')?.getAttribute('aria-current'), 'true');
+    assert.equal(document.querySelector('.spectrum-row strong')?.textContent, 'Second spectrum');
   } finally { await act(async () => root.unmount()); dom.window.close(); }
 });
 
@@ -68,16 +74,16 @@ test('the last spectrum can be removed in the sidebar and the empty project stil
   const snapshot = { project: demo(), raw: null, cal: { max: 10, shift: 0, folding: false, sinusoidal: false, center: 256.5 }, filename: 'Only spectrum', selected: 0 };
   function Harness() {
     const [workspace, setWorkspace] = useState(() => workspaceFromSnapshot(snapshot));
-    return <ProjectSidebar workspace={workspace} disabled={false} ratio={.55} onRatio={() => {}} collapsed={false} onCollapse={() => {}} onSelect={() => {}} onImport={() => setWorkspace(w => appendSpectra(w, [snapshot]))} onRename={() => {}} onRemove={() => setWorkspace(removeSpectrum)}><div/></ProjectSidebar>;
+    return <ProjectSidebar workspace={workspace} disabled={false} ratio={.55} onRatio={() => {}} collapsed={false} onCollapse={() => {}} onSelect={() => {}} onImport={() => setWorkspace(w => appendSpectra(w, [snapshot]))} onRename={() => {}} onRemove={id => setWorkspace(w => removeSpectrum(w, id))}><div/></ProjectSidebar>;
   }
-  const remove = () => document.querySelector<HTMLButtonElement>('[aria-label="Remove spectrum"]')!;
+  const remove = () => document.querySelector<HTMLButtonElement>('[aria-label^="Delete spectrum:"]')!;
   try {
     await act(async () => root.render(<Harness/>));
     assert.equal(remove().disabled, false);
     await act(async () => remove().click());
     assert.equal(document.querySelectorAll('.spectrum-row').length, 0);
     assert.equal(document.querySelector('.no-spectra')?.textContent, 'No spectra yet.');
-    assert.equal(remove().disabled, true);
+    assert.equal(remove(), null);
     assert.equal(document.querySelector('.project-sidebar-footer')?.textContent, '0 spectra · 0 models');
     await act(async () => document.querySelector<HTMLButtonElement>('[aria-label="Add spectra"]')!.click());
     assert.equal(document.querySelectorAll('.spectrum-row').length, 1);

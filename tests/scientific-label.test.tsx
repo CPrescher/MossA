@@ -98,3 +98,7 @@ test('name editor previews drafts, applies once on Enter/blur and restores on Es
     assert.equal(document.querySelector('[role="status"]'), null);
   } finally { await act(async () => root.unmount()); dom.window.close(); }
 });
+
+test('site buttons form a named group with arrow selection and Delete, with accessible row actions',async()=>{
+ const dom=new JSDOM('<div id="root"></div>');Object.assign(globalThis,{window:dom.window,document:dom.window.document,HTMLElement:dom.window.HTMLElement,IS_REACT_ACT_ENVIRONMENT:true});const {createRoot}=await import('react-dom/client');const root=createRoot(document.getElementById('root')!);let selected=-1,removed=-1;try{await act(async()=>root.render(<SiteList sites={demo().sites} selected={0} disabled={false} onSelect={i=>selected=i} onDelete={i=>removed=i}/>));assert.ok(document.querySelector('[role=group][aria-label=Sites]'));const buttons=document.querySelectorAll<HTMLButtonElement>('.site-select');await act(async()=>buttons[0].dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'ArrowRight',bubbles:true,cancelable:true})));assert.equal(selected,1);assert.equal(document.activeElement,buttons[1]);await act(async()=>buttons[1].dispatchEvent(new dom.window.KeyboardEvent('keydown',{key:'Delete',bubbles:true,cancelable:true})));assert.equal(removed,1);assert.ok([...document.querySelectorAll<HTMLButtonElement>('.site-trash')].every(b=>b.tabIndex===0));}finally{await act(async()=>root.unmount());dom.window.close();}
+});

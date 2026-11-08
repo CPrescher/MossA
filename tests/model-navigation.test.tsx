@@ -47,6 +47,14 @@ test('model context menus target inactive models correctly and support keyboard 
     assert.equal(document.querySelector('[role=menu]'), null); assert.equal(document.activeElement, tabs()[0]);
     await open(tabs()[0]); await act(async () => document.body.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true })));
     assert.equal(document.querySelector('[role=menu]'), null);
+    const beforeDelete = activeModel(current).id;
+    const inactive = activeSpectrum(current).models.find(m => m.id !== beforeDelete)!;
+    await act(async () => document.querySelector<HTMLButtonElement>(`[aria-label="Rename model: ${inactive.name}"]`)!.click());
+    assert.equal(renamed, inactive.id);
+    await act(async () => document.querySelector<HTMLButtonElement>(`[aria-label="Delete model: ${inactive.name}"]`)!.click());
+    assert.equal(activeModel(current).id, beforeDelete);
+    assert.equal(activeSpectrum(current).models.length, 1);
+    assert.equal(document.querySelector<HTMLButtonElement>('.row-trash')!.disabled, true);
     await act(async () => root.render(<Harness key="single" start={initial}/>));
     await open(tabs()[0]); assert.equal(item('Remove model').disabled, true);
     await act(async () => root.render(<Harness key="disabled" start={initial} disabled/>));

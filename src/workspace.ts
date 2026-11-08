@@ -113,15 +113,16 @@ export function removeModel(workspace: Workspace, modelId?: string): Workspace {
   const models = spectrum.models.filter(m => m.id !== targetId);
   return { ...workspace, spectra: workspace.spectra.map(s => s.id === spectrum.id ? { ...s, models, activeModelId: targetId === spectrum.activeModelId ? models[Math.max(0, index - 1)].id : spectrum.activeModelId } : s) };
 }
-export function removeSpectrum(workspace: Workspace): Workspace {
+export function removeSpectrum(workspace: Workspace, spectrumId = workspace.activeSpectrumId): Workspace {
+  const index = workspace.spectra.findIndex(s => s.id === spectrumId);
+  if (index < 0) return workspace;
   if (workspace.spectra.length === 1) {
     if (!activeSpectrum(workspace).spectrum.x.length) return workspace;
     const { spectra, activeSpectrumId } = freshWorkspace();
     return { ...workspace, spectra, activeSpectrumId };
   }
-  const index = workspace.spectra.findIndex(s => s.id === workspace.activeSpectrumId);
-  const spectra = workspace.spectra.filter(s => s.id !== workspace.activeSpectrumId);
-  return { ...workspace, spectra, activeSpectrumId: spectra[Math.max(0, index - 1)].id };
+  const spectra = workspace.spectra.filter(s => s.id !== spectrumId);
+  return { ...workspace, spectra, activeSpectrumId: spectrumId === workspace.activeSpectrumId ? spectra[Math.max(0, index - 1)].id : workspace.activeSpectrumId };
 }
 export function renameEntry(workspace: Workspace, kind: 'project' | 'spectrum' | 'model', name: string, modelId?: string): Workspace {
   name = name.trim().slice(0, 160);

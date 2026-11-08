@@ -1,0 +1,60 @@
+/* Shared rows for spectra, models, and sites. Names use the full desktop row
+   until its action buttons are shown. */
+.item-list { display:flex; flex-direction:column; gap:0; }
+:root .app .item-list-row {
+  --item-row-background:transparent;
+  position:relative;
+  display:flex; align-items:center; flex-shrink:0; min-width:0;
+  min-height:2.25rem; height:auto; border:0; border-radius:3px;
+  background:var(--item-row-background); box-shadow:none; color:var(--muted);
+}
+:root .app .item-list-row[data-selected=true] {
+  --item-row-background:var(--control-selected,var(--dark-selected,#d9e4f2));
+  box-shadow:inset 2px 0 #849ab9;
+}
+:root .app .item-list-row:hover,
+:root .app .item-list-row:focus-within { --item-row-background:var(--control-hover,var(--dark-hover,#f0f5fb)); }
+:root .app .item-list-row[data-selected=true]:is(:hover,:focus-within) { --item-row-background:var(--control-selected,var(--dark-selected,#d9e4f2)); }
+:root .app .item-list-row>:is(.spectrum-row,.model-select,.model-name-row,.site-select) {
+  flex:1; min-width:0; width:auto; max-width:none; min-height:2.25rem; height:auto;
+  padding:5px 6px; border:0; border-radius:3px; background:transparent;
+  box-shadow:none; color:inherit; gap:4px;
+}
+:root .app .item-list-row>:is(.spectrum-row,.model-select,.site-select) strong {
+  font-size:.9375rem; font-weight:500;
+}
+:root .app .item-list-row[data-selected=true]>:is(.spectrum-row,.model-select,.site-select) strong { font-weight:600; }
+:root .app .item-list-row .item-number {
+  display:block; flex:0 0 auto; min-width:1ch; font-size:.8125rem; font-weight:600;
+  font-variant-numeric:tabular-nums; letter-spacing:0; text-align:center;
+  color:var(--control-muted,var(--muted,#536570));
+}
+:root .app .item-list-row .model-select>strong {
+  flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+:root .app .item-list-row .fit-dot { display:block; flex:0 0 4px; min-width:4px; width:4px; height:4px; }
+:root .app .item-list-row .item-name { text-align:left; }
+.item-name-tail { direction:rtl; }
+.row-actions { display:flex; align-items:center; flex:0 0 auto; gap:0; padding-right:2px; }
+:root .app .row-actions>button {
+  display:flex; align-items:center; justify-content:center;
+  flex:0 0 1.5rem; width:1.5rem; min-width:1.5rem; height:2rem; min-height:2rem;
+  margin:0; padding:3px; border:0; border-radius:3px;
+  background:transparent; box-shadow:none; color:var(--muted); opacity:1;
+}
+:root .app .row-actions>button:hover:not(:disabled) { background:var(--control-surface,var(--dark-raised,#fff)); color:var(--teal); }
+:root .app .row-actions>.row-trash:hover:not(:disabled) { color:#b45d50; }
+:root .app .row-actions>button:disabled { opacity:.4; }
+@media (hover:hover) and (pointer:fine) {
+  .item-list-row>.row-actions {
+    position:absolute; right:0; top:50%; transform:translateY(-50%); z-index:1;
+    opacity:0; pointer-events:none;
+  }
+  .item-list-row:is(:hover,:focus-within)>.row-actions {
+    position:static; transform:none; opacity:1; pointer-events:auto;
+  }
+}
+@media (pointer:coarse) {
+  :root .app .item-list-row>:is(.spectrum-row,.model-select,.model-name-row,.site-select) { min-height:48px; }
+  :root .app .row-actions>button { flex-basis:44px; width:44px; min-width:44px; height:44px; min-height:44px; }
+}

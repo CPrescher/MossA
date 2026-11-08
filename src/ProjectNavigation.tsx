@@ -1,7 +1,9 @@
+import { ItemList, ItemListName, ItemListNumber, ItemListRow } from './ItemList';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { activeModel, activeSpectrum, type ModelEntry, type Workspace } from './workspace';
 import { InlineNameEditor } from './InlineNameEditor';
+import { RowActions } from './RowActions';
 
 type RenameKind = 'project' | 'spectrum' | 'model';
 export function FitDot({ model }: { model: ModelEntry }) {
@@ -74,16 +76,15 @@ export function ModelNavigation({ workspace, disabled, onSelect, onDuplicate, on
     <div className="model-list-heading"><h2>Models <span className="count">{spectrum.models.length}</span></h2><div className="model-actions">
       <button disabled={disabled || limitReached} className="duplicate-model" aria-label="Duplicate model" onClick={() => onDuplicate(current.id)} title="Duplicate selected model"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M15 8V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4"/></svg></button>
       <button disabled={disabled || limitReached} aria-label="New model" title="New model with no sites" onClick={onNew}>＋</button>
-      <button disabled={disabled || spectrum.models.length === 1} aria-label="Remove model" title="Remove selected model; Undo restores it" onClick={() => onRemove(current.id)}>−</button>
     </div></div>
     <div className="model-spectrum-name" title={spectrum.name}>{spectrum.name}</div>
-    <div className="model-tabs" role="tablist" aria-orientation="vertical" aria-label="Spectrum models" ref={tabs}>
-      {spectrum.models.map((m, i) => renamingModelId === m.id ? <div key={m.id} id={`model-${m.id}`} className={`model-name-row name-editing ${m.id === current.id ? 'selected' : ''}`}><FitDot model={m}/><InlineNameEditor name={m.name} label="Model name" rowId={`model-${m.id}`} onCommit={name => onCommitName?.(name)} onCancel={() => onCancelName?.()}/></div> : <button role="tab" id={`model-${m.id}`} aria-controls="model-workspace" aria-selected={m.id === current.id} tabIndex={m.id === current.id ? 0 : -1} disabled={disabled} key={m.id} onClick={() => onSelect(m.id)} onDoubleClick={() => onRename(m.id)} onContextMenu={e => { e.preventDefault(); if (!disabled) { setContext({ id: m.id, x: e.clientX, y: e.clientY, trigger: e.currentTarget }); } }} title={`${m.name}${m.fit ? ` · Reduced objective ${m.fit.reduced_objective.toPrecision(5)} · ${m.fit.free_parameters} free parameters` : ' · Not fitted'}`} onKeyDown={e => {
+    <ItemList className="model-tabs" role="tablist" aria-orientation="vertical" aria-label="Spectrum models" ref={tabs}>
+      {spectrum.models.map((m, i) => <ItemListRow key={m.id} className="model-entry-row" role="presentation" selected={m.id === current.id} actions={<RowActions kind="model" name={m.name} disabled={disabled} removeDisabled={spectrum.models.length === 1} onRename={() => onRename(m.id)} onRemove={() => onRemove(m.id)}/>}>{renamingModelId === m.id ? <div key={m.id} id={`model-${m.id}`} className={`model-name-row name-editing ${m.id === current.id ? 'selected' : ''}`}><ItemListNumber value={i + 1}/><InlineNameEditor name={m.name} label="Model name" rowId={`model-${m.id}`} onCommit={name => onCommitName?.(name)} onCancel={() => onCancelName?.()}/></div> : <button className="model-select" role="tab" id={`model-${m.id}`} aria-controls="model-workspace" aria-selected={m.id === current.id} tabIndex={m.id === current.id ? 0 : -1} disabled={disabled} key={m.id} onClick={() => onSelect(m.id)} onDoubleClick={() => onRename(m.id)} onContextMenu={e => { e.preventDefault(); if (!disabled) { setContext({ id: m.id, x: e.clientX, y: e.clientY, trigger: e.currentTarget }); } }} title={`${m.name}${m.fit ? ` · Reduced objective ${m.fit.reduced_objective.toPrecision(5)} · ${m.fit.free_parameters} free parameters` : ' · Not fitted'}`} onKeyDown={e => {
         if (e.key === 'ContextMenu' || (e.key === 'F10' && e.shiftKey)) { e.preventDefault(); const bounds = e.currentTarget.getBoundingClientRect(); setContext({ id: m.id, x: bounds.left, y: bounds.bottom, trigger: e.currentTarget }); return; }
         const next = (e.key === 'ArrowDown' || e.key === 'ArrowRight') ? (i + 1) % spectrum.models.length : (e.key === 'ArrowUp' || e.key === 'ArrowLeft') ? (i - 1 + spectrum.models.length) % spectrum.models.length : e.key === 'Home' ? 0 : e.key === 'End' ? spectrum.models.length - 1 : null;
-        if (next !== null) { e.preventDefault(); onSelect(spectrum.models[next].id); (e.currentTarget.parentElement?.children[next] as HTMLElement)?.focus(); }
-      }}><span><FitDot model={m}/><strong>{m.name}</strong></span><small className={m.fit ? 'model-has-fit' : ''}>{!m.fit ? '—' : m.fit.converged && !m.fit.warnings.length ? 'fit' : 'review'}</small></button>)}
-    </div>
+        if (next !== null) { e.preventDefault(); onSelect(spectrum.models[next].id); tabs.current?.querySelectorAll<HTMLButtonElement>('[role="tab"]')[next]?.focus(); }
+      }}><ItemListNumber value={i + 1}/><ItemListName>{m.name}</ItemListName><FitDot model={m}/><small className={m.fit ? 'model-has-fit' : ''}>{!m.fit ? '—' : m.fit.converged && !m.fit.warnings.length ? 'fit' : 'review'}</small></button>}</ItemListRow>)}
+    </ItemList>
     {onCompare && <div className="model-compare-actions"><button className="compare-models-button" disabled={disabled || spectrum.models.length < 2} title={spectrum.models.length < 2 ? 'Duplicate or create a second model to compare alternatives' : 'Compare fits and test additional components with simulated spectra'} onClick={onCompare}>Compare models</button></div>}
     {context && contextModel && !disabled && <ModelContextMenu target={context} model={contextModel} canDuplicate={!limitReached} canRemove={spectrum.models.length > 1} onClose={() => setContext(null)} onAction={(action, id) => { setContext(null); if (action === 'duplicate') onDuplicate(id); else if (action === 'rename') onRename(id); else onRemove(id); }}/>}
   </div>;
