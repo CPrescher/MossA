@@ -984,5 +984,820 @@
         "state": "New raw import; folding diagnostic button visible; not fitted"
       }
     ]
+  },
+  "tutorialRefresh": {
+    "records": [
+      {
+        "name": "almandine-velocity-location-wide",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-velocity-location-wide.png",
+        "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
+        "capturedAt": "2026-11-08T05:16:52.191Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "f4addb25cb27d10e84976223a3d6ed09223d15361f3bd9c3c8dae52a217a8d7e",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-velocity-location-laptop",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-velocity-location-laptop.png",
+        "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
+        "capturedAt": "2026-11-08T05:16:52.959Z",
+        "viewport": {
+          "width": 1180,
+          "height": 900
+        },
+        "sha256": "69a6cdb302ef2ff8040ebca6a0dfc375b1142c2cb12ade9ee8bac95fbb075104",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-calibration",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-calibration.png",
+        "description": "Fresh velocity-reference fit through GUI; Max. velocity\n5.02155 mm/s\nStandard CS\n-0.108591 mm/s",
+        "capturedAt": "2026-11-08T05:16:54.162Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fac70a6c89aef977928b627bb68bdfc742a72d6bad630005bde690acc267ef40",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": [
+          "New calibration preset",
+          "Velocity calibration"
+        ]
+      },
+      {
+        "name": "almandine-one-doublet",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-one-doublet.png",
+        "description": "Reopened one-doublet constant-background worked fit; no refitting.",
+        "capturedAt": "2026-11-08T05:16:54.486Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "0e9afa6d59adbda0414a453ae793eaca447c54eae81d5975c8c4d6d91051c9ee",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-two-doublets",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-two-doublets.png",
+        "description": "Reopened two-doublet linear-background worked fit; no refitting.",
+        "capturedAt": "2026-11-08T05:16:54.987Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "b5014cb122b442b3326abba2eca54b2522a91945b0026de464ba9d67737ddbcb",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-location-wide",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-velocity-location-wide.png",
+        "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
+        "capturedAt": "2026-11-08T05:16:55.681Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "a61533c80e9d07dc95f0686910c891dcce156186f20dbf06c1715e5269a48c02",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 3 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-location-laptop",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-velocity-location-laptop.png",
+        "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
+        "capturedAt": "2026-11-08T05:16:56.480Z",
+        "viewport": {
+          "width": 1180,
+          "height": 900
+        },
+        "sha256": "79e25d7e9b6e322129ba003a57684d3629e2ef0fc35a9069ac6a82ced1e50114",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 3 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-calibration",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-velocity-calibration.png",
+        "description": "Fresh velocity-reference fit through GUI; Max. velocity\n8.73429 mm/s\nStandard CS\n0.712028 mm/s",
+        "capturedAt": "2026-11-08T05:16:57.817Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "34b791b381f83989b31c728217c386df7552e69a0cd9eb39ab9c24a52a5b4d55",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": [
+          "New calibration preset",
+          "Velocity calibration"
+        ]
+      },
+      {
+        "name": "sms-reference-columns",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-reference-columns.png",
+        "description": "Saved five-column singlet reference; actual Import details names velocity column 1 and total counts column 2.",
+        "capturedAt": "2026-11-08T05:16:58.677Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "5dc735a3dc4c0eba7ec9bee6ede8260cb21155bd835b7dec781a15c6343f520d",
+        "spectrum": "singleLineBefore.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-source-before",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-source-before.png",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n± 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
+        "capturedAt": "2026-11-08T05:16:59.845Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "81963ec8f6addfa279dec802d9f1e753dcf39ce38f37b1ead7f2d883f05dedcf",
+        "spectrum": "singleLineBefore.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-source-after",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-source-after.png",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n± 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
+        "capturedAt": "2026-11-08T05:17:01.661Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "12ad5c463f24a52d25acbdc8b53e8d884c15b8d54de76dbb5ea8a97ae80b5d80",
+        "spectrum": "singleLineAfter.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-reversed-axis",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-reversed-axis.png",
+        "description": "Saved raw SPEC MCA sample with Reverse velocity axis checked and original acquisition header expanded.",
+        "capturedAt": "2026-11-08T05:17:02.380Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "906ffce95e433b712b94d725390a24641a1c69634e5865d5d05826f02839a593",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-two-sextets",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-two-sextets.png",
+        "description": "Saved SMS tutorial stage 1 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:03.158Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "ae13f34c7e4e5acbe98c4dd7060f7796468593f3d39c87acff72f0be9f6bfb77",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 8 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-two-sextets-qs",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-two-sextets-qs.png",
+        "description": "Saved SMS tutorial stage 2 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:03.929Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d1077fda8a6ab64e0c6c51ebd51638aa14fc4696d00c5887beadc07de830a42e",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-three-sextets",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-three-sextets.png",
+        "description": "Saved SMS tutorial stage 3 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:04.700Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "ddcd0028d0ab63a5b754d9961f5098f6e567a0a23f1ae4b8c17f1ab89f1f74c8",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 17 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-final-fit",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-final-fit.png",
+        "description": "Saved SMS tutorial stage 5 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:05.281Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "07ba4a69183873ba327cc740a0943fe09f0ed56c7b70f59d98f022f32e0bb9fc",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-intensity-links",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-intensity-links.png",
+        "description": "Existing site-3 intensity link to one third of site 1; target/source/factor controls selected for inspection, not applied.",
+        "capturedAt": "2026-11-08T05:17:06.190Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "54a0465ba5ae248023183756b39f3f75593808abd18bf54c85f01db05264f7e7",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 12 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-mca-import",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/sms-mca-import.png",
+        "description": "Unfitted tutorial start, original raw MCA and headers; Reverse velocity axis still off.",
+        "capturedAt": "2026-11-08T05:17:06.831Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "a0a475fdb319324f580d877621e4d23c22876c9cbb69b6dd31fe998510037a0c",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-import",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-import.jpg",
+        "description": "Actual original CMS file imported into an empty project; no fitted sites and supplied velocity axis retained.",
+        "capturedAt": "2026-11-08T05:17:07.342Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "aec4b29ee7d59ccf1fea43df2394380a43edd43c8937ebdc55049bae8f139260",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Added 1 spectrum to the project.",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-cms-lorentzian",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-cms-lorentzian.jpg",
+        "description": "Reopened measured CMS empirical model; saved fit and std retained.",
+        "capturedAt": "2026-11-08T05:17:08.559Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2898a4b236ddbfa237752629849e2ced61b590a8725081981fa005abb9a61c06",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Converged · 7 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-cms-pseudovoigt",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-cms-pseudovoigt.jpg",
+        "description": "Reopened measured CMS empirical model; saved fit and std retained.",
+        "capturedAt": "2026-11-08T05:17:09.309Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fd2e608fc7982c715acd7182ad933239b3958c6529013c36ae1fae17d2dd2d49",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Converged · 8 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-sms-gaussian",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-sms-gaussian.jpg",
+        "description": "Saved measured SMS fit with supplied three-Gaussian source controls visible.",
+        "capturedAt": "2026-11-08T05:17:10.123Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d09fd55647aca2e308d2de75a8ed3c7708b73bcd101112da5b96e14c63d10414",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-weighting",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-weighting.jpg",
+        "description": "Observed-count weighting, one current-model start and iteration limit for the saved SMS model.",
+        "capturedAt": "2026-11-08T05:17:10.459Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fd851f5e973110efe82c5704dc6111509810ea23ec6a4fc5da47ea843236ae9f",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-sms-squared",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-sms-squared.jpg",
+        "description": "Saved deliberate 0.200 mm/s Lorentzian-squared source control; no refitting.",
+        "capturedAt": "2026-11-08T05:17:11.223Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "5f2a490fc3372104e0c6a74f05c922d1e4947fc0bc6a9ddfa800b7c241316ffe",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 15 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-workspace",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-workspace.jpg",
+        "description": "Current GUI with original CMS/SMS spectra and saved model alternatives in expanded project browser.",
+        "capturedAt": "2026-11-08T05:17:11.777Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "243eb13be245c567d4e6de7a7623b8dae727cb18d99eedaa402e383d4925b132",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-export",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/syncmoss-export.jpg",
+        "description": "Actual current figure studio with saved SMS model, white-page preview, current export controls.",
+        "capturedAt": "2026-11-08T05:17:12.233Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "415d504d428797cda9a94eb065af5fd9ff2990693d4496a9355a9926df6347de",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": [
+          "Export figure"
+        ]
+      },
+      {
+        "name": "almandine-velocity-location-wide",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-velocity-location-wide.jpg",
+        "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
+        "capturedAt": "2026-11-08T05:17:13.434Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "07580d173e54e4fe744f8dc981c66170993c16b61e3288a16684376f53432264",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-velocity-location-laptop",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-velocity-location-laptop.jpg",
+        "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
+        "capturedAt": "2026-11-08T05:17:14.193Z",
+        "viewport": {
+          "width": 1180,
+          "height": 900
+        },
+        "sha256": "a005219bf1ba59f524a95e653e8eec92979b1318a188041f8c4015392bce0747",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-calibration",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-calibration.jpg",
+        "description": "Fresh velocity-reference fit through GUI; Max. velocity\n5.02155 mm/s\nStandard CS\n-0.108591 mm/s",
+        "capturedAt": "2026-11-08T05:17:15.317Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "668a0332dc317cf81f5517d1a34622781bc4d1a65bde75781fe4ad33a209fc9a",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": [
+          "New calibration preset",
+          "Velocity calibration"
+        ]
+      },
+      {
+        "name": "almandine-one-doublet",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-one-doublet.jpg",
+        "description": "Reopened one-doublet constant-background worked fit; no refitting.",
+        "capturedAt": "2026-11-08T05:17:15.616Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fc7da4c0f4cfc33f50c708bb2dabd2dbda8b17624c9557a4cd13176a89ecdd84",
+        "spectrum": "almandine",
+        "status": "Converged · 9 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "almandine-two-doublets",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-two-doublets.jpg",
+        "description": "Reopened two-doublet linear-background worked fit; no refitting.",
+        "capturedAt": "2026-11-08T05:17:16.101Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "42d9f546b796d135867ee757880a820baa2a9fe4fbd5c6270022fde69702ea2e",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-location-wide",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-velocity-location-wide.jpg",
+        "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
+        "capturedAt": "2026-11-08T05:17:16.785Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "87921e935e4903a11b529e9eb54bc2350c8361883f174e25d11c14105932bf88",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 3 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-location-laptop",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-velocity-location-laptop.jpg",
+        "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
+        "capturedAt": "2026-11-08T05:17:17.545Z",
+        "viewport": {
+          "width": 1180,
+          "height": 900
+        },
+        "sha256": "0059c2d187c0daadf17ec888c4ab55948251d40be1f6f154231d66dfe53a76ba",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 3 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "sms-velocity-calibration",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-velocity-calibration.jpg",
+        "description": "Fresh velocity-reference fit through GUI; Max. velocity\n8.73429 mm/s\nStandard CS\n0.712028 mm/s",
+        "capturedAt": "2026-11-08T05:17:18.867Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d12343a3ce03a300fedf54f23577f5a5f8297a606e3c312a4f54e519a72e4079",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": [
+          "New calibration preset",
+          "Velocity calibration"
+        ]
+      },
+      {
+        "name": "sms-reference-columns",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-reference-columns.jpg",
+        "description": "Saved five-column singlet reference; actual Import details names velocity column 1 and total counts column 2.",
+        "capturedAt": "2026-11-08T05:17:19.703Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "9d6bbef008ce58858fdc727eafa9ff37de057e88ce0bcde467581694e3a31516",
+        "spectrum": "singleLineBefore.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-source-before",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-source-before.jpg",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n± 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
+        "capturedAt": "2026-11-08T05:17:20.850Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "4c4a3be0dd7179320105d521eb8fbc53e33750d09bde3a96ddd1e967ed5ec88e",
+        "spectrum": "singleLineBefore.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-source-after",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-source-after.jpg",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n± 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
+        "capturedAt": "2026-11-08T05:17:22.616Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "64c44eb9c52d821b777e0e7e33e3dd404a778d286c0290f45f959a418ba6dee8",
+        "spectrum": "singleLineAfter.dat",
+        "status": "Converged · 2 iterations",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "sms-reversed-axis",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-reversed-axis.jpg",
+        "description": "Saved raw SPEC MCA sample with Reverse velocity axis checked and original acquisition header expanded.",
+        "capturedAt": "2026-11-08T05:17:23.318Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "5796dea9d9f8ae1a04976c4e99a7e853637f73c4c90e487362c2c16871fcfac4",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-two-sextets",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-two-sextets.jpg",
+        "description": "Saved SMS tutorial stage 1 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:24.050Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e5c2cedfcb4660ba32d445877001329b5b7d0e5ee9ff68c123109943a7d6b1e4",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 8 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-two-sextets-qs",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-two-sextets-qs.jpg",
+        "description": "Saved SMS tutorial stage 2 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:24.783Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "9026dcc7362c108638640b0badd28a46a1be5d7cdbb09666763d73ff902ca4b2",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-three-sextets",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-three-sextets.jpg",
+        "description": "Saved SMS tutorial stage 3 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:25.535Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "49b1fc3df903464f43fbfa167f58a1cb68f4b5eff8d18b881f40af7c381edf12",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 17 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-final-fit",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-final-fit.jpg",
+        "description": "Saved SMS tutorial stage 5 with current GUI, residuals and fitted parameter table; no refitting.",
+        "capturedAt": "2026-11-08T05:17:26.098Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2b416ab7a135d97fe5868947bcd63e641417b054dfcefa80bee97a4d500475b1",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 26 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-intensity-links",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-intensity-links.jpg",
+        "description": "Existing site-3 intensity link to one third of site 1; target/source/factor controls selected for inspection, not applied.",
+        "capturedAt": "2026-11-08T05:17:27.000Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "69774ac44eec51bcfc1a6de8cbaaa78f2da09b3773d52b389ad0a7b1b4c49c3c",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Converged · 12 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "sms-mca-import",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/sms-mca-import.jpg",
+        "description": "Unfitted tutorial start, original raw MCA and headers; Reverse velocity axis still off.",
+        "capturedAt": "2026-11-08T05:17:27.501Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "a21639d6fe22822bf8a3f16aa462d7adc3112fde034724339ea50b4e72048e9a",
+        "spectrum": "Fe7C3_01GPa.mca",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-import",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-import.jpg",
+        "description": "Actual original CMS file imported into an empty project; no fitted sites and supplied velocity axis retained.",
+        "capturedAt": "2026-11-08T05:17:28.081Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2a4d3cbe6977ac1f542e7e09974799b9fe438a8d81507afb1a9f188349cfaa83",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Added 1 spectrum to the project.",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-cms-lorentzian",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-cms-lorentzian.jpg",
+        "description": "Reopened measured CMS empirical model; saved fit and std retained.",
+        "capturedAt": "2026-11-08T05:17:29.182Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "60b4e0e51ffb6374e35ad003de5e12e45bae6940c72864083566e1b5bb1f64e0",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Converged · 7 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-cms-pseudovoigt",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-cms-pseudovoigt.jpg",
+        "description": "Reopened measured CMS empirical model; saved fit and std retained.",
+        "capturedAt": "2026-11-08T05:17:29.935Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2cb0eedd74b1feb00373eaaf6fd42d2d7d5d8bd8ca1abb8040b141061e04d025",
+        "spectrum": "Standard_CMS.dat",
+        "status": "Converged · 8 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-sms-gaussian",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-sms-gaussian.jpg",
+        "description": "Saved measured SMS fit with supplied three-Gaussian source controls visible.",
+        "capturedAt": "2026-11-08T05:17:30.763Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "0216c9d09a6b56518e998fb834eb0191b152867fd5321f56d2ed3bf93d80fe4e",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-weighting",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-weighting.jpg",
+        "description": "Observed-count weighting, one current-model start and iteration limit for the saved SMS model.",
+        "capturedAt": "2026-11-08T05:17:31.099Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "97fc03585dc28f3ca421b9bba77460c63831c5947e5992ab4e6d371740052880",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-sms-squared",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-sms-squared.jpg",
+        "description": "Saved deliberate 0.200 mm/s Lorentzian-squared source control; no refitting.",
+        "capturedAt": "2026-11-08T05:17:31.899Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "c564c5c34049fe9dfd2ca3990b8949d3ae2f9a0d1872e48f2819b16b4b007062",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 15 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-workspace",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-workspace.jpg",
+        "description": "Current GUI with original CMS/SMS spectra and saved model alternatives in expanded project browser.",
+        "capturedAt": "2026-11-08T05:17:32.483Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e3ddfa321194bcbf84fcb94f5069090e424f693ab58ee47e0b27877c65343b74",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "syncmoss-export",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/syncmoss-export.jpg",
+        "description": "Actual current figure studio with saved SMS model, white-page preview, current export controls.",
+        "capturedAt": "2026-11-08T05:17:32.943Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "9239ad7abdeb711044b787804fec0d5c2c813fbdc0303a1c4d9947c47180838d",
+        "spectrum": "Standard_SMS.dat",
+        "status": "Converged · 3 iterations",
+        "dialogs": [
+          "Export figure"
+        ]
+      }
+    ],
+    "sourceCommit": "0807b7789e14db04baee1242d24e8bfb7445d823",
+    "source": "http://127.0.0.1:5428/",
+    "method": "Actual Chromium UI in light and dark mode. Worked fits reopened without optimization; velocity/source dialogs refitted through their real controls. No screenshot compositing."
   }
 }

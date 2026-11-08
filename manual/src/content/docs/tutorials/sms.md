@@ -32,6 +32,14 @@ Open **Fitting options → General → Folding & calibration**. On a wide screen
 Velocity-scale calibration is in **General**. The **Fit options** tab contains solver settings such as weighting; **General → Source profile → Calibrate source…** is the separate source-profile procedure used later.
 :::
 
+![Current wide-screen SMS workspace with General in the right Fitting options panel and From reference file visible under the calibration preset plus menu.](../../../assets/screenshots/sms-velocity-location-wide.png)
+
+*Find velocity-scale calibration in the right-hand **Fitting options → General** panel. Under **Folding & calibration**, select + → **From reference file…**. The worked sample shown here provides context for locating the controls.*
+
+![Current laptop SMS workspace with the Fitting options view selected and the calibration preset menu open in General.](../../../assets/screenshots/sms-velocity-location-laptop.png)
+
+*The same controls share the editor with Sites on a laptop. Select **Fitting options → General**; velocity calibration is available from the + beside Preset.*
+
 1. Save your existing project and start a tutorial project.
 2. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
 3. Load `Iron foil calibration.txt` in the velocity-reference dialog.

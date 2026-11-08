@@ -30,6 +30,14 @@ Open **Fitting options → General → Folding & calibration**. On a wide screen
 The similarly named **Fit options** tab contains solver settings such as residual weighting. Velocity-scale calibration is in **General**.
 :::
 
+![Current wide-screen GUI with General selected in the right Fitting options panel and the calibration preset menu open at From reference file.](../../../assets/screenshots/almandine-velocity-location-wide.png)
+
+*On a wide screen: right-hand **Fitting options → General → Folding & calibration → + → From reference file…**. The worked sample provides context; loading a foil in this dialog does not replace the sample.*
+
+![Current laptop GUI with Fitting options selected above the shared editor, General selected, and From reference file visible in the calibration preset menu.](../../../assets/screenshots/almandine-velocity-location-laptop.png)
+
+*On a laptop: select **Fitting options** above the editor, then **General** and the + beside Preset. **From reference file…** opens velocity-scale calibration.*
+
 1. Open **Fitting options → General → Folding & calibration → + (Add calibration preset) → From reference file…**.
 2. In the preset editor, open the reference calibration if it is not already visible, then load `almandine-iron-foil.dat`.
 3. Select the **linear** drive; leave sinusoidal drive off.
