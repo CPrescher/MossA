@@ -111,7 +111,7 @@ impl DerivativeModel {
 
 enum Advance {
     Need,
-    Boundary(Vec<f64>, u64, f64),
+    Boundary(Vec<f64>, u64),
     End(Vec<f64>, u64, bool, String),
 }
 
@@ -160,21 +160,14 @@ impl FitSession {
                 }
             };
             if initializing {
-                let boundary = Advance::Boundary(
-                    stepper.state().param().clone(),
-                    stepper.iter(),
-                    stepper.state().cost(),
-                );
+                let boundary = Advance::Boundary(stepper.state().param().clone(), stepper.iter());
                 checkpoint = stepper.into_checkpoint();
                 return Ok(boundary);
             }
             match stepper.step() {
                 Ok(StepOutcome::Continue) => {
-                    let boundary = Advance::Boundary(
-                        stepper.state().param().clone(),
-                        stepper.iter(),
-                        stepper.state().cost(),
-                    );
+                    let boundary =
+                        Advance::Boundary(stepper.state().param().clone(), stepper.iter());
                     checkpoint = stepper.into_checkpoint();
                     Ok(boundary)
                 }
@@ -215,7 +208,7 @@ impl FitSession {
                 let exchange = self.model.external_derivatives.as_ref().unwrap().borrow();
                 serde_json::json!({ "kind": "derivatives", "x": exchange.requested, "rows": self.model.project.spectrum.x.len(), "columns": self.model.free.len() })
             }
-            Advance::Boundary(x, iteration, _) => {
+            Advance::Boundary(x, iteration) => {
                 self.model
                     .external_derivatives
                     .as_ref()
