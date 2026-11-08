@@ -21,9 +21,9 @@ Inspect both halves and their difference in the folding diagnostic. Check whethe
 
 Read Status and Fit details. Inspect the starting positions, widths, background, bounds, links, and fixed parameters. Increase the iteration limit if the fit is still progressing, or try several **Starting models** when alternative minima are plausible. Keep the stopping code and warnings with the result.
 
-![Synthetic example stopped at an intentionally small iteration limit, with the warning in Status and the iteration setting visible in Opt.](../../../assets/screenshots/iteration-limit.png)
+![Synthetic example stopped at a one-iteration limit, with the Fit warnings dialog opened from Status over the Fit options panel.](../../../assets/screenshots/iteration-limit.png)
 
-*This warning was produced deliberately with a one-iteration limit on the synthetic starting model. It is a troubleshooting illustration, not an accepted final analysis.*
+*This warning was produced deliberately with a one-iteration limit on the synthetic starting model. Select the warning count in Status to open the full message. It is a troubleshooting illustration, not an accepted final analysis.*
 
 ## Errors are missing
 

@@ -75,13 +75,13 @@ $$
 
 The target follows its source instead of being optimized independently. Target bounds also constrain the source. Cycles, missing sources, or inconsistent bounds are invalid.
 
-![Bnds tab showing lower and upper parameter bounds and the proportional-link controls beside the fitted almandine model.](../../../assets/screenshots/bounds-and-links.png)
+![Bounds tab showing lower and upper parameter bounds and the proportional-link controls beside the fitted almandine model.](../../../assets/screenshots/bounds-and-links.png)
 
 *Select the intended site first. A link is entered as target = factor × source; entering ordinary bounds does not create a link.*
 
 ## Choose fitting options
 
-Under **Fit options**, set residual weighting, starting-model search, and the iteration limit.
+Under **Fitting options → Fit options**, set residual weighting, starting-model search, and the iteration limit.
 
 - **Unweighted** minimizes the sum of squared observed-minus-model residuals.
 - **1 / observed counts** minimizes squared residuals divided by the observations. Every observation must be strictly positive.
@@ -90,7 +90,7 @@ Under **Fit options**, set residual weighting, starting-model search, and the it
 
 More starts cost more time and can reduce dependence on starting estimates. They do not prove a global optimum or identify a physically correct model.
 
-![Opt tab showing residual weighting, number of starting models, and iteration limit for the measured almandine model.](../../../assets/screenshots/fit-options.png)
+![Fit options tab showing residual weighting, number of starting models, and iteration limit for the measured almandine model.](../../../assets/screenshots/fit-options.png)
 
 *Record these settings with the model. This measured worked example uses unweighted refinement from the current start.*
 

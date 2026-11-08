@@ -19,7 +19,7 @@ Weights are nonnegative and normalized to 100% separately for each distribution.
 
 ![CS distribution controls for an xVBF doublet in the synthetic iron mixture, with component centers, widths, weights, fit flags, and bounds controls.](../../../assets/screenshots/xvbf-distributions.png)
 
-*An editor illustration with two CS components. This modified synthetic starting model has not been fitted; the visible Fit for errors state is intentional.*
+*An editor illustration with two CS components. This modified synthetic starting model has not been fitted; the visible Not fitted state is intentional.*
 
 ## Avoid an underdetermined model
 

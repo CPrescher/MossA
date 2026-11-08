@@ -54,7 +54,7 @@ For a reproducible first test, open the [synthetic no-extra-line project](/MossA
 
 *The curves nearly coincide. The small improvement does not clearly justify another component: 55 of 199 spectra generated with one line earn at least this much improvement.*
 
-![Completed weak-line comparison showing the borderline verdict, p = 0.04, and Monte Carlo interval 0.017142–0.070816 crossing 0.05.](../../../assets/screenshots/comparison-borderline-result.jpg)
+![Statistical results of the completed weak-line comparison: p = 0.04 and Monte Carlo interval 0.017142–0.070816 crossing 0.05.](../../../assets/screenshots/comparison-borderline-result.jpg)
 
 *A p-value just below 0.05 is insufficient for a clear decision when simulation uncertainty crosses that threshold. The one-line fit also retains its numerical warning; inspect the fit diagnostics rather than hiding them.*
 

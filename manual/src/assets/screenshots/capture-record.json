@@ -1799,5 +1799,552 @@
     "sourceCommit": "0807b7789e14db04baee1242d24e8bfb7445d823",
     "source": "http://127.0.0.1:5428/",
     "method": "Actual Chromium UI in light and dark mode. Worked fits reopened without optimization; velocity/source dialogs refitted through their real controls. No screenshot compositing."
+  },
+  "manualRefresh": {
+    "records": [
+      {
+        "name": "workspace",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/workspace.jpg",
+        "description": "Measured almandine, complete project browser and saved alternative fits in the current GUI.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:33.484Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "6b89b1ec228c0ea74470e2fc8a8651047fa9ca2dd4e3767b56f7c56f8db4f3d3",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "bounds-and-links",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/bounds-and-links.png",
+        "description": "Current Bounds tab with selected-site bounds and proportional-link controls; saved fit unchanged.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:33.787Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "ff379fea13dcabd691406c7a5324fbf0451449dfd56a0c5a799b1d622e42af9a",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "fit-options",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/fit-options.png",
+        "description": "Current Fit options tab: unweighted residuals, one current-model start and iteration limit from the almandine worked model.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:34.120Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d2c94faf817bfb31ece76dbf8821429a02c24087bf6ee792c5aed20816482630",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "calibration-preset",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/calibration-preset.png",
+        "description": "Current named velocity-calibration preset editor with velocity scale, folding and explicit save/cancel controls; no edits.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:34.512Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d7ebd92d2ea1c1a8b56dc3674419766dfe752b5fd2ce65ed9f00ef33ca3b8e88",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Edit calibration preset"
+        ]
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/almandine-folding.jpg",
+        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; not applied.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:35.085Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "4696776fd4e37ee31b9a9863753576842a202974dfd3cd676c8a4e01a5e206a7",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Folding alignment"
+        ]
+      },
+      {
+        "name": "figure-export",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/figure-export.png",
+        "description": "Current almandine figure studio, real white-page preview and export controls.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:35.697Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "f837ef4f95387035c5715a5e3dc95ab0c9bb593ab491131f8fe981ad1e18fef2",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Export figure"
+        ]
+      },
+      {
+        "name": "model-comparison",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/model-comparison.png",
+        "description": "Actual comparison setup for one and two almandine doublets with identical constant-background constraints; no simulation run.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:36.287Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e5ddfd6f641e501bf8d250fcdcc98fa45bcddbc89e14c913d9efd4d122a0d3f5",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      },
+      {
+        "name": "transmission-overlays",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/transmission-overlays.png",
+        "description": "Noiseless synthetic singlet in full-transmission mode; absorber width 0.097 and fixed Lorentzian source width 0.17 mm/s. Not measured data.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:37.069Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "1e6c75b6e0db26cf8a4e9ef10397cf696a552efee84651cf85cda4f6cf4e4630",
+        "spectrum": "Synthetic singlet reference",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "source-calibration",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/source-calibration.png",
+        "description": "Actual source calibration of the explicitly constructed noiseless reference; tiny residual/std reflect construction, not experimental precision.",
+        "details": {
+          "values": "Source width\n0.17 mm/s\n± 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
+        },
+        "capturedAt": "2026-11-08T05:35:38.344Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "76851c3c8263318a1ed171d23c11c1d8867b8ade6269a791a9c3b404109f575a",
+        "spectrum": "Synthetic singlet reference",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "xvbf-distributions",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/xvbf-distributions.png",
+        "description": "Synthetic starting doublet enabled for xVBF, two CS components, normalized weights, current parameter cards and bounds controls; not fitted.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:39.188Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "40515f41e892817d109559549d059400cb783c2c6ecc2c413fb341985ff39cf9",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": []
+      },
+      {
+        "name": "xvbf-correlation",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/xvbf-correlation.png",
+        "description": "Current xVBF correlation view at its initial delta=0, with live synthetic spectrum and joint map.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:39.537Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "6913d4976b991c79202d8fdafbe6bc9b07d499e6c1a87f71a2fe720675558277",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": []
+      },
+      {
+        "name": "xvbf-map",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/xvbf-map.png",
+        "description": "Actual enlarged joint CS–QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:40.297Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "818af5e172552a1a3d270dd6c412c48fd04ca67736cc4a55ab3c6e0cc5a06c3f",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": [
+          "CS–QS correlation"
+        ]
+      },
+      {
+        "name": "iteration-limit",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/iteration-limit.png",
+        "description": "Intentionally stopped one-iteration synthetic fit. Actual warning dialog opened from Status; Fit options iteration limit visible behind it.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:41.336Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "ca8d2b1fae11cc60cf296b3bd5d82b9acf029d94be5381748caab7167c19fab5",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Stopped ⚠ 1 warning",
+        "dialogs": [
+          "Fit warnings"
+        ]
+      },
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/comparison-no-extra-result.jpg",
+        "description": "Completed real Gaussian bootstrap: 199 simulations, seed 12345, one worker; exact teaching p-value 0.28.",
+        "details": {
+          "pValue": 0.28,
+          "simulations": 199,
+          "seed": 12345,
+          "workers": 1
+        },
+        "capturedAt": "2026-11-08T05:35:42.479Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "14c65e54557ecaf79a6cfef470597fe4c2c4590f107241a98610662163217b52",
+        "spectrum": "Synthetic · No extra line",
+        "status": "Converged · 6 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "light",
+        "file": "manual/src/assets/screenshots/comparison-borderline-result.jpg",
+        "description": "Completed real Gaussian bootstrap: 199 simulations, seed 12345, one worker; exact teaching p-value 0.04.",
+        "details": {
+          "pValue": 0.04,
+          "simulations": 199,
+          "seed": 12345,
+          "workers": 1
+        },
+        "capturedAt": "2026-11-08T05:35:44.058Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e08d0f08833e22c9591182d38fa4c41718b15a433c2cc645a0b6cea4ca6a2765",
+        "spectrum": "Synthetic · Weak extra line",
+        "status": "Converged · 3 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      },
+      {
+        "name": "workspace",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/workspace.jpg",
+        "description": "Measured almandine, complete project browser and saved alternative fits in the current GUI.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:45.030Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "d82a2f65572ed6c86a770a72895f777c9ac7ae096cf276ff5ed13fec8031cd69",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "bounds-and-links",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/bounds-and-links.jpg",
+        "description": "Current Bounds tab with selected-site bounds and proportional-link controls; saved fit unchanged.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:45.319Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "c2f16a84586a14394a520a6125cb7bc38997cc7f12abc96dcd38fd53b3c3d3b4",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "fit-options",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/fit-options.jpg",
+        "description": "Current Fit options tab: unweighted residuals, one current-model start and iteration limit from the almandine worked model.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:45.630Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "480fcb9d391ed31b4a59e5ddf83a7c7e1799b02eb01be0d4d9501022ad47c8ce",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": []
+      },
+      {
+        "name": "calibration-preset",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/calibration-preset.jpg",
+        "description": "Current named velocity-calibration preset editor with velocity scale, folding and explicit save/cancel controls; no edits.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:46.009Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fa91afe194b3248a319f1a0180ca3262f69e6afba32ad1f9ce21dd5a17e6a62e",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Edit calibration preset"
+        ]
+      },
+      {
+        "name": "almandine-folding",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/almandine-folding.jpg",
+        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; not applied.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:46.583Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "da6e44d363ef568de684df0b302433a1d89c35f6450d8b8be302d84b92f2d5ea",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Folding alignment"
+        ]
+      },
+      {
+        "name": "figure-export",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/figure-export.jpg",
+        "description": "Current almandine figure studio, real white-page preview and export controls.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:47.132Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "4344cac16e0f79aac305f6ba20c07366240fa4de2e8f0bfda35b523721c06572",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Export figure"
+        ]
+      },
+      {
+        "name": "model-comparison",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/model-comparison.jpg",
+        "description": "Actual comparison setup for one and two almandine doublets with identical constant-background constraints; no simulation run.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:47.712Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "faaea65a9a0fd4ef0c1f68045fb6a45afb81e73fae6a4121c81521c40528caf7",
+        "spectrum": "almandine",
+        "status": "Converged · 11 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      },
+      {
+        "name": "transmission-overlays",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/transmission-overlays.jpg",
+        "description": "Noiseless synthetic singlet in full-transmission mode; absorber width 0.097 and fixed Lorentzian source width 0.17 mm/s. Not measured data.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:48.430Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "53aa00a0e6d95dec303c29a365c52ed29956d9e071cb7019fefa8f64f99f2279",
+        "spectrum": "Synthetic singlet reference",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "source-calibration",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/source-calibration.jpg",
+        "description": "Actual source calibration of the explicitly constructed noiseless reference; tiny residual/std reflect construction, not experimental precision.",
+        "details": {
+          "values": "Source width\n0.17 mm/s\n± 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
+        },
+        "capturedAt": "2026-11-08T05:35:49.690Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "fdddca6a47f525b24649327e547309c12f943ce596f02e429678f9246264bbad",
+        "spectrum": "Synthetic singlet reference",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": [
+          "Source-profile calibration"
+        ]
+      },
+      {
+        "name": "xvbf-distributions",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/xvbf-distributions.jpg",
+        "description": "Synthetic starting doublet enabled for xVBF, two CS components, normalized weights, current parameter cards and bounds controls; not fitted.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:50.515Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2255b55ab73daf0d1dee243c7f577496c7e0132198cfcabca0899f7f8a19ddf5",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": []
+      },
+      {
+        "name": "xvbf-correlation",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/xvbf-correlation.jpg",
+        "description": "Current xVBF correlation view at its initial delta=0, with live synthetic spectrum and joint map.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:50.857Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "f240d2c42fce1f6a22d9b6c9f12f8509324b262f5170fde27f72c5f1954daa0a",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": []
+      },
+      {
+        "name": "xvbf-map",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/xvbf-map.jpg",
+        "description": "Actual enlarged joint CS–QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:51.581Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "2a0cee2bfe935a9ddc6fd42bde59d86de5162d5673266cfa0e78b7dc66160605",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Model changed; fit again to update results.",
+        "dialogs": [
+          "CS–QS correlation"
+        ]
+      },
+      {
+        "name": "iteration-limit",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/iteration-limit.jpg",
+        "description": "Intentionally stopped one-iteration synthetic fit. Actual warning dialog opened from Status; Fit options iteration limit visible behind it.",
+        "details": {},
+        "capturedAt": "2026-11-08T05:35:52.559Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e771f20c9a51c4d019273b13a8618d721e3cae2feb75b0785092b8d63a5f8442",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Stopped ⚠ 1 warning",
+        "dialogs": [
+          "Fit warnings"
+        ]
+      },
+      {
+        "name": "comparison-no-extra-result",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/comparison-no-extra-result.jpg",
+        "description": "Completed real Gaussian bootstrap: 199 simulations, seed 12345, one worker; exact teaching p-value 0.28.",
+        "details": {
+          "pValue": 0.28,
+          "simulations": 199,
+          "seed": 12345,
+          "workers": 1
+        },
+        "capturedAt": "2026-11-08T05:35:53.493Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "64f8961b9236fd19433d3632b2748c2cd8e721002f7e5bbab8be4d12e1a76734",
+        "spectrum": "Synthetic · No extra line",
+        "status": "Converged · 6 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      },
+      {
+        "name": "comparison-borderline-result",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/comparison-borderline-result.jpg",
+        "description": "Completed real Gaussian bootstrap: 199 simulations, seed 12345, one worker; exact teaching p-value 0.04.",
+        "details": {
+          "pValue": 0.04,
+          "simulations": 199,
+          "seed": 12345,
+          "workers": 1
+        },
+        "capturedAt": "2026-11-08T05:35:54.906Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "e79b293e159f3fb12f0f046e79793adca9a7e5b329ef9823a75d2bd6aabb1b45",
+        "spectrum": "Synthetic · Weak extra line",
+        "status": "Converged · 3 iterations",
+        "dialogs": [
+          "Compare models"
+        ]
+      }
+    ],
+    "sourceCommit": "881a88c67210125eb3e4c981858e9d7c5388a7d1",
+    "source": "http://127.0.0.1:5428/",
+    "method": "Actual current Chromium GUI in both themes. Public worked fits reopened; synthetic source generated with the production evaluator and explicitly labeled. Comparison results recomputed through the real UI (199 Gaussian simulations, seed 12345, one worker). No screenshot compositing."
   }
 }
