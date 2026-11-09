@@ -1,0 +1,129 @@
+{
+  "date": "2026-11-08T19:45:51.496Z",
+  "checks": {
+    "benchmark_native": {
+      "passed": true,
+      "comparisons": 31,
+      "joint_reference_exact": true,
+      "schema_and_std_rechecked": true,
+      "source_binary_hashes_match": true,
+      "same_coordinate_std_exact": true
+    },
+    "benchmark_search": {
+      "passed": true,
+      "comparisons": 8,
+      "joint_reference_exact": true,
+      "schema_and_std_rechecked": true,
+      "source_binary_hashes_match": true,
+      "same_coordinate_std_exact": true
+    },
+    "benchmark_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "joint_reference_exact": true,
+      "schema_and_std_rechecked": true,
+      "source_binary_hashes_match": true,
+      "same_coordinate_std_exact": true
+    },
+    "benchmark_browser": {
+      "passed": true,
+      "comparisons": 18,
+      "joint_reference_exact": true,
+      "schema_and_std_rechecked": true,
+      "wasm_hashes_match": true
+    },
+    "forward_model": {
+      "passed": true,
+      "cases": 31,
+      "projection_selection_leaves_evaluation_exact": true
+    },
+    "rust": {
+      "passed": true,
+      "tests": 72,
+      "log_sha256": "64414879d1ffc5aa06a1bbf81ca11a5eafaf2ff2d672c2d25930d56e83864b0d"
+    },
+    "final_projection_checks": {
+      "passed": true,
+      "tests": 6,
+      "log_sha256": "cf0d231f893f3752b4afb48086c586d57574d03d15a0bc6ac553a237eea239aa"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 163,
+      "log_sha256": "33b10c52bf7a90b77d19116b64cf470f195c889bd55d22eea5cc025fa00d70e2"
+    },
+    "typescript_react": {
+      "passed": true,
+      "tests": 274,
+      "log_sha256": "534c82d4a397e625bd40ababca309037286cf27e2ee440473703dcab1d92a578"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 15,
+      "log_sha256": "84ed4b2b24f1502f36cc29fc2961976dd0376ca7b2bc6d6468fea1a90c14a706"
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "typescript_compile": true,
+      "files": 284,
+      "manual_links": 1374,
+      "log_sha256": "f07a43a7267ad776190e698bf97c040ec9eb462956eba1dad9c5d78968c97f08"
+    },
+    "desktop_cargo_check": {
+      "passed": true,
+      "log_sha256": "bf8b2bf6cab52b66f267db7d5392d6d5757cd409fef0f2906bbd171e04fea5ff"
+    }
+  },
+  "maximum_relative_std": {
+    "parameter": 0.00002237803963808732,
+    "fraction": 0.00001932927939372042,
+    "same_coordinate": 0,
+    "same_coordinate_numerical": 0.0000017418250916433711
+  },
+  "sha256": {
+    "PORTING.md": "e689eac9a17ec0a4135cf473def083d27852a6e6cef90d9c7c7ae7329c406833",
+    "README.md": "9b1a79b2b78a70a68d8cef8ca2ab1bd7eaecbf196612d814efabf54bcf416d83",
+    "manual/src/content/docs/guides/building-models.md": "8d5f3241b8738a7123829a1de9d60b402768a123faad63af2548f3a17752dc28",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "rust-core/Cargo.toml": "1216ff155c7e5718770f64d1c2599f273fcba76c1c210e9fddfb7b04afdd49fa",
+    "rust-core/src/analytical.rs": "6171960d215dcfa1838cb90df3bed845a3912c2849c7b10bf03073fb98b8dfff",
+    "rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+    "rust-core/src/analytical/transmission.rs": "ffba50b7799f0027c7d07b2c99970d970880bffc9d35a83f14778e5525ab90e8",
+    "rust-core/src/lib.rs": "07fdf33323333158ba8656f2d87222192337bb48f508c1093446aa3c3b25ba4d",
+    "rust-core/src/native.rs": "9e26a1a33f3bf2523e861e0d9835ab6056ed1f73ff7518ebcdcac9e269baf5af",
+    "rust-core/src/native/derivatives.rs": "8f50968146843a0324fea71333febee35628a3c000222d31aba77ca79cf09c90",
+    "rust-core/src/parallel.rs": "4852840f3e34cc5e2a3211bd95d497ce7a415371b05f2331ed2691d81980d33e",
+    "rust-core/src/tests.rs": "249b384b99288f76598b679a27d38c95dd4dd3cedfb8eddef2ec7c480393694a",
+    "rust-core/src/variable_projection.rs": "e8018dca0478232c3049c9283798c620712c8f1aa0cd5eeb25ae4e6df4ceedc2",
+    "rust-core/target/release/examples/native_fixture": "a4d5eeee4b192d3168c4a1fe17e7b3339a780b2935b25f7456020b420406ee54",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-variable-projection-browser.mjs": "c72a85add498efc4a7aba29ad5cb7563b662b728039290f0b649844daebfe2d3",
+    "scripts/benchmark-variable-projection.mjs": "8b6418a521d49ab2a55d2ccfd9f5745e9f8a24d92de957588f9cb8902b57a0f8",
+    "scripts/variable-projection-cases.mjs": "b2c85d78b9ae16db5d308e7ac7ba288b144195ea5b9322c1f7cd644bf5613e8e",
+    "scripts/verify-variable-projection.mjs": "043f028727474d775bd02f84bb329d41c90d606904482f6d559871c04997324b",
+    "src/App.tsx": "6c3faa0336d01e9e8e3025c9591c3a5eb90366f9005162b108b194a87195df94",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/session.ts": "f1a0988608d01afa5112aa947182c114a100e88e87ade4526d778b18d8722428",
+    "src/types.ts": "775716febeb30f03e79527ba04db89382470d958946c74b2838e83eb889d0686",
+    "src/wasm/mossa_core.js": "31423f8b323059a72e8fdb3e840bba5df0a2db6564984acbabaa2175410f715e",
+    "src/wasm/mossa_core_bg.wasm": "63f899d2c5de688ade7bbe8d8c337d06cbc3f1a182bad8eb181573c821a7a1e6",
+    "tests/native-backend.integration.tsx": "753a393a1bdb4c738d63846e76d6b229bb9c1404b8e64d704d1ab25d4a3271bc",
+    "tests/variable-projection-options.test.tsx": "4d5ea9cbd4f6472e4b0cb92833b4d852176a7a0e8cace58d13900b120406f52d",
+    "tests/variable-projection.test.mjs": "ac235614fcc31aac8ee818a24c36f489ff3e62d605e4c4eb2f870530c1a9288c",
+    "validation-data/performance/VARIABLE-PROJECTION.md": "8641b48d2319569aee332c5e6df8688523051635435b579898a903ab647b8e0e",
+    "validation-data/performance/runtime/variable-projection/baseline/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+    "validation-data/performance/runtime/variable-projection/baseline/mossa_core_bg.wasm": "de873d4a9cc61019fe9ed60c6d588a0b790871670ee98a9d8aa03b6d6774bebe",
+    "validation-data/performance/runtime/variable-projection/baseline/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "validation-data/performance/runtime/variable-projection/baseline/native_fixture": "95dcf4d115acebac4f65a7b37544e95c9c40c348d0587d6c00422781523b65c4",
+    "validation-data/performance/runtime/variable-projection/baseline/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/variable-projection/baseline/rust-core/src/analytical.rs": "98978b32d12c42e8fb599f883343e502d9d83efa3b4cd9dd44fcb84cccd3cec2",
+    "validation-data/performance/runtime/variable-projection/baseline/rust-core/src/lib.rs": "06ad5c55221ce01b30c1e46318184af9f9d76d4165389de8d2fa5652d9dab89e",
+    "validation-data/performance/runtime/variable-projection/baseline/rust-core/src/native/derivatives.rs": "64f2954b814b58f431c5ed55337f2742ded88d8d2f6ea6eba3c6613ece5611cf",
+    "validation-data/performance/runtime/variable-projection/baseline/rust-core/src/parallel.rs": "84082efafe64520ff0b88e1b61021308ee33be3662ece5ad9feffd0478dc1081",
+    "validation-data/performance/variable-projection-baseline-provenance.json": "17704d36e707fc8b8569e07042989f268449bc14920abc311069e2513b392283",
+    "validation-data/performance/variable-projection-browser.json": "c95e710cd59082f84407c41adc406603db1ffec53aa4267ce85f10b1287c47b0",
+    "validation-data/performance/variable-projection-native.json": "422cffe27d8bdd932313f9ed01d8c00b8fe90098f9318990091a0638ab963229",
+    "validation-data/performance/variable-projection-search.json": "f0963fc93b5d4cea955ec23a77643a8f0511ee343c6297e5510851e400a0c7c8",
+    "validation-data/performance/variable-projection-search12.json": "4730d1227d666d0ee0ddd0cb2c9f171db14f6f6d6b0272493cac9a727c97acbd"
+  }
+}

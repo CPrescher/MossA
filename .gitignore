@@ -14,3 +14,14 @@ src-tauri/gen/
 
 __pycache__/
 *.pyc
+
+# Local benchmark builds; timing summaries and numerical fixtures are retained.
+validation-data/performance/runtime/
+
+# Expanded benchmark evidence is preserved in fitting-evidence.tar.xz.
+validation-data/performance/logs/
+validation-data/performance/*.json
+!validation-data/performance/*-verification.json
+!validation-data/performance/*-provenance.json
+!validation-data/performance/evidence-manifest.json
+validation-data/performance/*.tar.xz.tmp

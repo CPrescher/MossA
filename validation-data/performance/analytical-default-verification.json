@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-08T16:22:10.544995+00:00",
+  "checks": {
+    "rust": {
+      "passed": true,
+      "tests": 49,
+      "log_sha256": "a260837712c3caac076969c12967c92ad0b8a0c86b5b5e2f99a1e8a35a30530c"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 100,
+      "log_sha256": "09767f78c466388546638fc54f2b1cdeb995ef09f6e634ff52e208c8e42d6ed0"
+    },
+    "typescript_react": {
+      "passed": true,
+      "tests": 273,
+      "log_sha256": "dca17de94e494e15ed5986320d01e1399b120d7380340ebcc1ac3addcc3d56a6"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 12,
+      "log_sha256": "effe2788f7309425fb998fed106920c8221639e94af365cc5977d80e899efb85"
+    },
+    "benchmark_native": {
+      "passed": true,
+      "comparisons": 20
+    },
+    "benchmark_informed": {
+      "passed": true,
+      "comparisons": 4
+    },
+    "benchmark_search": {
+      "passed": true,
+      "comparisons": 10
+    },
+    "benchmark_search12": {
+      "passed": true,
+      "comparisons": 2
+    },
+    "benchmark_browser": {
+      "passed": true,
+      "comparisons": 48
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "local_links": 1374,
+      "payload_files": 284
+    },
+    "typescript_compile": {
+      "passed": true
+    },
+    "desktop_cargo_check": {
+      "passed": true
+    },
+    "cargo_fmt_check": {
+      "passed": true
+    }
+  },
+  "sha256": {
+    "rust-core/src/analytical.rs": "ff8c26fcf1381461f88ed3511648ec00ca6d4e70694ef32131c778a9bf89a4a9",
+    "rust-core/src/lib.rs": "32e8c624fa67f43f6b121a54bf6d1673366f6e521e8e0da0bce82f4072032a74",
+    "rust-core/src/parallel.rs": "84082efafe64520ff0b88e1b61021308ee33be3662ece5ad9feffd0478dc1081",
+    "rust-core/src/tests.rs": "2e0ca8ba6dfb92c62f7afda189cdd139ffe950d3e4fb610275aae6898bda04bd",
+    "rust-core/Cargo.lock": "926fe0b8dced896718b1532f3ed161610cb3f406e520923001d5e704c9afbe75",
+    "rust-core/target/release/examples/native_fixture": "531ee38902ef870334c761ce1ce8290b0834fea38b7af8ff393f978650483999",
+    "src/wasm/mossa_core_bg.wasm": "365adefd3b58386af4a8b7323632880ecac31df16a51f0ac665b5745a95bf9f3",
+    "src/analytical-derivatives.ts": "fe1a1db5bcaf247961acf5f7b441a9ce1e05b1310f829f80c307423137c18a71",
+    "src/worker.ts": "5450564cb3ac467c4ffe141df0c9a7dc340ba881a22be4f56483d9f5af00cb9d",
+    "src/parallel-fit.ts": "cdfbe79a973f2469c0b33d720766bc20ed96e9068593760a45d0de034ac1c96c",
+    "src/App.tsx": "0807858a91b805a1bcd4d9afef0be42fa5d8b28c2a5bbb5a13f66e2c7f6e253c",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-analytical-default.mjs": "fc7bc92a23a3954cef26b6114af138082a812bff69399faeba5292682435f072",
+    "scripts/benchmark-analytical-default-browser.mjs": "76d8946393d00d72edf18e20698a83f5a4a424ea0d7b32165340c787749ad9d6",
+    "tests/analytical-derivatives.test.mjs": "0a1f87c278537c7a015a528b5afbe5e3c74f0ec88d2709af10893b40e1031159",
+    "tests/analytical-options.test.tsx": "04c9f0533fee84c8cb29dbe24906278e25e63b461d8f3e8f95afba8c15787c48",
+    "tests/native-backend.integration.tsx": "5ea9ea38a40eeb517350cdc6f25c9590ba8c0db2224c8371ebf65d88b7604fc8",
+    "manual/src/content/docs/guides/building-models.md": "95db5e4477ad1f754adc5dfd8427b0cc1894aac4a0d11e277a7991cadc7a7283",
+    "validation-data/performance/ANALYTICAL-DEFAULT.md": "23b35653702116e948f1f0c7595fea1b0a9fcfeb5c3c0b23c21b8c105223cf85",
+    "validation-data/performance/analytical-default-native.json": "a645c647ba51bf9d76e5dda66a7acfc5833b3759b8b57e107d387be4ede00c50",
+    "validation-data/performance/analytical-default-informed.json": "d4e1f09db636be647530be7c2fd894ace54cefc35eb204ee23d33ac368181176",
+    "validation-data/performance/analytical-default-search.json": "e0b5f7b103b4c08c72c570bac1b53620b32cb6b78e1cd1175c9885b9d80ad651",
+    "validation-data/performance/analytical-default-search12.json": "c3fac1046fff7f872d15194e5fc58c90a431ba5883a75847aa5acba01566eb25",
+    "validation-data/performance/analytical-default-browser.json": "9dd745d43838d142ed8fc12542f88f3b4266c5340a7f1ddd21566abe4994370f"
+  }
+}

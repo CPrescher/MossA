@@ -1,0 +1,209 @@
+{
+  "date": "2026-11-08T18:59:02.624Z",
+  "checks": {
+    "benchmark_shared_native": {
+      "passed": true,
+      "comparisons": 36,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": true
+    },
+    "benchmark_shared_search": {
+      "passed": true,
+      "comparisons": 8,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": true
+    },
+    "benchmark_shared_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": true
+    },
+    "benchmark_realfft_native": {
+      "passed": true,
+      "comparisons": 36,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": false
+    },
+    "benchmark_realfft_search": {
+      "passed": true,
+      "comparisons": 8,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": false
+    },
+    "benchmark_realfft_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": false
+    },
+    "benchmark_combined_native": {
+      "passed": true,
+      "comparisons": 36,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": false
+    },
+    "benchmark_combined_search": {
+      "passed": true,
+      "comparisons": 8,
+      "schema_and_std_rechecked": true,
+      "source_and_binary_hashes_match": true,
+      "complete_results_exact": false
+    },
+    "cumulative_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "quality": [
+        {
+          "id": "xvbf-transmission-mixture-full",
+          "passed": true,
+          "failures": [],
+          "delta_objective": -6.84274858997469e-12,
+          "reference_objective": 1.2771439774227775,
+          "analytical_objective": 1.2771439774159348,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.767262037049614e-11,
+          "residual_rms": 0.070631746840976,
+          "max_std_relative": 1.4303766140190293e-11,
+          "max_parameter_std": 6.37738639414865e-9,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            4,
+            5
+          ],
+          "termination": [
+            "SolverFailed",
+            "RelativeCostTolerance"
+          ]
+        },
+        {
+          "id": "xvbf-transmission-mixture-selective",
+          "passed": true,
+          "failures": [],
+          "delta_objective": -6.84274858997469e-12,
+          "reference_objective": 1.2771439774227775,
+          "analytical_objective": 1.2771439774159348,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.767262037049614e-11,
+          "residual_rms": 0.070631746840976,
+          "max_std_relative": 1.4303766140190293e-11,
+          "max_parameter_std": 6.37738639414865e-9,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            4,
+            5
+          ],
+          "termination": [
+            "SolverFailed",
+            "RelativeCostTolerance"
+          ]
+        }
+      ]
+    },
+    "benchmark_browser": {
+      "passed": true,
+      "comparisons": 108,
+      "schema_and_std_rechecked": true,
+      "wasm_hashes_match": true
+    },
+    "forward_roundoff": {
+      "passed": true,
+      "cases": 36,
+      "max_curve_count_difference": 6.984919309616089e-10,
+      "max_scaled_sse_objective_difference": 1.2788021817559658e-13,
+      "numerical_override_exact": true
+    },
+    "rust": {
+      "passed": true,
+      "tests": 65,
+      "log_sha256": "b746ee06a28bc3b2fc82e894924dd30c5698f6599ce7889bbe2e6223a3e71576"
+    },
+    "rust_cancellation": {
+      "passed": true,
+      "tests": 1,
+      "log_sha256": "377dcb17640ef6ff9e5ad59ff6a6f6bd8a128db16293e5ee3563876e5733f3ba"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 129,
+      "log_sha256": "04b99693988f0fb6527dfffd937fb28edcddb811e259e1cbea4631c05a0659cf"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 14,
+      "log_sha256": "256f6f4034aebb721c3f2e248f4a3782695d64eb1873f748d27ee7c2f699a418"
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "links": 1374,
+      "files": 284,
+      "typescript_compile": true,
+      "log_sha256": "9854f787e3668cdf9ef0c4f827b8ef062f256e60fde5cf5a3ccb66805d4f9e5d"
+    },
+    "desktop_cargo_check": {
+      "passed": true,
+      "log_sha256": "ef7ac3e5752dc5740e91c332441d8b08630d9a2c8e5bdc1671ab2620d77b45a5"
+    }
+  },
+  "maximum_relative_std": {
+    "native": 1.8782997984576183e-9,
+    "browser": 1.3110460503606616e-9,
+    "identical_coordinate_reference": 2.4009523077614262e-11,
+    "identical_coordinate_numerical": 0.0000014511422300744136
+  },
+  "sha256": {
+    "PORTING.md": "db971bd3f71ca01951d8d887d297773753b731e02c53d744a2cc4b90834b17ca",
+    "README.md": "150738f85eb40df79a753ff9d495401941846b1fb60836f0d43e2e0155ccd787",
+    "THIRD_PARTY_NOTICES.txt": "75f486f1d9ccfcd04d094e4052c976fd0f8dd0609cd35f395a47ce126de038ed",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "rust-core/Cargo.toml": "1216ff155c7e5718770f64d1c2599f273fcba76c1c210e9fddfb7b04afdd49fa",
+    "rust-core/src/analytical.rs": "98978b32d12c42e8fb599f883343e502d9d83efa3b4cd9dd44fcb84cccd3cec2",
+    "rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+    "rust-core/src/analytical/source.rs": "d8ea7e7c85d449a6e449dd22138b2a5e92d72e1dd88717cff1154c9fe0e7467a",
+    "rust-core/src/analytical/transmission.rs": "ffba50b7799f0027c7d07b2c99970d970880bffc9d35a83f14778e5525ab90e8",
+    "rust-core/src/lib.rs": "06ad5c55221ce01b30c1e46318184af9f9d76d4165389de8d2fa5652d9dab89e",
+    "rust-core/src/native.rs": "9e26a1a33f3bf2523e861e0d9835ab6056ed1f73ff7518ebcdcac9e269baf5af",
+    "rust-core/src/native/derivatives.rs": "64f2954b814b58f431c5ed55337f2742ded88d8d2f6ea6eba3c6613ece5611cf",
+    "rust-core/src/tests.rs": "24caaa38aafbb986f66768d2d4cee2cfce73ee9f67b9d3e09ce9e2e9498e87b0",
+    "rust-core/target/release/examples/native_fixture": "95dcf4d115acebac4f65a7b37544e95c9c40c348d0587d6c00422781523b65c4",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-shared-real-fft-browser.mjs": "8517f59d16b1d221b88f11b90c493ff74a4c6910e06f26d2acd0637d65986a95",
+    "scripts/benchmark-shared-real-fft.mjs": "3c984124c3fb79331149798705ebb21bf93a7a36f45a1f7bd222e7173ad37064",
+    "scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
+    "scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
+    "scripts/verify-shared-real-fft.mjs": "429cb5a8d681ac6c13542701d0250cebced32a9a4aef54584a83042089625683",
+    "src-tauri/Cargo.lock": "3e18104fc074585b5621fb2070d15460b04d705b3e16360d2ea45d8b6ed726df",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/wasm/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+    "src/wasm/mossa_core_bg.wasm": "de873d4a9cc61019fe9ed60c6d588a0b790871670ee98a9d8aa03b6d6774bebe",
+    "tests/transmission-analytical.test.mjs": "a025934d57a9bcb1edddb81aa70aaa773dde76814fba225ca873a7319c90ff1e",
+    "validation-data/performance/SHARED-REAL-FFT.md": "5c2fba1e398aa610f92fc32c2dbec1be03f6ab0d7606b962bde654eadbbf8739",
+    "validation-data/performance/combined-evaluation-native.json": "247e41686359c41e43d816169c49d560d4f2d36f070ff276bf45c680c4564543",
+    "validation-data/performance/combined-evaluation-search.json": "3594d387a73d914bd4de35f4b8b9afa7d5ef3973c63a89b92085b382fbdb098a",
+    "validation-data/performance/realfft-evaluation-native.json": "c471a3bf6b73f3f0b36ab56043d51fb9de501cb1a98d8fe8db81b81a68f94eab",
+    "validation-data/performance/realfft-evaluation-search.json": "0b611dd6e1a7cc2f370ebbdc45fd3a851562dd856ff7c580def83b0abfbd4ee6",
+    "validation-data/performance/realfft-evaluation-search12.json": "5f09df40c951fdea77eb748b7998b85b276269b88a36a91c05ff76d098ddcdb7",
+    "validation-data/performance/runtime/shared-real-fft/baseline/native_fixture": "409179b7d15bab370991978a448f682a1ab886eedd83fc076138cfc3a2591cbc",
+    "validation-data/performance/runtime/shared-real-fft/shared/native_fixture": "0e44c134e62eb211d28a8fa1f280f1c386dd3cd37a93cad2673aea500e46af8b",
+    "validation-data/performance/runtime/shared-real-fft/shared/rust-core/Cargo.lock": "926fe0b8dced896718b1532f3ed161610cb3f406e520923001d5e704c9afbe75",
+    "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical.rs": "4a4db9b91bc174c9a3972d1ea81f08367f5a596a79fb92c3075c2f3291aec462",
+    "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+    "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical/transmission.rs": "7b7ab5caf69be8289aac9ffe36b9c1c29b88a9cea385ec62c8633295e16772da",
+    "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/lib.rs": "6b35ba47718cb5fef9419e615ee7d7573458387f063cb7e0f5d269238d298303",
+    "validation-data/performance/shared-evaluation-native.json": "d12aafcb53615a4298b54bc4d04c9231473d5ff248cfa945788ed3fb893d0a13",
+    "validation-data/performance/shared-evaluation-search.json": "93f366fe9351c5d95439e34b7e23933a916831a4a7d55dc94b196c2d7d35c6eb",
+    "validation-data/performance/shared-evaluation-search12.json": "3d6b8f70457afbda7205a0661d31a89449cd0d13a63b65970e94c32f641fd06a",
+    "validation-data/performance/shared-evaluation-stage-provenance.json": "5315ed60b6ff5ddbc932139e17ac80c6be2084ee769b8f715d9cedb670115a5c",
+    "validation-data/performance/shared-real-fft-baseline-provenance.json": "61b0523850a4e5112cd3d83c21931313b4f9d0c3dac8bbd3da0559038ac10d00",
+    "validation-data/performance/shared-real-fft-browser.json": "4447db82deb1ad190b47a5f89267f6aa8dc00a5f80150ae38137d26bbd7e6bd1"
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "date": "2026-11-08T20:53:35.014Z",
+  "checks": {
+    "native": {
+      "passed": true,
+      "cases": 31,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "same_coordinate_std_exact": true,
+      "hashes_match": true
+    },
+    "search": {
+      "passed": true,
+      "cases": 8,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "same_coordinate_std_exact": true,
+      "hashes_match": true
+    },
+    "search12-magnetite": {
+      "passed": true,
+      "cases": 2,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "same_coordinate_std_exact": true,
+      "hashes_match": true
+    },
+    "search12-mixture": {
+      "passed": true,
+      "cases": 2,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "same_coordinate_std_exact": true,
+      "hashes_match": true
+    },
+    "repeat-mixture": {
+      "passed": true,
+      "cases": 2,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "same_coordinate_std_exact": true,
+      "hashes_match": true
+    },
+    "individual_magnetite_starts": {
+      "passed": true,
+      "cases": 4,
+      "minima_std_rechecked": true,
+      "slow_start_iterations": 140,
+      "max_parameter_std_relative": 0.000011347626072230032,
+      "max_fraction_std_relative": 0.0000066969681708004656
+    },
+    "browser": {
+      "passed": true,
+      "cases": 18,
+      "strict_before_after_labels": true,
+      "joint_control_exact": true,
+      "wasm_hashes_match": true
+    },
+    "magnetite_winner": {
+      "passed": true,
+      "cases": 4,
+      "minima_curves_std_fractions_bit_exact": true
+    },
+    "forward_model": {
+      "passed": true,
+      "cases": 31,
+      "bit_exact": true
+    },
+    "rust": {
+      "passed": true,
+      "tests": 76,
+      "log_sha256": "6f4a1c4dfe5b83731c6b67cfe8758f99a4957c8c197632433646133dd969b1fb"
+    },
+    "profile_feature": {
+      "passed": true,
+      "tests": 3,
+      "log_sha256": "21a1f98fa4cd32a2aae7aa50f17e39a14dac64b1f1be6555bea7ef7aa52b1b1b"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 168,
+      "log_sha256": "c73a1e4daa42ae51bdd326c2b3ecfd10d06a1a64817747a237c1a59fea5e15bc"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 16,
+      "log_sha256": "b138c640d035154115c184c9832c7d24faffb49debd1912a0047b2eacb03cb4e"
+    },
+    "desktop_manual": {
+      "passed": true,
+      "typescript_compile": true,
+      "files": 284,
+      "links": 1374,
+      "log_sha256": "329d14698e5d07304304d437fc30bff798807979a6feed80c89846bb3ef658e5"
+    },
+    "desktop_cargo": {
+      "passed": true,
+      "log_sha256": "a37e03dcc249c5cc13927acf2d6ad091f6016f1388c2222e3233824c427f3e09"
+    }
+  },
+  "maximum_relative_std": {
+    "parameter": 0,
+    "fraction": 0,
+    "same_coordinate": 0,
+    "same_coordinate_numerical": 0.0000017418250916433711
+  },
+  "sha256": {
+    "README.md": "9c2b63d953fb69c3b076c3ef89a781820568b5b6f41196e97300ad369371f5b5",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "rust-core/src/analytical.rs": "6171960d215dcfa1838cb90df3bed845a3912c2849c7b10bf03073fb98b8dfff",
+    "rust-core/src/lib.rs": "ebf20d322be8248384501265b22da568bef65a92a365df6ca1df26a807fa4724",
+    "rust-core/src/native.rs": "d2b7c50a13b98a40ae544f5c69bc37527dcf86cea108f4534d26d41cdb03fea3",
+    "rust-core/src/native/derivatives.rs": "de698031945fcf2532f08b80f6846485d18a29a250220cfe81c1b975cb6c0c9a",
+    "rust-core/src/parallel.rs": "dcb79286d372a7e6bf38c564b73da5e89049d7edcbe9a8bde639c726a9d3206a",
+    "rust-core/src/variable_projection.rs": "9a6fbc4aad0ad04e36831fbd31ecf2f27914ad5858c8897b3074689e1a50236e",
+    "rust-core/src/variable_projection/profile.rs": "337dc5a83552ee6b90d31a376a3d968a122bf12dc0f71d8a9ebcd593a9a061e4",
+    "rust-core/target/release/examples/native_fixture": "ba4b82b14ae4d8c014357c359c7a6b445cc566230d3922141ad095d331d4c8bd",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-variable-projection-multistart-browser.mjs": "70395a154efa0b08791f6bdd341e7eabf9fd51fdc29fb442f88a981810d61317",
+    "scripts/benchmark-variable-projection-multistart.mjs": "952c5223904137e7a69ea5b7f832a4033e285b2fd01e179b3b9d4b119209225a",
+    "scripts/compare-equivalent-sites.mjs": "7ae5f0b65ab67c3423f2afb2207fb9b6664cc81f63385f60a267bc236c9ed8a8",
+    "scripts/profile-variable-projection-search.mjs": "ef2cd7dfb412a13412b8bfa6df64014abe45dbb6a477073d2d45b3354900d28e",
+    "scripts/variable-projection-cases.mjs": "b2c85d78b9ae16db5d308e7ac7ba288b144195ea5b9322c1f7cd644bf5613e8e",
+    "scripts/verify-variable-projection-multistart.mjs": "9d55a026622ec0e95abcf726df8171335c6a9ab13eff3d64d324b405c5d0bd1c",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "tests/equivalent-sites.test.mjs": "87d2cd61624ea7030374aa7c5a9fec614d831a7265835c115e8d56a768138e3d",
+    "tests/fixtures/variable-projection-slow-trial.json": "8816e1f04fe6b81f38a889efc55c22fe12936ac25661be2ab77d9a7b9b925774",
+    "tests/native-backend.integration.tsx": "78530f6ec136cd896c7e0bd96040ecaef7748e96bfdbe7dd5f40bab56b8ad1ac",
+    "tests/variable-projection-continuation.test.mjs": "2aae218805f475aa0b9c21f1478629d224b14384502f8b1d202be603a1a698c8",
+    "validation-data/performance/VARIABLE-PROJECTION-MULTISTART.md": "09258c5f8618456ab94e8f92c01746f2f73fe1428ec40f6db12eb482b1351f5b",
+    "validation-data/performance/VARIABLE-PROJECTION.md": "265e51350800a0f04fc336def24bba34da97b7d2513a1ffb37d74c0e5ebd667d",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/mossa_core.js": "31423f8b323059a72e8fdb3e840bba5df0a2db6564984acbabaa2175410f715e",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/mossa_core_bg.wasm": "63f899d2c5de688ade7bbe8d8c337d06cbc3f1a182bad8eb181573c821a7a1e6",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/native_fixture": "a4d5eeee4b192d3168c4a1fe17e7b3339a780b2935b25f7456020b420406ee54",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/Cargo.toml": "1216ff155c7e5718770f64d1c2599f273fcba76c1c210e9fddfb7b04afdd49fa",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/src/analytical.rs": "6171960d215dcfa1838cb90df3bed845a3912c2849c7b10bf03073fb98b8dfff",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/src/lib.rs": "07fdf33323333158ba8656f2d87222192337bb48f508c1093446aa3c3b25ba4d",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/src/native/derivatives.rs": "8f50968146843a0324fea71333febee35628a3c000222d31aba77ca79cf09c90",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/src/parallel.rs": "4852840f3e34cc5e2a3211bd95d497ce7a415371b05f2331ed2691d81980d33e",
+    "validation-data/performance/runtime/variable-projection-multistart/baseline/rust-core/src/variable_projection.rs": "e8018dca0478232c3049c9283798c620712c8f1aa0cd5eeb25ae4e6df4ceedc2",
+    "validation-data/performance/runtime/variable-projection-multistart/improved/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/variable-projection-multistart/improved/mossa_core_bg.wasm": "07ab67ddb859f712e216d9a77ae523697d5d4f5ad0675a0899432900e1b7a84a",
+    "validation-data/performance/runtime/variable-projection-multistart/improved/native_fixture": "ba4b82b14ae4d8c014357c359c7a6b445cc566230d3922141ad095d331d4c8bd",
+    "validation-data/performance/variable-projection-multistart-baseline-provenance.json": "58cceea75fdd0f0be065970d22e7419e6437923f6e8174a808ccaa23f3539aa0",
+    "validation-data/performance/variable-projection-multistart-browser.json": "fe5c13dd1d666a5e78244d254a9fdece5eff71db6f5c3004dbc5185539a5baf6",
+    "validation-data/performance/variable-projection-multistart-native.json": "481df3e70e4ccef2d806f62290aefe5b402c905cef26425e653f507ca08378a3",
+    "validation-data/performance/variable-projection-multistart-profile.json": "2bd2f1d39ebf3c4cb54baef27686322e666f9986e12495a8f9f6202b74a14c5d",
+    "validation-data/performance/variable-projection-multistart-repeat-mixture.json": "a3d7b6b8dfc13bc85ad6e0c95766e44421a1d6bd46d079fab145252fd11872a2",
+    "validation-data/performance/variable-projection-multistart-search.json": "7e48a80f7ad9778aafd9341246efcbdede95c749dd31d7a4413c9a6632a7c6b7",
+    "validation-data/performance/variable-projection-multistart-search12-magnetite.json": "45b53c7892bbb65c12cb7c3798cc1d177b91dab786de6750abd51e98e1d87b84",
+    "validation-data/performance/variable-projection-multistart-search12-mixture.json": "f8bb57ecc20b4d2a6eebb7f4fd8a03c55d2ac0896eba1f921a5bc93e608985ce",
+    "validation-data/performance/variable-projection-multistart-trials-final.json": "7bc890540360a8ca02543de965fb99cfd441e997939c46628661d0aab7e76ddd"
+  }
+}

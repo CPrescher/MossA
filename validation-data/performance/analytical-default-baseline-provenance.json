@@ -1,0 +1,6 @@
+{
+  "rust-core/target/release/examples/native_fixture": "316ef633d3b2e7f5ea406f55cc297bb8dbdc285c64947234d485f618ded873c1",
+  "src/wasm/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+  "src/wasm/mossa_core_bg.wasm": "2db84d69498faf6085ecaa4c3d569a301fd7ba1a3dba531a61afabe78ea09e3d",
+  "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6"
+}
