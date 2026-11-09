@@ -51,7 +51,7 @@ For a magnetic sextet, QS enters the retained magnetic-line shift convention; it
 
 ## Site names and mathematical notation
 
-Site names are labels; they do not change the fit or assign a chemical species. Select a site using its visible name button (arrow keys also switch sites), then edit **Site name** above its parameters. Press Enter or click away to apply; Escape cancels the edit. Press Delete while a site button is focused to remove that site; Undo restores it.
+Site names are labels; they do not change the fit or assign a chemical species. Select a site using its name button (arrow keys also switch sites). Double-click its name or use the row’s pencil icon to edit **Site name** inline. In the compact selector, choose the site and use **Rename selected site**. Press Enter or click away to apply; Escape cancels the edit. Press Delete while a site button is focused to remove that site; Undo restores it.
 
 Use `$…$` for mathematical notation inside a name. For example:
 
