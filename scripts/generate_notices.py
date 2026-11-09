@@ -12,7 +12,7 @@ metadata = json.loads(subprocess.check_output(
 packages = []
 resolved = {node['id'] for node in metadata['resolve']['nodes']}
 for package in metadata['packages']:
-    if package['source'] and package['id'] in resolved:
+    if (package['source'] or package['name'] == 'basin') and package['id'] in resolved:
         packages.append((package['name'], package['version'], package['license'], Path(package['manifest_path']).parent))
 for name in ['react', 'react-dom', 'scheduler', '@mathjax/src', '@mathjax/mathjax-tex-font']:
     folder = root / 'node_modules' / name

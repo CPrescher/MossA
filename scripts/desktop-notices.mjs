@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const result = spawnSync('cargo', ['metadata', '--locked', '--format-version', '1', '--manifest-path', 'src-tauri/Cargo.toml'], { cwd: root, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
 if (result.status !== 0) throw new Error(result.stderr || result.error?.message || 'Cargo metadata failed');
-const packages = JSON.parse(result.stdout).packages.filter(p => p.source).map(p => ({ name: p.name, version: p.version, license: p.license, dir: dirname(p.manifest_path) }));
+const packages = JSON.parse(result.stdout).packages.filter(p => p.source || p.name === 'basin').map(p => ({ name: p.name, version: p.version, license: p.license, dir: dirname(p.manifest_path) }));
 for (const [base, names] of [[root, ['@tauri-apps/api']], [join(root, 'manual'), ['astro', '@astrojs/starlight', 'katex', '@pagefind/default-ui', 'pagefind']]]) {
   for (const name of names) {
     const dir = join(base, 'node_modules', name);

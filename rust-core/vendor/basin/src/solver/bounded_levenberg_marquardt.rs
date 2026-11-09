@@ -1,0 +1,922 @@
+use crate::core::constraint::evaluation::BoxProblem;
+use crate::core::inner::InitialState;
+use crate::core::least_squares::evaluation::{BoundedEvaluation, NllsStep};
+use crate::core::math::{
+    AddDiagonalVectorInPlace, BoxAffineScaling, Dot, GramMatrix,
+    LinearSolveSpd, MatTransposeVec, MaxDiagonal, NegInPlace, NormSquared,
+    Scalar, ScaledAdd,
+};
+use crate::core::problem::{Jacobian, Problem, Residual};
+use crate::core::solver::Solver;
+use crate::core::state::{PointState, State};
+use crate::core::termination::Termination;
+use crate::{
+    LossFunction, RobustLeastSquares, ScaleRowsInPlace, VectorIndex, VectorLen,
+};
+
+use super::least_squares_diagnostics::{
+    LeastSquaresCheck, LeastSquaresDiagnostics, LeastSquaresObservation, Trace,
+};
+
+/// Levenberg-Marquardt with Coleman–Li box scaling
+/// for nonlinear least-squares problems `min ½‖r(x)‖²` subject to
+/// `lower ≤ x ≤ upper`. Extends
+/// [`LevenbergMarquardt`](super::LevenbergMarquardt) to bounded problems.
+///
+/// For an explicit trust-region radius, reflected steps, and rank-aware dense
+/// subproblems, use [`TrustRegionReflective`](super::TrustRegionReflective).
+/// This solver uses Nielsen damping and strictly feasible steps without
+/// reflection or an explicit trust-region radius.
+///
+/// Wrap the raw problem in [`RobustLeastSquares`] to minimize a robust loss.
+/// The adapter supplies the safeguarded Gauss–Newton model. Reported costs,
+/// actual reductions, and Coleman–Li scaling use the robust objective and
+/// its gradient.
+///
+/// # Algorithm
+///
+/// At each iteration the solver computes the Coleman-Li affine scaling
+/// from Branch-Coleman-Li 1999: a diagonal trust-region matrix
+/// `D = diag(|v|^{-1/2})` and a diagonal curvature correction
+/// `C = D · diag(g) · J^v · D` (also diagonal, non-negative), and
+/// solves the damped, scaled normal equations
+///
+/// ```text
+/// (JᵀJ + diag(c) + μ · diag(d²)) h = −g
+/// ```
+///
+/// via Cholesky on the SPD Gram. The unconstrained step `h` is then
+/// scaled back into the open feasible region by the largest
+/// `α ∈ (0, 1]` such that `x + α·h` stays inside `(lower, upper)`,
+/// multiplied by a strict-interior factor `θ ≈ 0.99995`. The damping
+/// `μ` adapts via the Nielsen smooth cubic gain-ratio update (the same
+/// machinery as [`LevenbergMarquardt`](super::LevenbergMarquardt)), and
+/// initial `μ₀ = τ · max diag(JᵀJ + diag(c))`.
+///
+/// The four-case dispatch defining `v(x)` and the elementwise diagonals
+/// `d²[i] = 1/|v_i|` and `c[i] = |g_i|/|v_i|` (or 0 for infinite bounds)
+/// follow Branch-Coleman-Li 1999 eqs (i)–(iv); see
+/// `references/branch-coleman-li-1999/source.marker.md:43-72` and
+/// `references/branch-coleman-li-1999/NOTES.md`.
+///
+/// # Reduction to LM
+///
+/// When `lower = -∞` and `upper = +∞` element-wise, the BCL scaling
+/// reduces to `D = I`, `C = 0`, the step-back is a no-op, and the
+/// algorithm becomes exactly Levenberg-Marquardt with Nielsen's μ-update:
+/// same iterates, same convergence. `BoundedLevenbergMarquardt` strictly
+/// subsumes [`LevenbergMarquardt`](super::LevenbergMarquardt) at the trait-bound
+/// level (the reverse is a compile error: LM bounds on
+/// `Residual + Jacobian` only, not [`BoxBounds`](crate::BoxBounds)).
+///
+/// # Bounded-LM variant
+///
+/// Basin's `BoundedLevenbergMarquardt` is a deliberate simplification of
+/// the full STIR algorithm in BCL §4. It ships:
+///
+/// - The Coleman-Li affine scaling matrix `D` and curvature correction
+///   `C` (BCL eqs 2.1–2.6).
+/// - LM-style μ-adaptation via Nielsen smooth cubic, in lieu of the
+///   explicit trust-region radius `Δ` of BCL FIG.6.
+/// - Strict-interior step-back to keep iterates in the *open* box
+///   (`D` is undefined on a finite face).
+/// - First-order optimality termination via `‖v ⊙ Jᵀr‖_∞ ≤ tol_grad`.
+///
+/// What it does **not** ship:
+///
+/// - **STIR 2D subspace** (BCL FIG.5). The full-space subproblem is
+///   solved each iteration. Adequate for small and medium dense and
+///   sparse problems; large-scale Krylov inner solves wait for a
+///   future session.
+/// - **Reflection technique** (BCL §2 / FIG.2). The unconstrained step
+///   is straight-line stepped back to the box boundary, never
+///   reflected off it. Full reflection is available in
+///   [`TrustRegionReflective`](super::TrustRegionReflective).
+/// - **Explicit trust-region radius `Δ`** with Moré-Sorensen-style
+///   λ-adaptation (BCL FIG.6). The LM-style μ-update is simpler and
+///   reuses [`LevenbergMarquardt`](super::LevenbergMarquardt)'s
+///   machinery.
+/// - **Negative-curvature termination clause** (BCL §6). The
+///   `‖D·g‖_∞ ≤ τ` clause alone is used; the curvature test would need
+///   an eigendecomposition or Lanczos pass that isn't worth the
+///   surface before STIR lands.
+///
+/// # Failure modes
+///
+/// - **Cholesky failure under bumped μ.** The damped, scaled Gram
+///   `JᵀJ + diag(c) + μ·diag(d²)` is SPD by construction for `μ > 0`,
+///   so Cholesky should succeed on the first attempt. The retry loop
+///   bumps μ via `μ ← μ·ν, ν ← 2ν` if it doesn't, capped at
+///   [`with_max_inner_attempts`](Self::with_max_inner_attempts) (default 50).
+///   Cap exhaustion or μ overflowing to `inf` returns
+///   [`crate::TerminationCode::SolverFailed`].
+/// - **Boundary starting point.** `D` is undefined where `v_i = 0`
+///   (i.e. on a finite face). [`init`](Solver::init) projects the
+///   starting iterate strictly into `(lower, upper)` via
+///   `BoxAffineScaling::project_strictly_inside`, so feasible-but-
+///   on-boundary starts are silently corrected.
+///
+/// # Convergence
+///
+/// [`with_absolute_scaled_gradient_tolerance`](Self::with_absolute_scaled_gradient_tolerance)
+/// configures the native first-order test `max_i |g_i| · |v_i| ≤ tolerance`,
+/// where `g = Jᵀr` and `v` is BCL's distance-to-bound scaling. It reports
+/// [`crate::TerminationCode::SolverConverged`] and defaults to `1e-8`.
+/// `None` disables the test; zero tests exact stationarity. The scaled metric
+/// vanishes at a KKT point and differs from the unscaled projected gradient.
+/// Observed cost and step checks are opt-in and combine with it using OR.
+/// Distance-to-bound scaling does not make this absolute threshold invariant
+/// to residual or parameter units. Tune it for the problem's scale, and use
+/// [`with_relative_cost_change_tolerance`](Self::with_relative_cost_change_tolerance)
+/// or [`with_relative_step_tolerance`](Self::with_relative_step_tolerance)
+/// when additional observed checks are appropriate. These checks do not
+/// replace the gradient test or establish stationarity when progress stalls.
+/// Non-finite damping or trial-model predictions stop with a numerical failure
+/// before evaluating another trial, preserving the current point and cost.
+/// Execution budgets belong on the executor. The solver computes the gradient
+/// internally; [`PointState`] does not expose a [`GradientState`](crate::GradientState).
+///
+/// # Backends
+///
+/// LA-heavy: the default `Vec<f64>` backend (over the hand-rolled
+/// [`DenseMatrix<f64>`](crate::DenseMatrix), via a pure-Rust Cholesky),
+/// nalgebra (`DVector<f64>`/`DMatrix<f64>`), faer (`Col<f64>` /
+/// `Mat<f64>`), and ndarray (`Array1<f64>`/`Array2<f64>`, the latter over
+/// the same pure-Rust Cholesky) at the dense tier; nalgebra-sparse
+/// (`DVector<f64>`/`CscMatrix<f64>`) and faer-sparse (`Col<f64>` /
+/// `SparseColMat<usize, f64>`) at the sparse tier.
+///
+/// The sparse damping path requires the diagonal of `JᵀJ` to be in the
+/// CSC pattern (always true when `J` has no zero columns); see
+/// `AddDiagonalVectorInPlace`.
+/// All support `f32` and `f64`; use `BoundedLevenbergMarquardt::default()` for `f32`.
+/// Robust objectives additionally require [`ScaleRowsInPlace`] on custom
+/// Jacobian types.
+///
+/// # References
+///
+/// - M. A. Branch, T. F. Coleman, and Y. Li (1999), "A Subspace, Interior, and
+///   Conjugate Gradient Method for Large-Scale Bound-Constrained Minimization
+///   Problems", *SIAM Journal on Scientific Computing* 21(1), 1–23.
+///   <https://doi.org/10.1137/S1064827595289108>.
+///
+/// # State convention
+///
+/// For an ordinary residual problem, as with
+/// [`LevenbergMarquardt`](super::LevenbergMarquardt),
+/// `state.cost` carries the LM convention `½‖r‖²`. The bound on `P`
+/// requires a box-only [`Constraints`](crate::Constraints)
+/// declaration independent of `CostFunction`. The solver computes `½‖r‖²`
+/// from the residual and never calls `cost()`. Problems whose user-facing
+/// `cost()` uses an
+/// unscaled `Σ rᵢ²` form (e.g.
+/// [`BoothBoxedResiduals`](https://docs.rs/basin/latest/basin/problems/booth/struct.BoothBoxedResiduals.html),
+/// available with the `problems` feature) will
+/// see `state.cost()` differ from `problem.cost(state.param())` by a
+/// factor of two; both go to zero at the optimum.
+///
+/// # Examples
+///
+/// See [`LevenbergMarquardt`](crate::LevenbergMarquardt) for the
+/// `Residual` + `Jacobian` least-squares pattern. `BoundedLevenbergMarquardt`
+/// additionally requires a box-only constraint declaration and is constructed
+/// with `BoundedLevenbergMarquardt::new()`.
+pub struct BoundedLevenbergMarquardt<V, M, F: Scalar = f64> {
+    tol_grad: Option<F>,
+    tau: F,
+    rstep: F,
+    theta: F,
+    max_inner_attempts: u32,
+
+    // Runtime state, populated by `init` and mutated by `next_iter`
+    // through `&mut self`.
+    mu: Option<F>,
+    nu: F,
+    rejected_step: bool,
+
+    // Residual and Jacobian caches across iterations, same shape as
+    // [`LevenbergMarquardt`](super::LevenbergMarquardt). On accept the
+    // trial residual is at the new iterate (so it's stashed) but the
+    // Jacobian there is unknown (so it's cleared); on reject both are
+    // unchanged at the current iterate (both stashed).
+    r_cache: Option<V>,
+    trial_residual: Option<V>,
+    j_cache: Option<M>,
+    jacobian_buffer: Option<M>,
+    model_r_cache: Option<V>,
+    failed: bool,
+    trace: Option<Trace<F>>,
+    trace_vector: Option<fn(&V) -> Vec<F>>,
+}
+
+impl<V, M, F: Scalar> LeastSquaresDiagnostics<F>
+    for BoundedLevenbergMarquardt<V, M, F>
+{
+    fn least_squares_observations(&self) -> &[LeastSquaresObservation<F>] {
+        self.trace.as_ref().map_or(&[], |trace| &trace.observations)
+    }
+}
+
+impl<V, M, F: Scalar> Default for BoundedLevenbergMarquardt<V, M, F> {
+    fn default() -> Self {
+        Self {
+            tol_grad: Some(F::from_f64(1e-8).unwrap()),
+            tau: F::from_f64(1e-3).unwrap(),
+            rstep: F::from_f64(1e-10).unwrap(),
+            theta: F::from_f64(0.99995).unwrap(),
+            max_inner_attempts: 50,
+            mu: None,
+            nu: F::from_f64(2.0).unwrap(),
+            rejected_step: false,
+            r_cache: None,
+            trial_residual: None,
+            j_cache: None,
+            jacobian_buffer: None,
+            model_r_cache: None,
+            failed: false,
+            trace: None,
+            trace_vector: None,
+        }
+    }
+}
+
+impl<V, M> BoundedLevenbergMarquardt<V, M> {
+    /// `BoundedLevenbergMarquardt` with the canonical defaults: `tol_grad = 1e-8`,
+    /// `tau = 1e-3`, `rstep = 1e-10`, `theta = 0.99995`,
+    /// `max_inner_attempts = 50`.
+    pub fn new() -> Self {
+        Self::default()
+    }
+}
+
+impl<V, M, F: Scalar> BoundedLevenbergMarquardt<V, M, F> {
+    /// Enable native model and trial observations (disabled by default).
+    ///
+    /// Recording requires indexed vectors but adds no problem evaluations.
+    /// Fresh initialization resets observations; exact continuation preserves them.
+    pub fn with_trial_diagnostics(mut self, enabled: bool) -> Self
+    where
+        V: VectorLen + VectorIndex<F>,
+    {
+        self.trace = enabled.then(Trace::default);
+        self.trace_vector = enabled.then_some(|v: &V| {
+            (0..v.vec_len()).map(|i| v.get_scalar(i)).collect()
+        });
+        self
+    }
+
+    /// Configure the Coleman-Li scaled gradient infinity norm.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_absolute_scaled_gradient_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_grad = crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Initial damping scale `τ` in `μ₀ = τ · max diag(JᵀJ + diag(c))`.
+    /// Smaller (e.g. `1e-6`) when `x₀` is believed close to the
+    /// optimum; larger (e.g. `1.0`) when far from it. Default `1e-3`.
+    pub fn with_tau(mut self, tau: F) -> Self {
+        assert!(tau > F::zero(), "tau must be > 0");
+        self.tau = tau;
+        self
+    }
+
+    /// Strict-interior projection scale at `init`. Components within
+    /// `rstep · max(1, |bound|)` of a finite bound are nudged inward.
+    /// Default `1e-10` matches SciPy's `make_strictly_feasible`.
+    pub fn with_rstep(mut self, rstep: F) -> Self {
+        assert!(rstep > F::zero(), "rstep must be > 0");
+        self.rstep = rstep;
+        self
+    }
+
+    /// Strict-interior step-back factor: when the unconstrained step
+    /// would land on or beyond a face, the actual step is scaled by
+    /// `theta · τ_max` instead of `τ_max` to keep the iterate strictly
+    /// inside. Must be in `(0, 1)`. Default `0.99995`.
+    pub fn with_theta(mut self, theta: F) -> Self {
+        assert!(
+            theta > F::zero() && theta < F::one(),
+            "theta must be in (0, 1), got {:?}",
+            theta
+        );
+        self.theta = theta;
+        self
+    }
+
+    /// Maximum number of damping bumps inside a single outer iteration
+    /// before giving up with [`crate::TerminationCode::SolverFailed`]. Each
+    /// bump multiplies μ by ν (initially 2) and doubles ν. Default
+    /// `50` is effectively unreachable in practice (μ grows by `2^50 ≈
+    /// 10¹⁵` before bailing). Default `50`.
+    pub fn with_max_inner_attempts(mut self, n: u32) -> Self {
+        assert!(n > 0, "max_inner_attempts must be > 0");
+        self.max_inner_attempts = n;
+        self
+    }
+}
+
+impl<V, M, F> InitialState<V> for BoundedLevenbergMarquardt<V, M, F>
+where
+    F: Scalar,
+    V: Clone,
+{
+    type State = PointState<V, F>;
+    fn seed(&self, x: &V) -> Self::State {
+        PointState::new(x.clone())
+    }
+}
+
+impl<P, V, M, F> Solver<P, PointState<V, F>>
+    for BoundedLevenbergMarquardt<V, M, F>
+where
+    F: Scalar,
+    P: Residual<Param = V, Output = V>
+        + Jacobian<Jacobian = M>
+        + BoxProblem<Param = V>,
+    V: ScaledAdd<F>
+        + NormSquared<F>
+        + NegInPlace
+        + Dot<F>
+        + BoxAffineScaling<F>
+        + Clone,
+    M: GramMatrix
+        + MatTransposeVec<V>
+        + LinearSolveSpd<V>
+        + AddDiagonalVectorInPlace<V>
+        + MaxDiagonal<F>
+        + Clone,
+    V: crate::VectorLen + std::ops::Index<usize, Output = F>,
+{
+    type Error = crate::ConstraintSolveError<<P as Residual>::Error>;
+    fn should_check_iterate_change(&self) -> bool {
+        !self.rejected_step
+    }
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, Self::Error> {
+        crate::core::constraint::evaluation::validate_box_problem(
+            problem.inner(),
+            Some(state.param().vec_len()),
+            false,
+        )
+        .map_err(crate::core::constraint::evaluation::invalid)?;
+        self.init_evaluated(problem, state)
+            .map_err(crate::ConstraintSolveError::Evaluation)
+    }
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<crate::SolverStep<PointState<V, F>>, Self::Error> {
+        self.next_evaluated(problem, state)
+            .map_err(crate::ConstraintSolveError::Evaluation)
+    }
+}
+
+impl<P, L, V, M, F, RW>
+    Solver<RobustLeastSquares<P, L, F, RW>, PointState<V, F>>
+    for BoundedLevenbergMarquardt<V, M, F>
+where
+    F: Scalar,
+    P: crate::Constraints<Set = crate::ConstraintSet<crate::BoxBounds<V>>>,
+    P: Residual<Param = V, Output = V>
+        + Jacobian<Jacobian = M>
+        + BoxProblem<Param = V>,
+    V: ScaledAdd<F>
+        + NormSquared<F>
+        + NegInPlace
+        + Dot<F>
+        + BoxAffineScaling<F>
+        + Clone,
+    M: GramMatrix
+        + MatTransposeVec<V>
+        + LinearSolveSpd<V>
+        + AddDiagonalVectorInPlace<V>
+        + MaxDiagonal<F>
+        + Clone,
+    L: LossFunction<F>,
+    V: VectorLen + VectorIndex<F>,
+    M: ScaleRowsInPlace<F>,
+    V: crate::VectorLen + std::ops::Index<usize, Output = F>,
+{
+    type Error = crate::ConstraintSolveError<<P as Residual>::Error>;
+    fn should_check_iterate_change(&self) -> bool {
+        !self.rejected_step
+    }
+    fn init(
+        &mut self,
+        problem: &mut Problem<RobustLeastSquares<P, L, F, RW>>,
+        state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, Self::Error> {
+        crate::core::constraint::evaluation::validate_box_problem(
+            problem.inner(),
+            Some(state.param().vec_len()),
+            false,
+        )
+        .map_err(crate::core::constraint::evaluation::invalid)?;
+        self.init_evaluated(problem, state)
+            .map_err(crate::ConstraintSolveError::Evaluation)
+    }
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<RobustLeastSquares<P, L, F, RW>>,
+        state: PointState<V, F>,
+    ) -> Result<crate::SolverStep<PointState<V, F>>, Self::Error> {
+        self.next_evaluated(problem, state)
+            .map_err(crate::ConstraintSolveError::Evaluation)
+    }
+}
+
+impl<V, M, F: Scalar> BoundedLevenbergMarquardt<V, M, F>
+where
+    V: ScaledAdd<F>
+        + NormSquared<F>
+        + NegInPlace
+        + Dot<F>
+        + BoxAffineScaling<F>
+        + Clone,
+    M: GramMatrix
+        + MatTransposeVec<V>
+        + LinearSolveSpd<V>
+        + AddDiagonalVectorInPlace<V>
+        + MaxDiagonal<F>
+        + Clone,
+{
+    fn init_evaluated<E: BoundedEvaluation<V, M, F>>(
+        &mut self,
+        problem: &mut E,
+        mut state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, E::Error> {
+        state.reset();
+        // Project the starting iterate strictly into (lower, upper).
+        // D is undefined where v_i = 0 (a finite face), so an
+        // on-boundary or infeasible start is silently corrected.
+        let mut param = state.param().clone();
+        param.project_strictly_inside(
+            problem.lower(),
+            problem.upper(),
+            self.rstep,
+        );
+
+        if let Some(trace) = &mut self.trace {
+            trace.reset();
+        }
+        self.failed = false;
+        self.rejected_step = false;
+        let residual = self.r_cache.take().unwrap_or_else(|| param.clone());
+        self.trial_residual = None;
+        let jacobian =
+            self.j_cache.take().or_else(|| self.jacobian_buffer.take());
+        self.model_r_cache = None;
+        self.mu = None;
+        self.nu = F::from_f64(2.0).unwrap();
+        let (r, j) = problem
+            .residual_and_jacobian_reusing(&param, residual, jacobian)?;
+        state.replace(
+            param,
+            problem.cost(&r, |r| F::from_f64(0.5).unwrap() * r.norm_squared()),
+        );
+        let Some((model_r, j)) = problem.model(&r, j) else {
+            self.failed = true;
+            return Ok(state);
+        };
+
+        // μ₀ = τ · max diag(JᵀJ + diag(c)). The C-correction is
+        // typically small; the τ · max diag scaling matches Nielsen's
+        // recommendation for LM, generalized to the BCL M-matrix.
+        let g = j.mat_transpose_vec(model_r.as_ref().unwrap_or(&r));
+        if !problem.valid_vector(&g) {
+            self.failed = true;
+            return Ok(state);
+        }
+        let mut d_sq = state.param().clone();
+        let mut c_diag = state.param().clone();
+        state.param().compute_cl_scaling(
+            &g,
+            problem.lower(),
+            problem.upper(),
+            &mut d_sq,
+            &mut c_diag,
+        );
+
+        let mut a = j.gram();
+        a.add_diagonal_vector_in_place(&c_diag);
+        let max_diag = a.max_diagonal().max(F::one());
+        self.mu = Some(self.tau * max_diag);
+        self.nu = F::from_f64(2.0).unwrap();
+        self.r_cache = Some(r);
+        self.j_cache = Some(j);
+        self.model_r_cache = model_r;
+        Ok(state)
+    }
+
+    fn next_evaluated<E: BoundedEvaluation<V, M, F>>(
+        &mut self,
+        problem: &mut E,
+        mut state: PointState<V, F>,
+    ) -> NllsStep<V, F, E::Error> {
+        if let Some(trace) = &mut self.trace {
+            trace.clear();
+        }
+        // Use cached `r`/`J` when available (set by init or by the
+        // previous accept-or-reject branch). Only count an eval when the
+        // cache misses.
+        if self.failed {
+            if let Some(trace) = &mut self.trace {
+                trace.event(
+                    state.cost(),
+                    "construction",
+                    "invalid_initial_model",
+                );
+            }
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::numerical_failure(
+                    "Bounded LM could not initialize a finite residual model.",
+                )),
+            )));
+        }
+        let r = match self.r_cache.take() {
+            Some(r) => r,
+            None => problem.residual(state.param())?,
+        };
+        let (model_r, j) = match self.j_cache.take() {
+            Some(j) => (self.model_r_cache.take(), j),
+            None => {
+                let j = problem.jacobian_reusing(
+                    state.param(),
+                    self.jacobian_buffer.take(),
+                )?;
+                let Some(model) = problem.model(&r, j) else {
+                    self.failed = true;
+                    if let Some(trace) = &mut self.trace {
+                        trace.event(
+                            state.cost(),
+                            "construction",
+                            "invalid_residual_model",
+                        );
+                    }
+                    return Ok(crate::SolverStep::from((
+                        state,
+                        Some(Termination::numerical_failure(
+                            "Bounded LM could not construct the residual model at the current point.",
+                        )),
+                    )));
+                };
+                model
+            }
+        };
+
+        let g = j.mat_transpose_vec(model_r.as_ref().unwrap_or(&r));
+        if !problem.valid_vector(&g) {
+            self.failed = true;
+            if let Some(trace) = &mut self.trace {
+                let index = trace.event(
+                    state.cost(),
+                    "construction",
+                    "invalid_gradient",
+                );
+                trace.observations[index].gradient =
+                    self.trace_vector.unwrap()(&g);
+            }
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::numerical_failure(
+                    "The bounded LM model gradient is invalid.",
+                )),
+            )));
+        }
+
+        // Compute the Coleman-Li affine scaling diagonals at the
+        // current iterate. d_sq[i] = 1/|v_i|, c_diag[i] = |g_i|/|v_i|
+        // (or 0 for infinite bounds).
+        let mut d_sq = state.param().clone();
+        let mut c_diag = state.param().clone();
+        state.param().compute_cl_scaling(
+            &g,
+            problem.lower(),
+            problem.upper(),
+            &mut d_sq,
+            &mut c_diag,
+        );
+
+        if let Some(trace) = &mut self.trace {
+            let mut row = LeastSquaresObservation::model(state.cost());
+            let collect = self.trace_vector.unwrap();
+            row.gradient = collect(&g);
+            row.diagonal = collect(&d_sq);
+            row.curvature = collect(&c_diag);
+            let value = g.cl_kkt_inf_norm(&d_sq);
+            row.checks.push(LeastSquaresCheck {
+                name: "scaled_gradient",
+                tolerance: self.tol_grad,
+                passed: self.tol_grad.map(|t| value <= t),
+                evidence: self.tol_grad.map(|tolerance| {
+                    crate::ConvergenceEvidence::UpperBound {
+                        value,
+                        bound: tolerance,
+                        tolerance,
+                        reference: None,
+                    }
+                }),
+            });
+            trace.push(row);
+        }
+        // First-order optimality: ‖v ⊙ Jᵀr‖_∞ ≤ tol_grad, equal to
+        // `max_i |g_i| / d_sq_i` in our representation (since
+        // `d_sq[i] = 1/|v_i|`). Goes to zero at any KKT point, interior
+        // *or* face-active. Collapses to LM's `‖Jᵀr‖_∞` when bounds are
+        // infinite (then `|v_i| = 1`, `d_sq = 1`, division is identity).
+        if self
+            .tol_grad
+            .is_some_and(|tol| g.cl_kkt_inf_norm(&d_sq) <= tol)
+        {
+            // Restore caches; init resets them on each reuse, but
+            // mirroring LM's pattern keeps the contract uniform.
+            self.r_cache = Some(r);
+            self.j_cache = Some(j);
+            self.model_r_cache = model_r;
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::custom(
+                    "bounded_lm.scaled_gradient",
+                    "The bounded LM Coleman-Li KKT gradient metric is at most the absolute tolerance.",
+                    vec![
+                        crate::Measurement {
+                            name: "scaled_gradient".into(),
+                            value: g.cl_kkt_inf_norm(&d_sq),
+                        },
+                        crate::Measurement {
+                            name: "tolerance".into(),
+                            value: self.tol_grad.unwrap(),
+                        },
+                    ],
+                )),
+            )));
+        }
+
+        let mut neg_g = g.clone();
+        neg_g.neg_in_place();
+
+        let m = j.gram();
+
+        let mut mu = self
+            .mu
+            .expect("mu not set: Solver::init must run before next_iter");
+        let mut nu = self.nu;
+        macro_rules! fail_model {
+            ($outcome:literal, $message:literal) => {{
+                self.failed = true;
+                if let Some(trace) = &mut self.trace {
+                    let index =
+                        trace.event(state.cost(), "selection", $outcome);
+                    let row = &mut trace.observations[index];
+                    row.damping = Some(mu);
+                    row.damping_after = Some(mu);
+                    row.gradient = self.trace_vector.unwrap()(&g);
+                    row.diagonal = self.trace_vector.unwrap()(&d_sq);
+                    row.curvature = self.trace_vector.unwrap()(&c_diag);
+                    row.arithmetic.push(("retry_multiplier", nu));
+                }
+                self.mu = Some(mu);
+                self.nu = nu;
+                self.r_cache = Some(r);
+                self.j_cache = Some(j);
+                self.model_r_cache = model_r;
+                return Ok(crate::SolverStep::stopped(
+                    state,
+                    Termination::numerical_failure($message),
+                ));
+            }};
+        }
+
+        // Inner damping loop: solve (J^TJ + diag(c) + μ·diag(d_sq)) h = −g.
+        // The damped, scaled Gram is SPD by construction for μ > 0; the
+        // retry path matters only for pathological cases where roundoff
+        // breaks SPD-ness at the chosen μ.
+        let two = F::from_f64(2.0).unwrap();
+        let half = F::from_f64(0.5).unwrap();
+        let one_third = F::from_f64(1.0 / 3.0).unwrap();
+        let h;
+        let mut attempts: u32 = 0;
+        loop {
+            // Some backends can return a zero step from an infinite diagonal
+            // without reporting a linear-solve error.
+            if !mu.is_finite() || !nu.is_finite() {
+                fail_model!(
+                    "nonfinite_damping",
+                    "Bounded LM produced non-finite damping."
+                );
+            }
+            let mut a_damped = m.clone();
+            // damping_vec = c + μ · d_sq.
+            let mut damping_vec = c_diag.clone();
+            damping_vec.scaled_add(mu, &d_sq);
+            a_damped.add_diagonal_vector_in_place(&damping_vec);
+            let result = a_damped.solve_spd(&neg_g);
+            let solve_record = self.trace.as_mut().map(|trace| {
+                let mut row = LeastSquaresObservation::model(state.cost());
+                let collect = self.trace_vector.unwrap();
+                row.event = "subproblem";
+                row.outcome =
+                    Some(if result.is_ok() { "solved" } else { "retry" });
+                row.damping = Some(mu);
+                row.damping_after = Some(mu);
+                row.gradient = collect(&g);
+                row.diagonal = collect(&d_sq);
+                row.curvature = collect(&c_diag);
+                row.model_solves = 1;
+                row.arithmetic.push(("retry_multiplier", nu));
+                if let Ok(step) = &result {
+                    row.step = collect(step);
+                    row.step_norm =
+                        Some(step.weighted_norm_squared(&d_sq).sqrt());
+                }
+                trace.push(row)
+            });
+            match result {
+                Ok(step) => {
+                    h = step;
+                    break;
+                }
+                Err(_) => {
+                    attempts += 1;
+                    if attempts >= self.max_inner_attempts || !mu.is_finite() {
+                        if let Some(index) = solve_record {
+                            self.trace.as_mut().unwrap().observations[index]
+                                .outcome = Some("exhausted");
+                        }
+                        self.mu = Some(mu);
+                        self.nu = nu;
+                        // State unchanged; restore both caches.
+                        self.r_cache = Some(r);
+                        self.j_cache = Some(j);
+                        self.model_r_cache = model_r;
+                        return Ok(crate::SolverStep::from((
+                            state,
+                            Some(Termination::numerical_failure(
+                                "Bounded LM exhausted damped linear-solve attempts or produced non-finite damping.",
+                            )),
+                        )));
+                    }
+                    mu = mu * nu;
+                    nu = nu * two;
+                    if let Some(index) = solve_record {
+                        self.trace.as_mut().unwrap().observations[index]
+                            .damping_after = Some(mu);
+                    }
+                }
+            }
+        }
+
+        // Step-back to the open feasible region. The unconstrained
+        // Newton step h might land on or beyond a face; scale it down
+        // by min(1, θ · τ_max) so the iterate stays strictly inside.
+        let tau_max = state.param().max_feasible_step(
+            &h,
+            problem.lower(),
+            problem.upper(),
+        );
+        let alpha = if tau_max >= F::one() {
+            F::one()
+        } else {
+            self.theta * tau_max
+        };
+
+        // BCL gain ratio with the C-correction (eq. ψ_k from
+        // `source.marker.md:138`). Numerator is "actual reduction in
+        // M-model": Δf − ½ s^T C s. Denominator is the predicted
+        // reduction in BCL's *undamped* M-model evaluated at s = α·h,
+        // derived from the Lagrangian (M + μD²) h = −g:
+        //
+        //   −ψ_k(α·h) = −α(1 − ½α) h^T g + ½ α² μ ‖D·h‖²
+        //
+        // For α = 1 this reduces to ½(μ ‖D·h‖² − h^T g), which mirrors
+        // Nielsen's LM formula with D folded in.
+        let h_t_g = h.dot(&g);
+        let dh_norm_sq = h.weighted_norm_squared(&d_sq);
+        let predicted = -alpha * (F::one() - half * alpha) * h_t_g
+            + half * alpha * alpha * mu * dh_norm_sq;
+        let half_s_t_c_s =
+            half * alpha * alpha * h.weighted_norm_squared(&c_diag);
+        if !alpha.is_finite()
+            || !predicted.is_finite()
+            || !half_s_t_c_s.is_finite()
+        {
+            if let Some(trace) = &mut self.trace {
+                let index = trace.event(
+                    state.cost(),
+                    "selection",
+                    "nonfinite_prediction",
+                );
+                let row = &mut trace.observations[index];
+                row.predicted_reduction = Some(predicted);
+                row.arithmetic = vec![
+                    ("feasible_fraction", alpha),
+                    ("curvature_correction", half_s_t_c_s),
+                    ("step_gradient", h_t_g),
+                    ("weighted_step_square", dh_norm_sq),
+                ];
+            }
+            fail_model!(
+                "nonfinite_trial_model",
+                "Bounded LM produced a non-finite trial model."
+            );
+        }
+
+        // Trial step.
+        let mut x_trial = state.param().clone();
+        x_trial.scaled_add(alpha, &h);
+        let trial_record = self.trace.as_mut().map(|trace| {
+            let mut row = LeastSquaresObservation::model(state.cost());
+            let collect = self.trace_vector.unwrap();
+            row.event = "trial";
+            row.trial = true;
+            row.step = collect(&h).into_iter().map(|x| alpha * x).collect();
+            row.gradient = collect(&g);
+            row.diagonal = collect(&d_sq);
+            row.curvature = collect(&c_diag);
+            row.damping = Some(mu);
+            row.model_solves = attempts + 1;
+            row.step_norm = Some(alpha * dh_norm_sq.sqrt());
+            trace.push(row)
+        });
+        let mut r_trial =
+            self.trial_residual.take().unwrap_or_else(|| r.clone());
+        if let Err(error) = problem.residual_into(&x_trial, &mut r_trial) {
+            if let Some(index) = trial_record {
+                self.trace.as_mut().unwrap().observations[index].outcome =
+                    Some("callback_failed");
+            }
+            return Err(error);
+        }
+        let f_trial = problem.cost(&r_trial, |r| half * r.norm_squared());
+
+        let prev_cost = state.cost();
+        let actual = prev_cost - f_trial - half_s_t_c_s;
+
+        let rho = if predicted > F::zero() {
+            actual / predicted
+        } else {
+            F::zero()
+        };
+
+        if let Some(index) = trial_record {
+            let row = &mut self.trace.as_mut().unwrap().observations[index];
+            row.trial_cost = Some(f_trial);
+            row.actual_reduction = Some(actual);
+            row.predicted_reduction = Some(predicted);
+            row.gain_ratio = Some(rho);
+            row.accepted = Some(rho > F::zero());
+        }
+        if rho > F::zero() {
+            self.rejected_step = false;
+            // Accept. Update x and cost; adapt μ via Nielsen smooth
+            // cubic with β=2, γ=3, p=3 (matches LevenbergMarquardt).
+            // Stash the trial residual (now at the new iterate); clear
+            // the Jacobian cache since J(x_trial) was not computed.
+            state.replace(x_trial, f_trial);
+            let factor = F::one() - (two * rho - F::one()).powi(3);
+            mu = mu * factor.max(one_third);
+            nu = two;
+            self.r_cache = Some(r_trial);
+            self.trial_residual = Some(r);
+            self.j_cache = None;
+            self.jacobian_buffer = Some(j);
+        } else {
+            // Reject. Bump μ geometrically; double ν so consecutive
+            // rejections escalate damping faster. Both r and J remain
+            // valid at the unchanged iterate.
+            self.rejected_step = true;
+            mu = mu * nu;
+            nu = nu * two;
+            self.r_cache = Some(r);
+            self.trial_residual = Some(r_trial);
+            self.j_cache = Some(j);
+            self.model_r_cache = model_r;
+        }
+
+        if let Some(index) = trial_record {
+            let row = &mut self.trace.as_mut().unwrap().observations[index];
+            row.damping_after = Some(mu);
+            row.outcome = Some(if rho > F::zero() {
+                "accepted"
+            } else {
+                "rejected"
+            });
+        }
+        self.mu = Some(mu);
+        self.nu = nu;
+        Ok(crate::SolverStep::from((state, None)))
+    }
+}

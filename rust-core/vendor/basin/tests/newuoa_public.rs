@@ -1,0 +1,172 @@
+//! Public-API integration tests for the NEWUOA solver.
+//!
+//! Exercises [`Newuoa`] through the framework: [`Executor`] over a
+//! [`PointState`], with framework termination ([`MaxCostEvals`],
+//! [`RhoTolerance`]). The algorithm itself is validated bit-against-PRIMA by the
+//! in-crate `solver::newuoa::parity` tests; these confirm the public wiring:
+//! init/next_iter, the V↔Vec bridge, count mirroring, and the convergence/
+//! budget/early-stop termination paths.
+
+use basin::{CostFunction, Executor, Newuoa, PointState, TerminationCode};
+
+/// Chained Rosenbrock (basin coefficient form), minimum 0 at the all-ones point.
+struct Rosenbrock;
+
+impl basin::Constraints for Rosenbrock {
+    type Set = basin::NoConstraints;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new()
+    }
+}
+impl CostFunction for Rosenbrock {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = std::convert::Infallible;
+    fn cost(&self, x: &Vec<f64>) -> Result<f64, std::convert::Infallible> {
+        Ok((0..x.len() - 1)
+            .map(|i| {
+                (1.0 - x[i]).powi(2) + 100.0 * (x[i + 1] - x[i] * x[i]).powi(2)
+            })
+            .sum())
+    }
+}
+
+#[test]
+fn converges_on_rosenbrock_2d() {
+    let result = Executor::new(
+        Rosenbrock,
+        Newuoa::new()
+            .with_initial_radius(0.5)
+            .with_final_radius(1e-8),
+        PointState::new(vec![-1.2, 1.0]),
+    )
+    .max_cost_evals(500)
+    .run_with_solver()
+    .unwrap();
+
+    // NEWUOA's natural convergence (ρ reached ρ_end), well within budget.
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        result.best_cost() < 1e-7,
+        "best_cost = {}",
+        result.best_cost()
+    );
+    assert!(
+        result.cost_evals() < 500,
+        "cost_evals = {}",
+        result.cost_evals()
+    );
+    // The reported iterate is the best (monotone), so the two coincide.
+    assert_eq!(result.cost(), result.best_cost());
+    let x = result.best_param();
+    assert!(
+        (x[0] - 1.0).abs() < 1e-3 && (x[1] - 1.0).abs() < 1e-3,
+        "x = {x:?}"
+    );
+}
+
+#[test]
+fn respects_cost_eval_budget() {
+    let result = Executor::new(
+        Rosenbrock,
+        // A tiny ρ_end so the solver would keep going far past the budget.
+        Newuoa::new()
+            .with_initial_radius(0.5)
+            .with_final_radius(1e-12),
+        PointState::new(vec![-1.2, 1.0]),
+    )
+    .max_cost_evals(20)
+    .run_with_solver()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxCostEvals);
+    assert!(
+        result.cost_evals() >= 20,
+        "cost_evals = {}",
+        result.cost_evals()
+    );
+}
+
+#[test]
+fn rho_tolerance_stops_early() {
+    let result = Executor::new(
+        Rosenbrock,
+        (
+            // Configured to drive ρ down to 1e-12, but RhoTolerance cuts it off at
+            // a coarse ρ first.
+            Newuoa::new()
+                .with_initial_radius(0.5)
+                .with_final_radius(1e-12)
+        )
+        .with_absolute_radius_tolerance(1e-3),
+        PointState::new(vec![-1.2, 1.0]),
+    )
+    .max_cost_evals(5000)
+    .run_with_solver()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::RhoTolerance);
+    assert!(
+        result.solver.rho().unwrap() <= 1e-3,
+        "rho = {}",
+        result.solver.rho().unwrap()
+    );
+}
+
+/// Backend-generic over the parameter vector: drive NEWUOA on `nalgebra`'s
+/// `DVector` to prove the `V`-generic solver and state work outside `Vec<f64>`.
+#[cfg(feature = "nalgebra_all")]
+#[test]
+fn backend_generic_nalgebra() {
+    use crate::backend_aliases::nalgebra::DVector;
+
+    struct RosenbrockN;
+
+    impl basin::Constraints for RosenbrockN {
+        type Set = basin::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for RosenbrockN {
+        type Param = DVector<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(
+            &self,
+            x: &DVector<f64>,
+        ) -> Result<f64, std::convert::Infallible> {
+            Ok((0..x.len() - 1)
+                .map(|i| {
+                    (1.0 - x[i]).powi(2)
+                        + 100.0 * (x[i + 1] - x[i] * x[i]).powi(2)
+                })
+                .sum())
+        }
+    }
+
+    let result = Executor::new(
+        RosenbrockN,
+        Newuoa::new()
+            .with_initial_radius(0.5)
+            .with_final_radius(1e-8),
+        PointState::new(DVector::from_vec(vec![-1.2, 1.0])),
+    )
+    .max_cost_evals(500)
+    .run_with_solver()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        result.best_cost() < 1e-7,
+        "best_cost = {}",
+        result.best_cost()
+    );
+}
+
+#[path = "support/backend_aliases.rs"]
+mod backend_aliases;

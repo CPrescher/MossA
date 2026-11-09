@@ -1,0 +1,365 @@
+//! Public-API integration tests for the nonlinearly-constrained MADS variant
+//! (`Mads<Constrained>`, the progressive barrier).
+//!
+//! Exercises [`Mads::constrained`] through the framework: [`Executor`] over a
+//! [`SelectedState`], with a problem carrying nonlinear inequality
+//! constraints via [`NonlinearInequalityConstraints`]. These confirm the public
+//! wiring: init/next_iter, the `c(x)` evaluation folded into the violation
+//! `h(x) = Σⱼ max(cⱼ, 0)²`, the V↔Vec bridge, count mirroring, feasibility of
+//! the returned point, and (the capability the extreme barrier lacks) that an
+//! **infeasible start** relaxes its way to a feasible optimum.
+//!
+//! The constraint trait is *function-valued* (no matrix carrier), so the
+//! backend-generic tests need only the parameter vector to be the backend type,
+//! guarding the support-matrix ✓ for nalgebra/ndarray/faer (same shape as
+//! `cobyla_public.rs`). MADS's poll geometry is deterministic and
+//! backend-independent, so every backend traces the identical run.
+
+use basin::{CostFunction, Executor, Mads, SelectedState, TerminationCode};
+
+/// `min x0·x1` s.t. `x0² + x1² ≤ 1` on `Vec<f64>` (default features). The
+/// constrained optimum is `F* = −1/2` on the unit circle (at the 45° points).
+struct Disk;
+
+impl basin::Constraints for Disk {
+    type Set = basin::ConstraintSet<
+        basin::NoBounds,
+        basin::NoLinearConstraints,
+        basin::NonlinearBlocks<basin::NoNonlinearBlock, basin::NonlinearBlock>,
+    >;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new().with_nonlinear_inequalities(1)
+    }
+}
+impl CostFunction for Disk {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = std::convert::Infallible;
+    fn cost(&self, x: &Vec<f64>) -> Result<f64, std::convert::Infallible> {
+        Ok(x[0] * x[1])
+    }
+}
+
+impl basin::NonlinearInequalityValues for Disk {
+    type Param = Vec<f64>;
+    type Values = Vec<f64>;
+    type Error = std::convert::Infallible;
+    fn nonlinear_inequalities(
+        &self,
+        x: &Self::Param,
+    ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>> {
+        { Ok(vec![x[0] * x[0] + x[1] * x[1] - 1.0]) }
+            .map_err(basin::ConstraintSolveError::Evaluation)
+    }
+}
+
+#[test]
+fn poll_tolerance_can_be_set_after_constraining() {
+    for (tolerance, expected) in [
+        (Some(1.0), TerminationCode::MeshTolerance),
+        (Some(0.0), TerminationCode::MaxIter),
+        (None, TerminationCode::MaxIter),
+    ] {
+        let solver = Mads::new()
+            .constrained()
+            .with_absolute_poll_size_tolerance(1.0)
+            .with_absolute_poll_size_tolerance(tolerance);
+        let configured = Mads::new()
+            .with_absolute_poll_size_tolerance(1.0)
+            .with_absolute_cost_change_tolerance(None)
+            .constrained()
+            .with_absolute_poll_size_tolerance(tolerance);
+        let direct = Executor::from_start(Disk, solver, vec![0.0; 2])
+            .max_iter(1)
+            .run()
+            .unwrap();
+        let wrapped = Executor::from_start(Disk, configured, vec![0.0; 2])
+            .max_iter(1)
+            .run()
+            .unwrap();
+        assert_eq!(direct.report.code(), expected);
+        assert_eq!(wrapped.report.code(), expected);
+    }
+}
+
+#[test]
+fn converges_to_disk_optimum() {
+    let result = Executor::new(
+        Disk,
+        Mads::new()
+            .with_initial_poll_size(1.0)
+            .with_minimum_poll_size(1e-7)
+            .constrained(),
+        SelectedState::new(vec![0.0, 0.0]),
+    )
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        (result.best_cost() - (-0.5)).abs() < 1e-2,
+        "f = {}",
+        result.best_cost()
+    );
+    // The returned point is feasible and the reported violation is ~0.
+    let x = result.best_param();
+    assert!(x[0] * x[0] + x[1] * x[1] <= 1.0 + 1e-6, "infeasible {x:?}");
+    assert!(
+        result.state.current().unwrap().2.value <= 1e-12,
+        "violation = {}",
+        result.state.current().unwrap().2.value
+    );
+}
+
+/// The progressive barrier's defining capability: starting **outside** the
+/// feasible region, it relaxes its way to a feasible optimum (the extreme
+/// barrier would have nothing to descend from). Start far outside the disk.
+#[test]
+fn infeasible_start_reaches_feasible_optimum() {
+    let start = vec![2.0, -2.0]; // x0² + x1² = 8 > 1: strongly infeasible
+    let result = Executor::new(
+        Disk,
+        Mads::new()
+            .with_initial_poll_size(1.0)
+            .with_minimum_poll_size(1e-7)
+            .constrained(),
+        SelectedState::new(start),
+    )
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    let x = result.best_param();
+    assert!(
+        x[0] * x[0] + x[1] * x[1] <= 1.0 + 1e-6,
+        "did not reach feasibility: {x:?}"
+    );
+    assert!(
+        (result.best_cost() - (-0.5)).abs() < 1e-2,
+        "f = {}",
+        result.best_cost()
+    );
+}
+
+/// The evaluation budget is honored: a tiny cap stops the run with
+/// [`TerminationCode::MaxCostEvals`].
+#[test]
+fn respects_eval_budget() {
+    let result = Executor::new(
+        Disk,
+        Mads::new().constrained(),
+        SelectedState::new(vec![0.0, 0.0]),
+    )
+    .max_cost_evals(50)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxCostEvals);
+}
+
+/// Backend-generic: drive constrained MADS on nalgebra `DVector`. Guards the
+/// support-matrix ✓ for nalgebra (the param vector needs
+/// `VectorLen + Index + IndexMut`).
+#[cfg(feature = "nalgebra_all")]
+#[test]
+fn backend_generic_nalgebra() {
+    use crate::backend_aliases::nalgebra::DVector;
+
+    struct Disk;
+
+    impl basin::Constraints for Disk {
+        type Set = basin::ConstraintSet<
+            basin::NoBounds,
+            basin::NoLinearConstraints,
+            basin::NonlinearBlocks<
+                basin::NoNonlinearBlock,
+                basin::NonlinearBlock,
+            >,
+        >;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new().with_nonlinear_inequalities(1)
+        }
+    }
+    impl CostFunction for Disk {
+        type Param = DVector<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(
+            &self,
+            x: &DVector<f64>,
+        ) -> Result<f64, std::convert::Infallible> {
+            Ok(x[0] * x[1])
+        }
+    }
+    impl basin::NonlinearInequalityValues for Disk {
+        type Param = DVector<f64>;
+        type Values = DVector<f64>;
+        type Error = std::convert::Infallible;
+        fn nonlinear_inequalities(
+            &self,
+            x: &Self::Param,
+        ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>>
+        {
+            { Ok(DVector::from_vec(vec![x[0] * x[0] + x[1] * x[1] - 1.0])) }
+                .map_err(basin::ConstraintSolveError::Evaluation)
+        }
+    }
+
+    let result = Executor::new(
+        Disk,
+        Mads::new().with_minimum_poll_size(1e-7).constrained(),
+        SelectedState::new(DVector::from_vec(vec![0.0, 0.0])),
+    )
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        (result.best_cost() - (-0.5)).abs() < 1e-2,
+        "f = {}",
+        result.best_cost()
+    );
+    let x = result.best_param();
+    assert!(x[0] * x[0] + x[1] * x[1] <= 1.0 + 1e-6, "infeasible {x:?}");
+}
+
+/// Backend-generic: drive constrained MADS on ndarray `Array1`.
+#[cfg(feature = "ndarray_all")]
+#[test]
+fn backend_generic_ndarray() {
+    use crate::backend_aliases::ndarray::Array1;
+
+    struct Disk;
+
+    impl basin::Constraints for Disk {
+        type Set = basin::ConstraintSet<
+            basin::NoBounds,
+            basin::NoLinearConstraints,
+            basin::NonlinearBlocks<
+                basin::NoNonlinearBlock,
+                basin::NonlinearBlock,
+            >,
+        >;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new().with_nonlinear_inequalities(1)
+        }
+    }
+    impl CostFunction for Disk {
+        type Param = Array1<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(
+            &self,
+            x: &Array1<f64>,
+        ) -> Result<f64, std::convert::Infallible> {
+            Ok(x[0] * x[1])
+        }
+    }
+    impl basin::NonlinearInequalityValues for Disk {
+        type Param = Array1<f64>;
+        type Values = Array1<f64>;
+        type Error = std::convert::Infallible;
+        fn nonlinear_inequalities(
+            &self,
+            x: &Self::Param,
+        ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>>
+        {
+            { Ok(Array1::from_vec(vec![x[0] * x[0] + x[1] * x[1] - 1.0])) }
+                .map_err(basin::ConstraintSolveError::Evaluation)
+        }
+    }
+
+    let result = Executor::new(
+        Disk,
+        Mads::new().with_minimum_poll_size(1e-7).constrained(),
+        SelectedState::new(Array1::from_vec(vec![0.0, 0.0])),
+    )
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        (result.best_cost() - (-0.5)).abs() < 1e-2,
+        "f = {}",
+        result.best_cost()
+    );
+    let x = result.best_param();
+    assert!(x[0] * x[0] + x[1] * x[1] <= 1.0 + 1e-6, "infeasible {x:?}");
+}
+
+/// Backend-generic: drive constrained MADS on faer `Col`.
+#[cfg(feature = "faer_all")]
+#[test]
+fn backend_generic_faer() {
+    use crate::backend_aliases::faer::Col;
+
+    struct Disk;
+
+    impl basin::Constraints for Disk {
+        type Set = basin::ConstraintSet<
+            basin::NoBounds,
+            basin::NoLinearConstraints,
+            basin::NonlinearBlocks<
+                basin::NoNonlinearBlock,
+                basin::NonlinearBlock,
+            >,
+        >;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new().with_nonlinear_inequalities(1)
+        }
+    }
+    impl CostFunction for Disk {
+        type Param = Col<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Col<f64>) -> Result<f64, std::convert::Infallible> {
+            Ok(x[0] * x[1])
+        }
+    }
+    impl basin::NonlinearInequalityValues for Disk {
+        type Param = Col<f64>;
+        type Values = Col<f64>;
+        type Error = std::convert::Infallible;
+        fn nonlinear_inequalities(
+            &self,
+            x: &Self::Param,
+        ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>>
+        {
+            { Ok(Col::from_fn(1, |_| x[0] * x[0] + x[1] * x[1] - 1.0)) }
+                .map_err(basin::ConstraintSolveError::Evaluation)
+        }
+    }
+
+    let result = Executor::new(
+        Disk,
+        Mads::new().with_minimum_poll_size(1e-7).constrained(),
+        SelectedState::new(Col::from_fn(2, |_| 0.0)),
+    )
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(
+        (result.best_cost() - (-0.5)).abs() < 1e-2,
+        "f = {}",
+        result.best_cost()
+    );
+    let x = result.best_param();
+    assert!(x[0] * x[0] + x[1] * x[1] <= 1.0 + 1e-6, "infeasible {x:?}");
+}
+
+#[path = "support/backend_aliases.rs"]
+mod backend_aliases;

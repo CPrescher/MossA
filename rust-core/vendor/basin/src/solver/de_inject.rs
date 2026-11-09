@@ -1,0 +1,512 @@
+use std::marker::PhantomData;
+
+use rand_distr::uniform::SampleUniform;
+
+use crate::core::constraint::evaluation::BoxProblem;
+use crate::core::executor::OptimizationResult;
+use crate::core::inner::{InitialState, InnerExecutor};
+use crate::core::math::{
+    SampleUniformBox, Scalar, ScaleInPlace, ScaledAdd, VectorLen,
+};
+use crate::core::problem::{CostFunction, Problem};
+use crate::core::solver::Solver;
+use crate::core::state::{CountsMirror, PopulationProgress, State};
+use crate::core::termination::Termination;
+use crate::solver::cma_es::sort_population_ascending;
+use crate::solver::cma_inject::MemeticInner;
+use crate::solver::de::De;
+
+/// Memetic Differential Evolution with per-generation injection. Outer
+/// [`De`] runs a full generation with its configured mutation, crossover,
+/// and optional dithering. An inner local solver
+/// ([`MemeticInner`]) then refines the best `k` candidates, and the refined
+/// points are box-clipped and written back if they improve the
+/// candidates they came from.
+///
+/// `DeInject` is the DE-flavored sibling of
+/// [`CmaInject`](crate::solver::CmaInject): same composition shape (top-k
+/// refinement after the outer step, no per-individual chain state) on
+/// top of DE's bounded-search loop instead of CMA-ES's covariance model.
+/// For the persistent-chain analogue with a steady-state GA outer, see
+/// [`MaLsChCma`](crate::solver::MaLsChCma).
+///
+/// Use [`RelaxedInner::new`](crate::RelaxedInner::new) for an unconstrained local
+/// solver such as Nelder-Mead. Box-respecting local solvers can be passed directly.
+/// The outer retains its clipping and reevaluation of the refined point.
+///
+/// # Algorithm
+///
+/// One [`next_iter`](Solver::next_iter) =
+///
+/// 1. **DE generation.** Delegate to [`De::next_iter`]: mutation
+///    using the configured rule, reinit-per-coord bound repair, configured
+///    crossover, greedy (`≤`) selection, sort ascending.
+/// 2. **Inject best `k`.** For each of the top-`k` candidates (the
+///    population is sorted ascending after step 1):
+///    - Seed the inner via
+///      [`MemeticInner::seed_scaled`] at the candidate. DE has no σ
+///      analogue, so the seeder receives `F::one()`; only Nelder-Mead's
+///      seeder consults `σ` (as the initial simplex edge); LM and
+///      L-BFGS-B ignore it. See "Open questions" below.
+///    - Drive the inner via [`InnerExecutor::run`] against the outer's
+///      shared [`Problem`] wrapper. Eval aggregation happens
+///      transparently (same-problem composition; see CONTRIBUTING.md
+///      "Solver composition" rule 1).
+///    - Saturating-clip the refined point to the box. *Not*
+///      reinit-per-coord, which is a diversity-preserving repair for
+///      donor vectors; for a post-LS polish it would throw away the
+///      inner's work.
+///    - Re-evaluate the clipped point. **Conditional write-back**: only
+///      adopt if `cost_refined < cost_origin` (strictly less). DE's main
+///      selection rule uses `≤`; here we use `<` because the refined
+///      point is a polish, not a fresh trial; no-cost-change swaps
+///      would diversify without improving the elite.
+/// 3. **Re-sort.** Restore this solver's ascending member order.
+///
+/// One refinement schedule is supported via
+/// [`with_refine_every`](Self::with_refine_every): refine on outer iters
+/// `0, n, 2n, …` for the configured `n`. Adaptive triggering (super-fit
+/// control, Caponio/Neri/Tirronen 2009) is intentionally deferred.
+///
+/// # Inner solver
+///
+/// Generic over any `I: MemeticInner<V, F>`. Shipped impls cover
+/// [`NelderMead`](crate::solver::NelderMead),
+/// [`LevenbergMarquardt`](crate::solver::LevenbergMarquardt), and
+/// [`Lbfgsb`](crate::Lbfgsb).
+///
+/// # Bounds
+///
+/// Unlike CMA-ES, [`De`] is bounded by construction (requires
+/// [`BoxBounds`](crate::BoxBounds)). One struct covers both unconstrained and bounded
+/// use; there is no `BoundedDeInject` because DE is always bounded.
+///
+/// # Eval aggregation
+///
+/// Same-problem composition: the inner shares the outer's
+/// [`Problem`] wrapper, so every inner cost / gradient / Jacobian /
+/// Hessian call bumps the same
+/// [`EvalCounts`](crate::core::problem::EvalCounts) as the outer's own
+/// evaluations. [`PopulationProgress`] preserves all six categories. Its
+/// `cost_evals()` reader reports only cost calls, while `counts().total_work()`
+/// provides an explicit sum. Per-category budgets therefore agree with readers.
+///
+/// # Lifecycle
+///
+/// Initialization follows [`De`]: empty progress samples the box; explicit
+/// members are projected and reevaluated. Fresh runs reset progress and the
+/// DE RNG. Each refinement initializes the inner solver from its selected
+/// member and resets the inner's convergence history. Exact checkpoints retain
+/// the outer RNG, population, schedule position, and inner solver together.
+/// With `serde`, this wrapper serializes when the inner solver does. Application
+/// hooks on the inner require an owned checkpoint instead of serialization.
+///
+/// # Termination
+///
+/// No solver-internal optimality test; inherits [`De`]'s "pair with
+/// framework criteria" model
+/// ([`max_iter`](crate::Executor::max_iter),
+/// [`max_cost_evals`](crate::Executor::max_cost_evals),
+/// [`max_time`](crate::Executor::max_time),
+/// [`with_absolute_cost_change_tolerance`](Self::with_absolute_cost_change_tolerance), or
+/// [`with_absolute_step_tolerance`](Self::with_absolute_step_tolerance)). The
+/// strict-less write-back preserves DE's non-increasing
+/// `state.cost()` contract.
+///
+/// # Caveats
+///
+/// Highly multimodal landscapes (Rastrigin, Schwefel) reward
+/// *exploration*, not the *exploitation* a local-search polish adds:
+/// memetic DE measurably underperforms pure DE in this regime
+/// (Neri & Tirronen 2010 §4.2, where DEahcSPX ranks 4th-of-5 on
+/// Rastrigin at D=50). The survey's overall finding is that "limited
+/// employment of these alternative moves appears to be the best
+/// option": refine *sparingly*, not every generation. Practical
+/// mitigations: sparser schedule
+/// ([`with_refine_every`](Self::with_refine_every) ≥ 5), smaller inner
+/// budget ([`with_inner_max_iter`](Self::with_inner_max_iter)), or a
+/// gradient-using inner ([`Lbfgsb`](crate::Lbfgsb)) that can escape
+/// shallow local minima. Ackley, Levy, Booth, and Rosenbrock-style
+/// basins exhibit the helpful side of the combination instead.
+///
+/// # Backends
+///
+/// `Vec<F>`, nalgebra `DVector<F>`, ndarray `Array1<F>`, and faer `Col<F>`
+/// for all supported releases, with `F = f32` or `f64`, when the chosen inner
+/// solver supports them. Nelder-Mead and L-BFGS-B support all four. Custom
+/// inner solvers or strategies can narrow this coverage. The outer requires
+/// the vector operations documented for [`De`] and no matrix operations.
+///
+/// # References
+///
+/// - Noman & Iba, *Accelerating Differential Evolution Using an
+///   Adaptive Local Search* (IEEE TEC, 2008): establishes the design
+///   slot `DeInject` fills (DE outer + fittest-individual LS each
+///   generation, Lamarckian write-back). The paper's specific LS is
+///   simplex crossover with other population members as parents (SPX),
+///   not a black-box inner; `DeInject` generalizes by accepting any
+///   [`MemeticInner`]. The paper's *adaptive LS length* (hill-climb
+///   until no improvement) is not built in here; to approximate it,
+///   pair a large [`with_inner_max_iter`](Self::with_inner_max_iter)
+///   with the inner's own convergence tolerance.
+/// - Neri & Tirronen, *Recent advances in differential evolution: a
+///   survey and experimental analysis* (Artificial Intelligence Review,
+///   2010): survey + 30D/50D benchmarks. §4.2 covers DEahcSPX; the
+///   overall message ("limited employment of these alternative moves
+///   appears to be the best option") motivates the
+///   [`with_refine_every`](Self::with_refine_every) knob.
+/// - Caponio, Neri & Tirronen, *Super-fit control adaptation in memetic
+///   differential evolution frameworks* (Soft Computing, 2009): §2.4
+///   defines an adaptive trigger χ = (f_best − f_avg) /
+///   max_k(f_best,k − f_avg,k), firing LS only when the best
+///   individual genuinely dominates the population. Not implemented:
+///   would require tracking the historical max and a probabilistic
+///   schedule; `with_refine_every` is the v1 stand-in.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "I: serde::Serialize, F: serde::Serialize",
+        deserialize = "I: serde::Deserialize<'de>, F: serde::Deserialize<'de>"
+    ))
+)]
+pub struct DeInject<I, V, F = f64>
+where
+    F: Scalar,
+    I: MemeticInner<V, F>,
+{
+    de: De<F>,
+    inner: InnerExecutor<I::State, I>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    inner_diagnostics: Option<Vec<crate::core::inner::diagnostics::Record<F>>>,
+    k: usize,
+    refine_every: u64,
+    _phantom: PhantomData<V>,
+}
+
+impl<I, V, F> DeInject<I, V, F>
+where
+    F: Scalar,
+    I: MemeticInner<V, F>,
+    I::State: CountsMirror,
+{
+    /// Wrap a configured [`De`] with `inner` as the local refinement
+    /// step. Defaults: `k = 1` refinement per generation, refine every
+    /// outer iteration, inner `max_iter = 50`.
+    pub fn with_inner_solver(de: De<F>, inner: I) -> Self {
+        Self {
+            de,
+            inner: InnerExecutor::new(inner).max_iter(50),
+            k: 1,
+            refine_every: 1,
+            inner_diagnostics: None,
+            _phantom: PhantomData,
+        }
+    }
+
+    /// Number of best-ranked candidates to refine each generation.
+    /// Default `1`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `k == 0`. `k > pop_size` is silently clamped at
+    /// runtime.
+    pub fn with_k(mut self, k: usize) -> Self {
+        assert!(k >= 1, "DeInject requires k >= 1, got {}", k);
+        self.k = k;
+        self
+    }
+
+    /// Refine every `n`-th outer iteration. With `n = 1` (default), every
+    /// generation triggers a refinement pass; with `n = 5`, refinement
+    /// fires on outer iters `0, 5, 10, …`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `n == 0`.
+    pub fn with_refine_every(mut self, n: u64) -> Self {
+        assert!(n >= 1, "DeInject requires refine_every >= 1, got {}", n);
+        self.refine_every = n;
+        self
+    }
+
+    /// Enable owned inner stopping reports and count snapshots. Disabled by default.
+    /// Fresh initialization clears records; exact continuation retains them.
+    pub fn with_inner_diagnostics(mut self, enabled: bool) -> Self {
+        self.inner_diagnostics = enabled.then(Vec::new);
+        self
+    }
+
+    /// Inner reports consumed during this outer run, in dispatch order.
+    /// A callback error retains counts and has no returned report.
+    pub fn inner_diagnostics(
+        &self,
+    ) -> &[crate::core::inner::diagnostics::Record<F>] {
+        self.inner_diagnostics.as_deref().unwrap_or(&[])
+    }
+
+    /// Inner solver iteration budget per refinement (default `50`).
+    pub fn with_inner_max_iter(self, n: u64) -> Self {
+        let Self {
+            de,
+            inner,
+            k,
+            refine_every,
+            inner_diagnostics,
+            _phantom,
+        } = self;
+        Self {
+            de,
+            inner: inner.max_iter(n),
+            k,
+            refine_every,
+            inner_diagnostics,
+            _phantom,
+        }
+    }
+
+    /// Add a factory creating fresh application-stop history for each inner run.
+    pub fn inner_stop_when_factory<Mk, CheckFn>(self, make: Mk) -> Self
+    where
+        Mk: FnMut() -> CheckFn + 'static,
+        CheckFn: FnMut(&I::State) -> Option<crate::ApplicationStop> + 'static,
+    {
+        let Self {
+            de,
+            inner,
+            k,
+            refine_every,
+            inner_diagnostics,
+            _phantom,
+        } = self;
+        Self {
+            de,
+            inner: inner.stop_when_factory(make),
+            k,
+            refine_every,
+            inner_diagnostics,
+            _phantom,
+        }
+    }
+}
+
+impl<I, V, F> DeInject<I, V, F>
+where
+    F: Scalar,
+    I: MemeticInner<V, F>,
+    I::State: CountsMirror,
+{
+    /// Cap the inner refinement at `evals` cost-evaluations via
+    /// [`max_cost_evals`](crate::Executor::max_cost_evals), the local-search-intensity idiom
+    /// [`MaLsChCma`](crate::solver::MaLsChCma) uses. Composes with
+    /// [`with_inner_max_iter`](Self::with_inner_max_iter): whichever
+    /// budget fires first stops the inner.
+    ///
+    /// Stateless across calls; safe to reuse for the lifetime of the
+    /// outer solver (composition contract 2).
+    pub fn with_ls_intensity(mut self, evals: u64) -> Self {
+        self.inner = self.inner.max_cost_evals(evals);
+        self
+    }
+}
+
+impl<P, I, V, F> Solver<P, PopulationProgress<V, F>> for DeInject<I, V, F>
+where
+    F: Scalar + SampleUniform,
+    P: CostFunction<Param = V, Output = F> + BoxProblem<Param = V>,
+    I: MemeticInner<V, F>
+        + Solver<
+            P,
+            <I as InitialState<V>>::State,
+            Error = crate::ConstraintSolveError<P::Error>,
+        >,
+    I::State: State<Param = V, Float = F> + CountsMirror,
+    V: VectorLen
+        + Clone
+        + SampleUniformBox
+        + ScaledAdd<F>
+        + ScaleInPlace<F>
+        + std::ops::Index<usize, Output = F>
+        + std::ops::IndexMut<usize, Output = F>,
+    De<F>: Solver<
+            P,
+            PopulationProgress<V, F>,
+            Error = crate::ConstraintSolveError<P::Error>,
+        >,
+    V: crate::VectorLen + std::ops::Index<usize, Output = F>,
+{
+    type Error = crate::ConstraintSolveError<P::Error>;
+
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PopulationProgress<V, F>,
+    ) -> Result<PopulationProgress<V, F>, Self::Error> {
+        crate::core::constraint::evaluation::validate_box_problem(
+            problem.inner(),
+            None,
+            true,
+        )
+        .map_err(crate::core::constraint::evaluation::invalid)?;
+        if let Some(records) = &mut self.inner_diagnostics {
+            records.clear();
+        }
+        // Delegate the initial population sampling to vanilla DE; the
+        // injection layer kicks in from `next_iter` onward.
+        self.de.init(problem, state)
+    }
+
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PopulationProgress<V, F>,
+    ) -> Result<crate::SolverStep<PopulationProgress<V, F>>, Self::Error> {
+        // 1. Vanilla DE generation: mutation, repair, crossover,
+        //    selection, ascending sort.
+        let step = self.de.next_iter(problem, state)?;
+        if step.termination.is_some() {
+            return Ok(step);
+        }
+        let mut state = step.state;
+
+        // 2. Schedule gate. `state.iter()` is pre-increment here
+        //    (executor bumps it after `next_iter` returns), so iter == 0
+        //    on the first call. With `refine_every = 1` (default) this
+        //    is always true.
+        if state.iter() % self.refine_every != 0 {
+            return Ok(crate::SolverStep::from((state, None)));
+        }
+
+        // Snapshot the box once; reused for the clip on every refined
+        // candidate.
+        let lo = problem.inner().lower().clone();
+        let hi = problem.inner().upper().clone();
+        let refine = self.k.min(state.candidates.len());
+
+        for i in 0..refine {
+            // 3. Seed the inner state. DE has no σ analogue; pass
+            //    `F::one()` as the neutral default. NM's seeder reads
+            //    `σ` as the initial simplex edge (1.0 is a reasonable
+            //    default for the [-5, 5]-style boxes in the test suite);
+            //    LM and L-BFGS-B ignore it.
+            let x_seed = state.candidates[i].clone();
+            let c_orig = state.costs[i];
+            let inner_state =
+                self.inner.solver_mut().seed_scaled(&x_seed, F::one());
+
+            // 4. Drive the inner. Same-problem composition: inner shares
+            //    the outer wrapper, so its evals flow into the outer's
+            //    EvalCounts transparently and PopulationProgress
+            //    preserves each category without folding it into cost calls.
+            let inner_result: OptimizationResult<I::State> =
+                crate::core::inner::diagnostics::run(
+                    &mut self.inner_diagnostics,
+                    problem,
+                    crate::core::inner::diagnostics::Context {
+                        outer_iteration: state.iter(),
+                        member: Some(i),
+                        resumed: false,
+                        initial_scale: Some(F::one()),
+                    },
+                    |problem| self.inner.run(problem, inner_state),
+                )?;
+
+            // 5. Failure routing: bubble SolverFailed only (composition
+            //    contract 3). MaxIter / tolerances / SolverConverged are
+            //    clean stops; consume the inner's final iterate.
+            if !inner_result
+                .report
+                .termination
+                .can_continue_as_inner(crate::PartialResultPolicy::Consume)
+            {
+                sort_population_ascending(
+                    &mut state.candidates,
+                    &mut state.costs,
+                );
+                state.select_best_member();
+                return Ok(crate::SolverStep::from((
+                    state,
+                    inner_result.report.into_outer_termination(
+                        crate::PartialResultPolicy::Consume,
+                    ),
+                )));
+            }
+
+            // 6. Saturating clip to the box. The inner may have stepped
+            //    outside `[lo, hi]` (NM, LM, and L-BFGS-B are
+            //    unconstrained on their seed; L-BFGS-B respects bounds
+            //    only when paired with a `BoxBounds` problem,
+            //    which is this case, but we re-clip for safety).
+            let mut x_refined = inner_result.state.param().clone();
+            let n = x_refined.vec_len();
+            for j in 0..n {
+                if x_refined[j] < lo[j] {
+                    x_refined[j] = lo[j];
+                } else if x_refined[j] > hi[j] {
+                    x_refined[j] = hi[j];
+                }
+            }
+
+            // 7. Re-evaluate after the clip (counted by the shared
+            //    wrapper). Conditional write-back: strictly less, so the
+            //    population-best slot is monotone non-increasing under
+            //    the same contract as vanilla DE's selection.
+            let c_refined = problem.cost(&x_refined)?;
+            if c_refined < c_orig {
+                state.candidates[i] = x_refined;
+                state.costs[i] = c_refined;
+            }
+        }
+
+        // 8. Re-sort. Cheap; mirrors `CmaInject`.
+        if refine > 0 {
+            sort_population_ascending(&mut state.candidates, &mut state.costs);
+            state.select_best_member();
+        }
+
+        Ok(crate::SolverStep::from((state, None)))
+    }
+
+    fn terminate(
+        &self,
+        state: &PopulationProgress<V, F>,
+    ) -> Option<Termination<F>> {
+        <De<F> as Solver<P, PopulationProgress<V, F>>>::terminate(
+            &self.de, state,
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::solver::nelder_mead::NelderMead;
+
+    #[test]
+    #[should_panic(expected = "DeInject requires k >= 1")]
+    fn with_k_zero_panics() {
+        let _ = DeInject::<
+            crate::RelaxedInner<NelderMead<Vec<f64>>>,
+            Vec<f64>,
+            f64,
+        >::with_inner_solver(
+            De::new(0),
+            crate::RelaxedInner::new(NelderMead::new()),
+        )
+        .with_k(0);
+    }
+
+    #[test]
+    #[should_panic(expected = "DeInject requires refine_every >= 1")]
+    fn with_refine_every_zero_panics() {
+        let _ = DeInject::<
+            crate::RelaxedInner<NelderMead<Vec<f64>>>,
+            Vec<f64>,
+            f64,
+        >::with_inner_solver(
+            De::new(0),
+            crate::RelaxedInner::new(NelderMead::new()),
+        )
+        .with_refine_every(0);
+    }
+}

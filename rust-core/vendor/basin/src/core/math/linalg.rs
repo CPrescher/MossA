@@ -1,0 +1,684 @@
+//! Dense linear-algebra ops for LA-heavy solvers (Gauss-Newton,
+//! Levenberg-Marquardt, bounded LM). This is the second math tier per
+//! `CONTRIBUTING.md` tenet 5: most of these operations are carried only by
+//! backends that can implement them honestly. All four dense backends provide
+//! pure-Rust Gram, Cholesky, symmetric eigenvalue, and pivoted-QR operations.
+//! Sparse capabilities are narrower and are documented on each trait.
+//!
+//! The op set covers what Gauss-Newton needs at minimum, plus a
+//! least-squares solve for sparse backends that ship QR:
+//!
+//! - [`MatVec`]: `y = A x` (matrix-vector product).
+//! - [`MatTransposeVec`]: `y = Aᵀ x` (transposed matrix-vector
+//!   product, used to form `Jᵀ r` without materializing `Jᵀ`).
+//! - [`GramMatrix`]: `G = Aᵀ A` (the SPD normal-equations matrix).
+//! - [`LinearSolveSpd`]: `A x = b` for SPD `A` (Cholesky inside).
+//! - [`FactorizePivotedQr`] and [`RegularizedQrSolve`]: reusable dense
+//!   column-pivoted QR with diagonal regularization and numerical rank checks.
+//! - [`LinearSolveLstsq`]: `min_x ‖A x − b‖₂` (QR inside). Implemented
+//!   per-backend wherever a sparse QR exists; not all backends do.
+//!
+//! Dense LU and `(AᵀA) x` for matrix-free Krylov inner solves are
+//! deliberately deferred: they land alongside the first solver that
+//! actually wants them (post-S6).
+
+/// Matrix-vector product `y = A x`.
+///
+/// # Contract
+///
+/// - **Caller must:** pass `x` whose length equals `self.ncols()`.
+///   Backends panic on shape mismatch.
+/// - **Implementor must:** return a freshly allocated `V` of length
+///   `self.nrows()`, with `y[i] = Σⱼ A[i, j] · x[j]`. The op is a
+///   pure function of `(self, x)`.
+///
+/// # Backends
+///
+/// Implemented on every backend's dense matrix type:
+/// [`DenseMatrix`](super::DenseMatrix) (with `V = Vec<f64>`, always
+/// available), `nalgebra::DMatrix<f64>` (`V = DVector<f64>`),
+/// `faer::Mat<f64>` (`V = faer::Col<f64>`), and `ndarray::Array2<f64>`
+/// (`V = Array1<f64>`), each behind its backend feature where
+/// applicable.
+pub trait MatVec<V> {
+    /// Compute `A x`, allocating a fresh `V` of length `self.nrows()`.
+    fn matvec(&self, x: &V) -> V;
+}
+
+/// Transposed matrix-vector product `y = Aᵀ x`. Lets least-squares
+/// solvers form `Jᵀ r` without materializing `Jᵀ`.
+///
+/// # Contract
+///
+/// - **Caller must:** pass `x` whose length equals `self.nrows()`.
+///   Backends panic on shape mismatch.
+/// - **Implementor must:** return a freshly allocated `V` of length
+///   `self.ncols()`, with `y[j] = Σᵢ A[i, j] · x[i]`. The op is a
+///   pure function of `(self, x)` and must agree with [`MatVec`] on
+///   the implicit transpose.
+///
+/// # Backends
+///
+/// Same backend coverage as [`MatVec`].
+pub trait MatTransposeVec<V> {
+    /// Compute `Aᵀ x`, allocating a fresh `V` of length `self.ncols()`.
+    fn mat_transpose_vec(&self, x: &V) -> V;
+}
+
+/// Gram matrix `G = Aᵀ A`. The SPD matrix at the heart of the
+/// Gauss-Newton normal equations. Returns `Self` because for both
+/// supported dense backends a Gram of a dense matrix is the same
+/// type; when sparse backends land in S2b the `Output` may need to
+/// become an associated type, but premature parameterization here
+/// would buy nothing for the dense prototype.
+///
+/// # Contract
+///
+/// - **Implementor must:** return a square `n × n` matrix where
+///   `n = self.ncols()`. The result is symmetric and positive
+///   semi-definite by construction; it is positive definite iff
+///   `self` has full column rank. (Rank-deficient `A` produces a
+///   `G` for which [`LinearSolveSpd::solve_spd`] returns
+///   [`LinearSolveError::NotPositiveDefinite`].)
+///
+/// # Backends
+///
+/// nalgebra (`DMatrix<f64>`), faer (`Mat<f64>`), their sparse
+/// counterparts, the default `Vec<f64>` backend over
+/// [`DenseMatrix`](super::DenseMatrix), and `ndarray::Array2<f64>`, the
+/// latter via a pure-Rust row-outer-product accumulation, wasm-clean with no
+/// BLAS/LAPACK.
+pub trait GramMatrix {
+    /// Compute `Aᵀ A` and return the freshly allocated SPD matrix.
+    fn gram(&self) -> Self;
+}
+
+/// Solve the SPD linear system `A x = b` via Cholesky factorization.
+/// `A` is `self`; `b` is the right-hand side.
+///
+/// Owned-return rather than in-place: both backends offer in-place
+/// solve paths, but every Cholesky factorization is `O(n³)` versus an
+/// `O(n²)` allocation, so the unified owned-return shape isn't a
+/// meaningful perf cost at this layer. An in-place variant can be
+/// added behind a separate trait if a hot inner loop ever wants it.
+///
+/// # Contract
+///
+/// - **Caller must:** pass an SPD `self` and a `b` of length
+///   `self.nrows()`. `self` must be square; backends panic otherwise.
+/// - **Implementor must:** return [`LinearSolveError::NotPositiveDefinite`]
+///   when the Cholesky factorization fails (zero or negative pivot).
+///   On success, `x` satisfies `‖A x − b‖` to within the backend's
+///   factorization accuracy.
+///
+/// # Backends
+///
+/// nalgebra (`DMatrix<f64>`) and faer (`Mat<f64>`) at the dense tier,
+/// their sparse counterparts, the default `Vec<f64>` backend over
+/// [`DenseMatrix`](super::DenseMatrix), and `ndarray::Array2<f64>`. All use a
+/// dense (or sparse) Cholesky (`L Lᵀ`); the `DenseMatrix` and `Array2` impls
+/// share the same pure-Rust Cholesky (`dense_chol`), wasm-clean with no
+/// BLAS/LAPACK. Pivoting variants live in the backend crates if needed. With
+/// the opt-in `nalgebra-lapack` feature the
+/// nalgebra `DMatrix` impl routes through LAPACK's Cholesky instead (f32/f64
+/// only); see the feature note in `Cargo.toml`.
+pub trait LinearSolveSpd<V> {
+    /// Solve `self · x = b` assuming `self` is SPD. Returns
+    /// [`LinearSolveError::NotPositiveDefinite`] when factorization
+    /// fails.
+    fn solve_spd(&self, b: &V) -> Result<V, LinearSolveError>;
+}
+
+/// Column-pivoted QR of a matrix and a fixed least-squares right-hand side.
+///
+/// Columns are equilibrated to unit norm before numerical pivoting; the
+/// returned factors retain the original matrix scaling.
+/// The factor retains `R`, the column permutation, and `Qᵀb` for repeated
+/// diagonal-regularized solves without forming `AᵀA`. Rank-deficient matrices
+/// are valid inputs: rank is checked by [`RegularizedQrSolve`] after damping.
+///
+/// # Contract
+///
+/// Matrices must have positive row and column counts and `b` must have one
+/// entry per row; implementations panic on shape mismatch. Square, tall, and
+/// wide matrices are supported. Non-finite inputs or factorization arithmetic
+/// return [`QrSolveError::NonFinite`]. No implementation may fall back to
+/// normal equations or substitute fill-reducing ordering for numerical pivoting.
+///
+/// # Backends
+///
+/// `DenseMatrix<F>`/`Vec<F>`, nalgebra `DMatrix<F>`/`DVector<F>`, ndarray
+/// `Array2<F>`/`Array1<F>`, and faer `Mat<F>`/`Col<F>`, including `f32` and
+/// `f64`. All implementations are pure Rust. Neither sparse backend implements
+/// this capability: nalgebra-sparse has no QR, and faer's sparse QR uses a
+/// fill-reducing permutation rather than numerical column pivoting.
+pub trait FactorizePivotedQr<V, F: super::Scalar = f64> {
+    /// Reusable factorization for this backend's vector type.
+    type Factorization: RegularizedQrSolve<V, F>;
+
+    /// Factor `self · P = Q · R` and retain the transformed right-hand side.
+    fn factorize_pivoted_qr(
+        &self,
+        b: &V,
+    ) -> Result<Self::Factorization, QrSolveError>;
+}
+
+/// Repeated solves of `min_x ‖A x − b‖² + μ ∑ⱼ dⱼ xⱼ²` from pivoted QR.
+///
+/// The right-hand side is fixed at factorization time. Solves must preserve
+/// the retained factorization, restore the original column order, and never
+/// form normal equations. [`QrFactorization`](super::QrFactorization) implements
+/// this contract for all supported dense vector types.
+pub trait RegularizedQrSolve<V, F: super::Scalar = f64> {
+    /// Squared column norms of the original matrix, in original column order.
+    fn column_norms_squared(&self) -> V;
+
+    /// Solve using nonnegative finite `mu` and diagonal entries.
+    ///
+    /// `diagonal` must have one entry per column (otherwise this panics).
+    /// `rank_tolerance` is dimensionless, finite, and in `[0, 1)`; `None`
+    /// selects `F::epsilon() * (m + n)` for the original `m × n` matrix.
+    /// After equilibrating augmented-system columns to unit norm, any
+    /// triangular pivot of magnitude at most the tolerance means rank loss.
+    /// Zero tolerance still detects exactly zero pivots. This is a numerical
+    /// rank safeguard, not a singular-value estimate of the original matrix.
+    ///
+    /// Rank loss returns [`QrSolveError::RankDeficient`], including at zero
+    /// damping. No truncated or minimum-norm solution is returned. Non-finite
+    /// inputs or results return [`QrSolveError::NonFinite`]; negative damping
+    /// or diagonal entries and invalid tolerances return
+    /// [`QrSolveError::InvalidRegularization`].
+    fn solve_regularized(
+        &self,
+        mu: F,
+        diagonal: &V,
+        rank_tolerance: Option<F>,
+    ) -> Result<V, QrSolveError>;
+}
+
+/// Failure of a pivoted-QR factorization or regularized solve.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum QrSolveError {
+    /// The equilibrated augmented system lost numerical column rank.
+    RankDeficient,
+    /// An input or intermediate arithmetic result is non-finite.
+    NonFinite,
+    /// Negative damping or diagonal entries, or a tolerance outside `[0, 1)`.
+    InvalidRegularization,
+}
+
+impl core::fmt::Display for QrSolveError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.write_str(match self {
+            Self::RankDeficient => {
+                "regularized QR system is numerically rank-deficient"
+            }
+            Self::NonFinite => "non-finite input or arithmetic in QR solve",
+            Self::InvalidRegularization => {
+                "invalid QR regularization or rank tolerance"
+            }
+        })
+    }
+}
+
+impl std::error::Error for QrSolveError {}
+
+/// Least-squares solve `min_x ‖A x − b‖₂` via QR factorization. `A`
+/// is `self`; `b` is the right-hand side. Unlike [`LinearSolveSpd`],
+/// `A` need not be square or full-rank.
+///
+/// Owned-return for the same reasons as [`LinearSolveSpd`]: the
+/// `O(mn²)` factorization dominates the `O(n)` allocation, and the
+/// unified return shape stays honest across backends.
+///
+/// # Contract
+///
+/// - **Caller must:** pass a `b` of length `self.nrows()`. `self` may
+///   be any shape; backends do not require `self` to be square.
+/// - **Implementor must:** return [`LinearSolveError::Singular`] when
+///   the underlying QR factorization itself fails (allocation or
+///   index-overflow errors counted as `Singular` for callers who only
+///   need pass/fail). On success, the returned `V` has length
+///   `self.ncols()` and minimizes `‖A x − b‖₂` to within the backend's
+///   factorization accuracy.
+/// - **Caller must (numerical caveat):** rank-deficient inputs are
+///   *not* guaranteed to surface as [`LinearSolveError::Singular`]:
+///   sparse QR backends (faer) succeed on rank-deficient systems and
+///   produce a solution whose components in the null space are
+///   numerically meaningless. A small residual does not establish full rank,
+///   even for a consistent system. Use [`FactorizePivotedQr`] when numerical
+///   pivoting and explicit rank-loss handling are required.
+///
+/// # Backends
+///
+/// Implemented for `faer::sparse::SparseColMat<usize, f64>` (with
+/// `V = faer::Col<f64>`) when the `faer` feature is enabled.
+/// `nalgebra-sparse` does not ship a sparse QR at the pinned version,
+/// so `nalgebra_sparse::CscMatrix<f64>` deliberately does not
+/// implement this trait; per tenet 5, missing coverage is a
+/// compile-time error rather than a runtime surprise.
+pub trait LinearSolveLstsq<V> {
+    /// Solve the least-squares problem `min_x ‖self · x − b‖₂` via QR.
+    /// Returns [`LinearSolveError::Singular`] on factorization failure;
+    /// numerical rank deficiency is not necessarily reported.
+    fn solve_lstsq(&self, b: &V) -> Result<V, LinearSolveError>;
+}
+
+/// `max_i Aᵢᵢ`, the maximum diagonal entry of a square matrix.
+/// [`BoundedLevenbergMarquardt`](crate::BoundedLevenbergMarquardt) uses it to size the initial damping parameter after
+/// applying the Coleman-Li diagonal correction:
+/// `μ₀ = τ · max diag(J(x₀)ᵀ J(x₀) + diag(c))`.
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square `self`. Backends panic otherwise.
+/// - **Caller must (sparse precondition):** for sparse impls, missing
+///   diagonal entries from the CSC pattern are treated as the implicit
+///   zero. The Gram of any `A` with no zero columns has all-positive
+///   diagonal entries, so bounded LM's damping path is unaffected.
+/// - **Implementor must:** return `maxᵢ self[(i, i)]` as `F`. For an empty
+///   matrix (0×0), the result is unspecified; callers should not invoke
+///   this method on empty matrices.
+///
+/// # Backends
+///
+/// Same coverage as [`AddDiagonalVectorInPlace`].
+///
+/// The `F` parameter is the scalar and defaults to `f64`.
+pub trait MaxDiagonal<F = f64> {
+    /// Compute the maximum diagonal entry as `F`.
+    fn max_diagonal(&self) -> F;
+}
+
+/// Extract the diagonal `diag(self) ∈ R^n` of a square matrix into a
+/// freshly allocated vector. CMA-ES with bounds (S9) needs the per-axis
+/// variances `σ² · diag(C)` for the adaptive boundary penalty.
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square `self`. Backends panic otherwise.
+/// - **Implementor must:** return a fresh `V` of length `self.nrows()`
+///   with `out[i] = self[(i, i)]`. The op is `O(n)`.
+///
+/// # Backends
+///
+/// Implemented for `nalgebra::DMatrix<f64>` (over `DVector<f64>`),
+/// `faer::Mat<f64>` (over `Col<f64>`), and [`DenseMatrix`](super::DenseMatrix)
+/// (over `Vec<f64>`), the dense matrix backends that support
+/// [`SymmetricEigen`], the gating requirement of CMA-ES.
+pub trait MatDiagonal<V> {
+    /// Return `diag(self)` as a fresh `V` of length `self.nrows()`.
+    fn diagonal(&self) -> V;
+}
+
+/// In-place diagonal augmentation `A ← A + diag(d)` for a vector `d`
+/// (a per-coordinate diagonal add, rather than a single scalar). The
+/// diagonal of the BCL trust-region-reflective subproblem is `c + μ·d²`
+/// (both vectors), and this trait expresses the addition in one
+/// in-place pass without materializing a full diagonal matrix.
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square `self` and a `diag` of length
+///   `self.nrows()`. Backends panic on shape mismatch or non-square.
+/// - **Caller must (sparse precondition):** every diagonal entry
+///   `(i, i)` must already exist in the sparsity pattern of `self`.
+///   The Gram
+///   matrix `G = AᵀA` of any `A` with no zero columns satisfies this
+///   (`Gᵢᵢ = ‖A·,ᵢ‖² > 0`); callers that only invoke
+///   `add_diagonal_vector_in_place` on a freshly computed
+///   [`GramMatrix::gram`] result are safe by construction.
+/// - **Implementor must:** add `diag[i]` to `self[(i, i)]` for every
+///   `i` in `0..self.nrows()`. Off-diagonal entries are untouched.
+///   The op is `O(n)` for an `n × n` matrix.
+///
+/// # Backends
+///
+/// Implemented for the default `Vec<f64>` backend
+/// ([`DenseMatrix`](super::DenseMatrix) over `Vec<f64>`), dense nalgebra
+/// (`DMatrix<f64>` over `DVector<f64>`), dense faer (`Mat<f64>` over
+/// `Col<f64>`), `ndarray::Array2<f64>` (over `Array1<f64>`), sparse nalgebra
+/// (`CscMatrix<f64>` over `DVector<f64>`), sparse faer
+/// (`SparseColMat<usize, f64>` over `Col<f64>`).
+pub trait AddDiagonalVectorInPlace<V> {
+    /// Add `diag[i]` to `self[(i, i)]` for every `i`, in place.
+    fn add_diagonal_vector_in_place(&mut self, diag: &V);
+}
+
+/// `n × n` identity matrix constructor. The smallest piece of matrix
+/// "fabric" needed by CMA-ES, which initializes its covariance as
+/// `C = I` by default (Hansen 2016, "Initialization" in Figure 6) but is
+/// generic over the matrix type. (An anisotropic initial covariance from
+/// per-coordinate stds uses [`MatrixFromDiagonal`] instead.)
+///
+/// # Contract
+///
+/// - **Implementor must:** return a square `n × n` matrix with `1.0` on
+///   the diagonal and `0.0` elsewhere. Allocates fresh storage per call.
+///
+/// # Backends
+///
+/// Implemented for `nalgebra::DMatrix<f64>` and `faer::Mat<f64>`. Sparse
+/// counterparts are intentionally unimplemented: sparse identity is a
+/// degenerate sparsity pattern that no current solver wants to construct
+/// at runtime.
+pub trait MatrixIdentity {
+    /// Build the `n × n` identity matrix.
+    fn identity(n: usize) -> Self;
+}
+
+/// `n × n` diagonal-matrix constructor from a vector: builds the matrix
+/// with `diag[i]` on the diagonal and `0` elsewhere. The constructor
+/// counterpart of `MatDiagonal::diagonal` (which extracts the diagonal).
+/// CMA-ES uses it to seed an anisotropic initial covariance
+/// `C = diag(stds²)` from a per-coordinate initial step-size vector
+/// (`CmaEs::with_stds`); the isotropic default still uses
+/// [`MatrixIdentity::identity`].
+///
+/// # Contract
+///
+/// - **Implementor must:** return a square `n × n` matrix (`n = diag`'s
+///   length) with `out[(i, i)] = diag[i]` and `0` off the diagonal.
+///   Allocates fresh storage per call. The op is `O(n²)` (dense fill).
+///
+/// # Backends
+///
+/// Implemented for `nalgebra::DMatrix<f64>` (over `DVector<f64>`),
+/// `faer::Mat<f64>` (over `Col<f64>`), and [`DenseMatrix`](super::DenseMatrix)
+/// (over `Vec<f64>`), the dense matrix backends that support
+/// [`SymmetricEigen`], CMA-ES's gating requirement. Sparse counterparts
+/// are intentionally unimplemented, matching [`MatrixIdentity`].
+pub trait MatrixFromDiagonal<V> {
+    /// Build the `n × n` matrix with `diag[i]` on the diagonal, `0`
+    /// elsewhere.
+    fn from_diagonal(diag: &V) -> Self;
+}
+
+/// Maps a vector backend to its canonical dense matrix type and builds a
+/// matrix of that type from a per-entry closure. Implemented on the
+/// *vector* type so that finite-difference differentiation
+/// ([`crate::core::numdiff`]) can synthesize a `Jacobian`/`Hessian`
+/// matrix from a problem whose only typed handle is the parameter vector
+/// `V`, with **one** generic impl rather than a per-backend blanket impl
+/// (two `impl<P> Jacobian for FiniteDiff<P> where P: Residual<Param = …>`
+/// blocks would collide under coherence: both have the head
+/// `impl<P> … for FiniteDiff<P>`, and Rust does not use the associated-type
+/// values of `where`-bounds to prove disjointness). Routing the matrix-type
+/// choice through `V::Matrix` keeps the impl single-headed.
+///
+/// # Contract
+///
+/// - **Implementor must:** return a freshly allocated `rows × cols` matrix
+///   with entry `(i, j) = f(i, j)`. `f` is called once per entry; the call
+///   order is backend-defined, so
+///   callers that care about evaluation order must precompute their data
+///   and let `f` be a pure read.
+///
+/// # Backends
+///
+/// Implemented for `Vec<F>` (`Matrix = DenseMatrix<F>`), nalgebra
+/// `DVector<F>` (`DMatrix<F>`), ndarray `Array1<F>` (`Array2<F>`), and
+/// faer `Col<F>` (`Mat<F>`), with `F = f32` or `f64`. Optional backends
+/// require their corresponding features. All implementations are pure Rust.
+pub trait DenseMatrixFromFn<F = f64>: Sized {
+    /// The dense matrix type paired with this vector backend.
+    type Matrix;
+
+    /// Build a `rows × cols` matrix with entry `(i, j) = f(i, j)`.
+    fn dense_from_fn<G: FnMut(usize, usize) -> F>(
+        rows: usize,
+        cols: usize,
+        f: G,
+    ) -> Self::Matrix;
+
+    /// Fill a `rows × cols` output, replacing its previous contents and shape.
+    ///
+    /// The default constructs a matrix through [`Self::dense_from_fn`]. Built-in
+    /// backends reuse storage when the shape matches. Calls `f` once per entry
+    /// in backend-defined order and requires no additional matrix capabilities.
+    fn dense_from_fn_into<G: FnMut(usize, usize) -> F>(
+        rows: usize,
+        cols: usize,
+        f: G,
+        out: &mut Self::Matrix,
+    ) {
+        *out = Self::dense_from_fn(rows, cols, f);
+    }
+}
+
+/// Read the shape and individual entries of a dense matrix.
+///
+/// Available for [`super::DenseMatrix`], nalgebra `DMatrix`, ndarray
+/// `Array2`, and faer `Mat`, for `f64` and `f32`. Entries must be read in
+/// constant time and use mathematical row/column indices, independently of
+/// storage order. Out-of-range indices panic. SLSQP uses this capability to
+/// copy constraint Jacobians into its scalar-generic factorization workspace.
+pub trait MatrixIndex<F = f64>: MatrixShape {
+    /// Read entry `(row, col)`.
+    fn matrix_entry(&self, row: usize, col: usize) -> F;
+}
+
+/// Multiply each matrix row by the corresponding entry in `factors`.
+///
+/// Implemented for all shipped dense matrices and nalgebra/faer CSC matrices,
+/// for `f32` and `f64`. Sparse implementations preserve the storage pattern.
+/// Panics when the number of factors differs from the matrix's row count.
+/// Robust least-squares solvers use this capability to adjust their local
+/// model without changing the original residual/Jacobian contract.
+pub trait ScaleRowsInPlace<F: super::Scalar = f64> {
+    /// Apply `self[i, j] *= factors[i]` in place.
+    fn scale_rows_in_place(&mut self, factors: &[F]);
+}
+
+/// Symmetric (self-adjoint) eigendecomposition `A = U diag(λ) Uᵀ`. The
+/// load-bearing op for CMA-ES, which factors its covariance every
+/// iteration to compute both the sampling map `B D z_k = y_k ~ N(0, C)`
+/// (Hansen 2016 eq. 39) and the conjugate-path scaling
+/// `C^{−1/2} = B D^{−1} Bᵀ` (eq. 43).
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square, symmetric `self`. Backends treat the
+///   lower triangle as authoritative; non-symmetric inputs produce
+///   meaningless eigenpairs without an error.
+/// - **Implementor must:** return `(eigenvectors, eigenvalues)` where
+///   columns of `eigenvectors` are an orthonormal basis and
+///   `eigenvalues[i]` is the eigenvalue paired with column `i`. The
+///   `eigenvectors` matrix is `n × n` and the `eigenvalues` vector is
+///   length `n` (with `n = self.nrows()`).
+/// - **Implementor may:** return eigenvalues in any order: backends
+///   currently produce ascending order (faer) or unsorted (nalgebra),
+///   and CMA-ES doesn't depend on either. Callers that need a specific
+///   ordering must sort the pairs themselves.
+/// - **Implementor must:** return [`SymmetricEigenError::Failed`] when
+///   the underlying QR/Jacobi/divide-and-conquer iteration fails to
+///   converge. Numerically near-singular but well-defined inputs
+///   succeed; the eigenvalues may include very small values that
+///   callers can clamp before taking square roots.
+///
+/// # Backends
+///
+/// Implemented for `nalgebra::DMatrix<f64>` (with `V = DVector<f64>`)
+/// via `nalgebra::SymmetricEigen` (pure-Rust QR iteration), for
+/// `faer::Mat<f64>` (with `V = faer::Col<f64>`) via
+/// `faer::linalg::evd::self_adjoint_evd`, and for
+/// [`DenseMatrix`](super::DenseMatrix) (with `V = Vec<f64>`) via a
+/// pure-Rust cyclic Jacobi solver, so CMA-ES runs on the default
+/// backend. With the opt-in `nalgebra-lapack` feature the nalgebra `DMatrix`
+/// impl routes through LAPACK's `dsyev`/`ssyev` instead (f32/f64 only); see the
+/// feature note in `Cargo.toml`. The `DenseMatrix` impl is the worked precedent
+/// for tenet 5's
+/// "broaden backend coverage when an op can be done honestly": the *solve*
+/// factorizations ([`LinearSolveSpd`]/[`GramMatrix`]) are simply not yet
+/// implemented for `Vec<f64>`, not categorically off-limits.
+pub trait SymmetricEigen<V> {
+    /// Eigendecompose a symmetric `self` into `(B, λ)` such that
+    /// `self ≈ B diag(λ) Bᵀ` in floating-point arithmetic.
+    ///
+    /// Named `try_eigh` rather than `symmetric_eigen` so that calls go
+    /// to the trait method without colliding with nalgebra's inherent
+    /// `Matrix::symmetric_eigen` (which consumes `self` and returns a
+    /// `SymmetricEigen` struct, not a `Result`).
+    fn try_eigh(&self) -> Result<(Self, V), SymmetricEigenError>
+    where
+        Self: Sized;
+}
+
+/// Reasons a [`SymmetricEigen::try_eigh`] call can fail. Variants
+/// are backend-agnostic; backends translate their native error types
+/// into these.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum SymmetricEigenError {
+    /// The eigensolver iteration failed to converge to the requested
+    /// accuracy. Both backends use bounded-iteration QR/divide-and-
+    /// conquer methods that can in principle fail on pathological
+    /// inputs.
+    Failed,
+}
+
+impl core::fmt::Display for SymmetricEigenError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::Failed => {
+                f.write_str("symmetric eigendecomposition failed to converge")
+            }
+        }
+    }
+}
+
+impl core::error::Error for SymmetricEigenError {}
+
+/// In-place rank-one update `self ← self + α · v · vᵀ`. CMA-ES uses
+/// this twice per iteration: once with `(α, v) = (c_1, p_c)` for the
+/// rank-one path-update term, and again, repeatedly, with
+/// `(α, v) = (c_µ · w_i°, y_{i:λ})` for the rank-µ recombination term
+/// (Hansen 2016 eq. 47).
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square `self` and a `v` of length
+///   `self.nrows()`. Backends panic on shape mismatch.
+/// - **Implementor must:** add `α · v[i] · v[j]` to `self[(i, j)]` for
+///   every `(i, j)`, in place. Off-diagonal entries are touched. The op
+///   is `O(n²)` for an `n × n` matrix.
+///
+/// # Backends
+///
+/// Implemented for `nalgebra::DMatrix<f64>` (with `V = DVector<f64>`)
+/// via `ger`, for `faer::Mat<f64>` (with `V = faer::Col<f64>`) via
+/// the `matmul` accumulator, and for [`DenseMatrix`](super::DenseMatrix)
+/// (with `V = Vec<f64>`, delegating to [`GeneralRankOneUpdate`] with
+/// `u = v`), so CMA-ES runs on the default backend. Sparse backends do
+/// *not* implement this: a rank-one update of a sparse matrix would
+/// densify the pattern, and CMA-ES's covariance is dense by construction
+/// anyway.
+pub trait RankOneUpdate<V, F = f64> {
+    /// Compute `self ← self + α · v · vᵀ` in place.
+    fn rank_one_update(&mut self, alpha: F, v: &V);
+}
+
+/// In-place *general* rank-one update `self ← self + α · u · vᵀ` with two
+/// distinct vectors (BLAS `ger`). The asymmetric generalization of
+/// a symmetric update (the `u == v` special case). BFGS needs the
+/// asymmetric form: its inverse-Hessian update carries the cross terms
+/// `−ρ · s · (Hy)ᵀ` and `−ρ · (Hy) · sᵀ`, where `s ≠ Hy` in general.
+///
+/// # Contract
+///
+/// - **Caller must:** pass a square `self`, a `u` of length `self.nrows()`,
+///   and a `v` of length `self.ncols()`. Backends panic on shape mismatch.
+/// - **Implementor must:** add `α · u[i] · v[j]` to `self[(i, j)]` for every
+///   `(i, j)`, in place. Off-diagonal entries are touched. The op is `O(n²)`
+///   for an `n × n` matrix.
+///
+/// The method is named `general_rank_one_update` rather than `ger` so calls
+/// go to the trait method without colliding with nalgebra's inherent
+/// `Matrix::ger` (a 4-arg `ger(α, x, y, β)` with a `β·self` term): the same
+/// defensive naming as [`SymmetricEigen::try_eigh`].
+///
+/// # Backends
+///
+/// Implemented for [`DenseMatrix`](super::DenseMatrix) with `Vec<F>`,
+/// `nalgebra::DMatrix<F>` with `DVector<F>`, `ndarray::Array2<F>` with
+/// `Array1<F>`, and `faer::Mat<F>` with `Col<F>`, for `f32` and `f64`.
+/// Every enabled backend version provides its own implementation.
+/// Sparse backends do not implement this operation.
+pub trait GeneralRankOneUpdate<V, F = f64> {
+    /// Compute `self ← self + α · u · vᵀ` in place.
+    fn general_rank_one_update(&mut self, alpha: F, u: &V, v: &V);
+}
+
+/// Reasons a linear-solve trait call can fail. Variants are
+/// backend-agnostic; backends translate their native error types
+/// into these.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LinearSolveError {
+    /// Cholesky factorization encountered a zero or negative pivot.
+    /// The matrix is not positive definite (it may still be positive
+    /// semi-definite, e.g. when `A = Jᵀ J` with rank-deficient `J`).
+    /// Reported by [`LinearSolveSpd`].
+    NotPositiveDefinite,
+    /// The matrix is numerically rank-deficient (zero on the diagonal
+    /// of an `R` or `U` factor), or a backend factorization failed.
+    /// [`LinearSolveLstsq`] does not guarantee detection of rank deficiency.
+    Singular,
+}
+
+impl core::fmt::Display for LinearSolveError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::NotPositiveDefinite => {
+                f.write_str("matrix is not positive definite")
+            }
+            Self::Singular => f.write_str("matrix is singular"),
+        }
+    }
+}
+
+impl core::error::Error for LinearSolveError {}
+
+/// The default dense matrix paired with a vector backend.
+///
+/// Solvers such as [`crate::Bfgs`] use this association to infer their model
+/// storage from the starting point. Every enabled backend version has its own
+/// implementation. The association selects a default, not an extra numerical
+/// capability: algorithms still require only the matrix operations they use.
+/// Custom vector backends can implement this trait; callers can override the
+/// solver's matrix type explicitly.
+pub trait DenseBackend<F: super::Scalar = f64> {
+    /// Dense matrix used for solver-owned models by default.
+    type Matrix;
+}
+
+/// Matrix dimensions, independently of scalar access or multiplication.
+pub trait MatrixShape {
+    /// Number of rows, including zero for an empty constraint block.
+    fn matrix_rows(&self) -> usize;
+    /// Number of columns.
+    fn matrix_cols(&self) -> usize;
+}
+/// Whether every coefficient is finite. Sparse implicit zeros are finite.
+pub trait MatrixFinite {
+    /// Inspect coefficients without evaluating a problem callback.
+    fn matrix_is_finite(&self) -> bool;
+}
+/// Matrix-vector multiplication into an independent scalar output buffer.
+///
+/// The destination is overwritten. Its length must equal the row count, and
+/// the input length must equal the column count. Shape mismatches panic;
+/// constraint consumers validate them before calling this operation.
+pub trait MatVecInto<V, F: super::Scalar = f64>: MatrixShape {
+    /// Overwrite `output` with `self * input`.
+    fn matvec_into(&self, input: &V, output: &mut [F]);
+}
+/// Transposed multiplication from scalar constraint values into a parameter vector.
+///
+/// The destination is overwritten. Input and output lengths must equal the
+/// row and column counts, respectively. Constraint consumers check these shapes.
+pub trait MatTransposeVecInto<V, F: super::Scalar = f64>: MatrixShape {
+    /// Overwrite `output` with `self.transpose() * input`.
+    fn mat_transpose_vec_into(&self, input: &[F], output: &mut V);
+}

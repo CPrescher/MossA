@@ -1,0 +1,174 @@
+--- a/src/core/math/dense_svd.rs
++++ b/src/core/math/dense_svd.rs
+@@ -12,6 +12,29 @@
+ 
+ pub(crate) fn norm<F: Scalar>(values: &[F]) -> F {
+     values.iter().fold(F::zero(), |s, &x| s.hypot(x))
++}
++
++/// Two-pass scaled sum of squares: no overflow/underflow from squaring the
++/// physical entries, and no per-entry hypot calls. Only the opt-in compressed
++/// analytical path uses this; the frozen direct solver retains ordered hypot.
++fn scaled_norm<F: Scalar>(len: usize, get: impl Fn(usize) -> F) -> F {
++    let mut scale = F::zero();
++    for i in 0..len {
++        let v = get(i).abs();
++        if !v.is_finite() {
++            return (0..len).fold(F::zero(), |s, i| s.hypot(get(i)));
++        }
++        scale = scale.max(v);
++    }
++    if scale == F::zero() {
++        return scale;
++    }
++    let mut sum = F::zero();
++    for i in 0..len {
++        let v = get(i) / scale;
++        sum = sum + v * v;
++    }
++    scale * sum.sqrt()
+ }
+ 
+ #[derive(Clone, Debug)]
+@@ -29,13 +52,14 @@
+     /// Input and factors use row-major storage; zero singular vectors in U
+     /// remain zero because least-squares solves never use their coefficients.
+     pub(crate) fn factor(rows: usize, cols: usize, a: Vec<F>) -> Option<Self> {
+-        Self::factor_with_row_tolerance(rows, cols, a, rows)
++        Self::factor_with_row_tolerance(rows, cols, a, rows, false)
+     }
+     fn factor_with_row_tolerance(
+         rows: usize,
+         cols: usize,
+         mut a: Vec<F>,
+         tolerance_rows: usize,
++        accelerated_norms: bool,
+     ) -> Option<Self> {
+         assert!(rows >= cols && cols > 0);
+         assert_eq!(a.len(), rows * cols);
+@@ -54,18 +78,22 @@
+         }
+         let tol = F::epsilon() * F::from_usize(tolerance_rows).unwrap().sqrt();
+         let mut converged = false;
+-        // Cached values use the original hypot fold, not an updated/approximate norm.
++        // Recompute changed columns. Direct factors retain the original hypot
++        // fold; compressed factors use the robust scaled sum of squares.
++        let column_norm = |a: &[F], j: usize| {
++            if accelerated_norms {
++                scaled_norm(rows, |i| a[i * cols + j])
++            } else {
++                (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + j]))
++            }
++        };
+         let mut norms: Vec<Option<F>> = vec![None; cols];
+         for _ in 0..100 {
+             let mut changed = false;
+             for p in 0..cols {
+                 for q in p + 1..cols {
+-                    let pn = *norms[p].get_or_insert_with(|| {
+-                        (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + p]))
+-                    });
+-                    let qn = *norms[q].get_or_insert_with(|| {
+-                        (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + q]))
+-                    });
++                    let pn = *norms[p].get_or_insert_with(|| column_norm(&a, p));
++                    let qn = *norms[q].get_or_insert_with(|| column_norm(&a, q));
+                     if pn == F::zero() || qn == F::zero() {
+                         continue;
+                     }
+@@ -100,8 +128,8 @@
+                         a[i * cols + p] = c * x - s * y;
+                         a[i * cols + q] = s * x + c * y;
+                     }
+-                    // Only the rotated columns changed. Recompute their norms
+-                    // at next use with exactly the upstream operation order.
++                    // Only the rotated columns changed. Recompute at next use
++                    // with the norm method selected for this factorization.
+                     norms[p] = None;
+                     norms[q] = None;
+                     for i in 0..cols {
+@@ -122,8 +150,7 @@
+         }
+         let mut singular = vec![F::zero(); cols];
+         for j in 0..cols {
+-            let length = norms[j]
+-                .unwrap_or_else(|| (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + j])));
++            let length = norms[j].unwrap_or_else(|| column_norm(&a, j));
+             if length > F::zero() {
+                 for i in 0..rows {
+                     a[i * cols + j] = a[i * cols + j] / length;
+@@ -288,6 +315,36 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    #[test]
++    fn scaled_norm_preserves_extreme_ranges_and_nonfinite_behavior() {
++        for values in [
++            vec![],
++            vec![0., -0.],
++            vec![3., 4.],
++            vec![3e300, 4e300],
++            vec![3e-300, 4e-300],
++            vec![1e300, 1e-300, -1e300],
++            vec![f64::from_bits(1); 4],
++            (0..20000).map(|i| (i as f64 * 0.73).sin()).collect(),
++        ] {
++            let expected = norm(&values);
++            let actual = scaled_norm(values.len(), |i| values[i]);
++            assert!(actual.is_finite());
++            assert!((actual - expected).abs() <= 2e-13 * expected + f64::from_bits(4));
++        }
++        for values in [[f64::INFINITY, 1.], [f64::NAN, 1.]] {
++            let actual = scaled_norm(2, |i| values[i]);
++            let expected = norm(&values);
++            assert_eq!(actual.is_infinite(), expected.is_infinite());
++            assert_eq!(actual.is_nan(), expected.is_nan());
++        }
++        for values in [[3e30_f32, 4e30], [3e-30, 4e-30], [0., 0.]] {
++            let expected = norm(&values);
++            let actual = scaled_norm(2, |i| values[i]);
++            assert!((actual - expected).abs() <= 4. * f32::EPSILON * expected);
++        }
++    }
+ 
+     #[test]
+     fn cached_norms_match_frozen_upstream_factors_and_steps_bit_for_bit() {
+--- a/src/core/math/dense_svd/qr.rs
++++ b/src/core/math/dense_svd/qr.rs
+@@ -1,5 +1,5 @@
+ //! Householder QR reduction before Jacobi SVD. No normal equations.
+-use super::{DenseSvd, Scalar};
++use super::{scaled_norm, DenseSvd, Scalar};
+ 
+ #[derive(Clone, Debug)]
+ pub(super) struct ImplicitQ<F> {
+@@ -73,9 +73,16 @@
+         for v in &mut a {
+             *v = *v / scale;
+         }
++        // Tiny reduced models retain ordered norms. Their solve cost is small,
++        // and near-exact calibration fits are sensitive to norm rounding.
++        let accelerated_norms = cols >= 8;
+         let mut tau = vec![F::zero(); cols];
+         for k in 0..cols {
+-            let length = (k..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + k]));
++            let length = if accelerated_norms {
++                scaled_norm(rows - k, |i| a[(i + k) * cols + k])
++            } else {
++                (k..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + k]))
++            };
+             if length == F::zero() {
+                 continue;
+             }
+@@ -108,7 +115,9 @@
+                 (0..cols).map(move |j| if j >= i { a[i * cols + j] } else { F::zero() })
+             })
+             .collect();
+-        let Some(mut small) = Self::factor_with_row_tolerance(cols, cols, r, rows) else {
++        let Some(mut small) =
++            Self::factor_with_row_tolerance(cols, cols, r, rows, accelerated_norms)
++        else {
+             return Self::factor(rows, cols, original);
+         };
+         let largest = small.singular.iter().copied().fold(F::zero(), F::max);

@@ -1,0 +1,370 @@
+//! Composition adapter: drive an inner solver from inside an outer
+//! solver's [`next_iter`](crate::core::solver::Solver::next_iter).
+//!
+//! [`InnerExecutor`] stores a configured inner solver and reusable execution
+//! controls. It borrows the outer problem and uses [`run_loop_with_control`](crate::run_loop_with_control).
+//! Each run resets convergence, clocks, stall counters, and factory-created
+//! application hooks. Evaluation aggregation and failure routing follow the
+//! composition contracts below.
+
+pub mod diagnostics;
+
+use crate::core::executor::OptimizationResult;
+use crate::core::math::Scalar;
+use crate::core::problem::Problem;
+use crate::core::solver::Solver;
+use crate::core::state::{CountsMirror, State};
+
+/// Marks a solver as eligible to be the *inner* of a composed solver.
+///
+/// Composed solvers ([`BarrierMethod`](crate::solver::BarrierMethod) and
+/// [`AugmentedLagrangianMethod`](crate::solver::AugmentedLagrangianMethod)
+/// re-solving their barrier or augmented-Lagrangian subproblem at each
+/// continuation step, or the CMA-injection family via the
+/// [`MemeticInner`](crate::solver::MemeticInner) sub-trait) repeatedly seed
+/// a fresh inner state at the current outer iterate, drive the inner over it,
+/// then read the refined iterate back via [`State::param`].
+///
+/// The seed and state machinery itself lives on the [`InitialState`] supertrait
+/// (which also powers the top-level
+/// [`Executor::from_start`](crate::core::executor::Executor::from_start)
+/// convenience constructor). `WarmStart` adds no items: it is a marker
+/// certifying that a solver's natural [`seed`](InitialState::seed) is
+/// *composition-safe*. A solver can build a default initial state
+/// ([`InitialState`]) without being a blessed inner: e.g. `TrustRegion` and
+/// the Powell/MADS families implement `InitialState` but not `WarmStart`.
+pub trait WarmStart<V>: InitialState<V> {}
+
+/// Build a solver's natural initial [`State`] from a starting point.
+///
+/// `seed(&self, x)` returns a fresh state whose [`State::param`] equals `x`,
+/// using the solver's *natural default scale*: there is no outer step-size to
+/// track, so a simplex solver picks its own default edge, a Hessian-history
+/// solver starts from the identity, a trust-region solver uses its default
+/// radius, and so on.
+///
+/// This is the capability behind
+/// [`Executor::from_start`](crate::core::executor::Executor::from_start):
+/// `Executor::from_start(problem, solver, x0)` calls
+/// [`seed`](Self::seed) so the caller never names the concrete state type.
+/// The composition layer reaches it through the [`WarmStart`] subtrait
+/// (which marks a solver as a validated inner); plain `InitialState` callers
+/// get the front-door constructor without that promise.
+///
+/// # Contract
+///
+/// **Implementor must:** return a state whose [`State::param`] equals `x`
+/// (a fresh seed, not a continuation of any previous solve).
+pub trait InitialState<V> {
+    /// State shape this solver iterates against.
+    type State: State<Param = V>;
+
+    /// Build a fresh state seeded at `x` using the solver's natural
+    /// default scale.
+    fn seed(&self, x: &V) -> Self::State;
+}
+
+/// A local-search operator whose full evolution state can be seeded at a
+/// point, snapshotted, and resumed: the contract behind MA-LSCh chain
+/// persistence (Molina et al. 2010), where an outer solver stores a
+/// `(solver, state)` pair per individual and later continues that exact
+/// local-search run.
+///
+/// This is the fourth composition tier, next to the fresh-seed ladder
+/// [`InitialState`] → [`WarmStart`] →
+/// [`MemeticInner`](crate::solver::MemeticInner)—but deliberately
+/// **not** a subtrait of [`InitialState`]: [`seed_chain`](Self::seed_chain)
+/// takes an explicit scale hint so a fresh local chain can use the outer
+/// population's spacing. [`CmaEs`](crate::CmaEs) and [`SolisWets`](crate::SolisWets)
+/// implement both tiers: ordinary point seeds use their configured initial
+/// scale, while chain seeds use the supplied scale hint.
+///
+/// # Contract
+///
+/// - **Caller must:** initialize a newly seeded chain once unless
+///   [`seeded_chain_is_initialized`](Self::seeded_chain_is_initialized) returns
+///   `true`. Resume stored chains without calling [`Solver::init`], so fresh
+///   initialization can reset all evolving machinery consistently.
+/// - **Caller must:** restart controls, convergence history, and per-segment
+///   accounting for each segment. This is an explicit local-search contract;
+///   exact checkpoint continuation instead retains convergence and counts.
+/// - **Implementor must:** make [`seed_chain`](Self::seed_chain) a pure
+///   function of `(self-as-config, x, fx, scale, seed)`. The
+///   prototype's own RNG must not be consumed: chains derive their
+///   streams solely from `seed`, so outer trajectories stay
+///   reproducible.
+/// - **Implementor must:** return a state whose
+///   [`State::param`] equals `x`.
+/// - **Caller (the outer solver) must:** bound the operator's
+///   `Solver` impl at its own impl site
+///   (`LS: Solver<P, LS::State, Error = P::Error>`), never via a
+///   supertrait here; and follow the three composition contracts on
+///   [`InnerExecutor`] (eval aggregation, history reset, failure
+///   routing) when driving the chain segment.
+pub trait ResumableInner<V, F = f64>: Sized
+where
+    F: Scalar,
+{
+    /// Evolution-state snapshot stored per chain slot.
+    type State: State<Param = V, Float = F> + CountsMirror;
+
+    /// Build a fresh per-chain `(solver, state)` pair anchored at `x`.
+    ///
+    /// `self` acts as a configuration prototype: hyperparameters are
+    /// copied into the returned per-chain solver instance, while the
+    /// prototype's own RNG is ignored. `fx` is the caller's known cost
+    /// at `x` (implementations may prime their state with it to avoid a
+    /// redundant evaluation, or ignore it). `scale` is the caller's
+    /// scale hint (MA-LSCh passes half the nearest-neighbor distance;
+    /// it becomes CMA-ES's σ or Solis-Wets's ρ). `seed` seeds the
+    /// chain's private RNG stream.
+    fn seed_chain(
+        &self,
+        x: &V,
+        fx: F,
+        scale: F,
+        seed: u64,
+    ) -> (Self, Self::State);
+
+    /// Whether [`seed_chain`](Self::seed_chain) produces an initialized pair.
+    ///
+    /// The default requires `Solver::init` on the first segment only. Return
+    /// `true` only if the seeded solver's machinery and every advertised state
+    /// record are ready for iteration. This supports operators that can reuse
+    /// the supplied objective `fx` without further problem evaluations.
+    fn seeded_chain_is_initialized(&self) -> bool {
+        false
+    }
+
+    /// Prepare a stored snapshot for its next run segment: reset the
+    /// local iteration counter and any per-segment bookkeeping. Must
+    /// **not** touch evolution state (distribution, bias, step size,
+    /// streak counters, …)—persisting those across segments is the
+    /// point of the chain.
+    fn prepare_resume(&self, state: &mut Self::State);
+
+    /// Configure execution stops or solver settings for a new chain segment.
+    ///
+    /// The default leaves the solver and controls unchanged. Built-in
+    /// operators configure their own convergence directly. The outer solver
+    /// supplies execution budgets, which are checked before convergence.
+    fn configure_segment(
+        &mut self,
+        _state: &Self::State,
+        _control: &mut crate::RunControl<Self::State>,
+    ) {
+    }
+}
+
+/// Pre-configured inner solver an outer solver drives once per outer
+/// iteration.
+///
+/// Owns the configured inner solver, execution controls, and its `max_iter`
+/// budget. The problem is supplied (borrowed) at [`run`](Self::run) time,
+/// so the outer solver can pass the `&P` it receives in
+/// [`next_iter`](crate::core::solver::Solver::next_iter) without taking
+/// ownership.
+///
+/// Mirrors [`Executor`](crate::core::executor::Executor)'s builder API:
+/// [`max_iter`](Self::max_iter) and [`stop_when_factory`](Self::stop_when_factory)
+/// are chainable. The differences are (a) the problem isn't owned, and
+/// (b) [`run`](Self::run) is reusable: the same `InnerExecutor` is
+/// expected to be invoked many times across the outer's lifetime.
+///
+/// [`run_loop_with_control`](crate::run_loop_with_control) provides the lower-level
+/// interface for custom outer solvers.
+///
+/// # Serialization
+///
+/// With `serde`, the solver and iteration/evaluation/time budgets serialize.
+/// Application hooks, capability controls (raw budgets
+/// and publication validation), and erased target/stall checks
+/// cannot be reconstructed and cause a serialization error. They are never
+/// silently dropped from an exact checkpoint.
+///
+/// # Composition contracts
+///
+/// Three rules outer solvers must follow when consuming the result of
+/// [`run`](Self::run); see also `CONTRIBUTING.md` "Solver composition":
+///
+/// 1. **Eval aggregation.** The [`Problem`] wrapper bumps
+///    [`EvalCounts`](crate::core::problem::EvalCounts) on every
+///    cost/gradient/residual/Jacobian/Hessian call, and the
+///    executor mirrors the per-run delta onto the inner state via
+///    [`CountsMirror`]. What the outer must do depends on which problem
+///    the inner sees:
+///
+///    - **Same-problem inner** (the outer passes its own
+///      `&mut Problem<P>` to [`run`](Self::run)): the inner's calls bump
+///      the *same* wrapper as the outer's, so aggregation happens
+///      transparently. No explicit roll-up; the outer state's
+///      [`CountsMirror`] impl decides how the counts surface on its
+///      [`State::cost_evals`]/
+///      [`GradientState::gradient_evals`](crate::core::state::GradientState::gradient_evals).
+///    - **Adapter-problem inner** (the outer builds a fresh
+///      `Problem::new(adapter)` per outer iter, e.g. the barrier and
+///      augmented-Lagrangian methods): after [`run`](Self::run) returns,
+///      fold the inner wrapper's counts back into the outer's wrapper via
+///      [`EvalCounts::add`](crate::core::problem::EvalCounts::add) on
+///      [`Problem::counts_mut`]. Skipping this fold silently corrupts
+///      `MaxCostEvals` budgets and the public `result.cost_evals()`.
+///
+///    See the [`Solver::next_iter`]
+///    contract for the canonical wording.
+///
+/// 2. **History resets per run.** Each fresh run resets solver convergence,
+///    built-in clocks, and stall checks.
+///    [`stop_when_factory`](Self::stop_when_factory) creates a fresh custom
+///    closure per run. A direct [`stop_when`](Self::stop_when) closure retains
+///    its captures across calls.
+///
+/// 3. **Stop routing.** [`run`](Self::run) returns a full
+///    [`OptimizationResult`]. Use
+///    [`TerminationReport::into_outer_termination`](crate::TerminationReport::into_outer_termination)
+///    with an explicit [`PartialResultPolicy`](crate::PartialResultPolicy).
+///    Inner convergence permits outer work to continue. Limits, targets, and
+///    stalls require a policy that consumes partial progress. Failures retain
+///    the nested report; cancellation and application stops propagate.
+///    An algorithm may explicitly reject a failed local candidate and continue,
+///    as basin hopping does. Inner convergence never certifies outer convergence.
+pub struct InnerExecutor<S: State, So> {
+    solver: So,
+    control: crate::RunControl<S>,
+}
+
+#[cfg(feature = "serde")]
+impl<S: State, So> serde::Serialize for InnerExecutor<S, So>
+where
+    So: serde::Serialize,
+{
+    fn serialize<Ser>(&self, serializer: Ser) -> Result<Ser::Ok, Ser::Error>
+    where
+        Ser: serde::Serializer,
+    {
+        use serde::ser::{Error, SerializeStruct};
+
+        if self.control.has_unserializable_stops() {
+            return Err(Error::custom(
+                "InnerExecutor cannot serialize application hooks, target/stall checks, or capability controls; \
+                 use legacy iteration/evaluation/time budgets or an owned checkpoint",
+            ));
+        }
+
+        let mut fields = serializer.serialize_struct("InnerExecutor", 3)?;
+        fields.serialize_field("solver", &self.solver)?;
+        fields.serialize_field("max_iter", &self.control.max_iter)?;
+        fields.serialize_field("limits", &self.control.limits)?;
+        fields.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, S: State, So> serde::Deserialize<'de> for InnerExecutor<S, So>
+where
+    So: serde::Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct StoredInnerExecutor<So> {
+            solver: So,
+            max_iter: u64,
+            #[serde(default)]
+            limits: crate::core::run_control::Limits,
+        }
+
+        let stored =
+            <StoredInnerExecutor<So> as serde::Deserialize>::deserialize(
+                deserializer,
+            )?;
+        Ok(Self {
+            solver: stored.solver,
+            control: {
+                let mut control =
+                    crate::RunControl::new().max_iter(stored.max_iter);
+                control.limits = stored.limits;
+                control
+            },
+        })
+    }
+}
+
+impl<S: State + CountsMirror, So> InnerExecutor<S, So> {
+    /// Build an inner executor around `solver`. Default `max_iter` is
+    /// 1000, mirroring [`Executor::new`](crate::core::executor::Executor::new).
+    pub fn new(solver: So) -> Self {
+        Self {
+            solver,
+            control: crate::RunControl::new(),
+        }
+    }
+
+    /// Set the inner-loop iteration budget. Each call to
+    /// [`run`](Self::run) drives the inner solver up to this many
+    /// iterations.
+    pub fn max_iter(mut self, n: u64) -> Self {
+        self.control.max_iter = n;
+        self
+    }
+
+    crate::core::run_control::control_methods!();
+
+    /// Append an application stop whose captures persist across inner runs.
+    /// Use [`stop_when_factory`](Self::stop_when_factory) for fresh per-run history.
+    pub fn stop_when<C>(mut self, check: C) -> Self
+    where
+        C: FnMut(&S) -> Option<crate::ApplicationStop> + 'static,
+    {
+        self.control = std::mem::take(&mut self.control).stop_when(check);
+        self
+    }
+
+    /// Read-only access to the inner solver. Lets composed outer
+    /// solvers dispatch on the inner before [`run`](Self::run), e.g. to
+    /// build an inner state via [`InitialState::seed`].
+    pub fn solver(&self) -> &So {
+        &self.solver
+    }
+
+    /// Configure the inner solver before a fresh run, including scaled
+    /// initialization through [`MemeticInner::seed_scaled`](crate::MemeticInner::seed_scaled).
+    pub fn solver_mut(&mut self) -> &mut So {
+        &mut self.solver
+    }
+
+    /// Drive the inner solver against `problem` from `state`, returning
+    /// the final inner state and termination reason. Reusable: call once
+    /// per outer iter.
+    ///
+    /// The inner state's [`State::cost_evals`] reflects only per-run
+    /// work (snapshot-relative against the wrapper count at entry), not
+    /// cumulative across calls. The wrapper itself accumulates
+    /// monotonically: for same-problem composition the outer reads
+    /// its own [`Problem::counts`] after `run` to see total work; for
+    /// adapter-problem composition the outer builds a fresh inner
+    /// `Problem` and folds counts via
+    /// [`EvalCounts::add`](crate::core::problem::EvalCounts::add) on
+    /// [`Problem::counts_mut`] after `run` returns.
+    ///
+    /// Internally exactly
+    /// [`run_loop_with_control`](crate::run_loop_with_control): `init` is called
+    /// on every invocation, so the inner solver sees a fresh setup pass
+    /// each time (e.g. seeding cost/gradient at the new starting point).
+    pub fn run<P>(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: S,
+    ) -> Result<OptimizationResult<S>, So::Error>
+    where
+        So: Solver<P, S>,
+    {
+        crate::run_loop_with_control(
+            problem,
+            state,
+            &mut self.solver,
+            &mut self.control,
+        )
+    }
+}

@@ -1,0 +1,111 @@
+#![cfg(all(feature = "ndarray_all", feature = "problems"))]
+
+use crate::backend_aliases::ndarray::Array1;
+use basin::problems::BoothBoxed;
+use basin::{
+    Backtracking, Executor, FirstOrderState, ProjectedGradientDescent,
+    TerminationCode,
+};
+
+#[test]
+fn slack_bounds_recover_unconstrained_minimum() {
+    let lower = Array1::from(vec![-5.0, -5.0]);
+    let upper = Array1::from(vec![5.0, 5.0]);
+    let problem = BoothBoxed::<Array1<f64>>::new(lower, upper);
+    let initial = Array1::from(vec![0.0, 0.0]);
+
+    let result = Executor::new(
+        problem,
+        ProjectedGradientDescent::with_line_search(Backtracking::new()),
+        FirstOrderState::new(initial),
+    )
+    .max_iter(2000)
+    .run()
+    .unwrap();
+
+    assert!(
+        (result.param()[0] - 1.0).abs() < 1e-4,
+        "x[0] = {}",
+        result.param()[0]
+    );
+    assert!(
+        (result.param()[1] - 3.0).abs() < 1e-4,
+        "x[1] = {}",
+        result.param()[1]
+    );
+}
+
+#[test]
+fn tight_bounds_converge_to_box_corner() {
+    let lower = Array1::from(vec![-1.0, -1.0]);
+    let upper = Array1::from(vec![1.0, 1.0]);
+    let problem = BoothBoxed::<Array1<f64>>::new(lower, upper);
+    let initial = Array1::from(vec![0.0, 0.0]);
+
+    let result = Executor::new(
+        problem,
+        ProjectedGradientDescent::with_line_search(Backtracking::new()),
+        FirstOrderState::new(initial),
+    )
+    .max_iter(2000)
+    .run()
+    .unwrap();
+
+    assert!(
+        (result.param()[0] - 1.0).abs() < 1e-6,
+        "x[0] = {}",
+        result.param()[0]
+    );
+    assert!(
+        (result.param()[1] - 1.0).abs() < 1e-6,
+        "x[1] = {}",
+        result.param()[1]
+    );
+}
+
+#[test]
+fn infeasible_initial_param_is_projected_at_init() {
+    let lower = Array1::from(vec![-1.0, -1.0]);
+    let upper = Array1::from(vec![1.0, 1.0]);
+    let problem = BoothBoxed::<Array1<f64>>::new(lower, upper);
+    let initial = Array1::from(vec![10.0, 10.0]);
+
+    let result = Executor::new(
+        problem,
+        ProjectedGradientDescent::new(0.01),
+        FirstOrderState::new(initial),
+    )
+    .max_iter(0)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxIter);
+    assert_eq!(result.param()[0], 1.0);
+    assert_eq!(result.param()[1], 1.0);
+}
+
+#[test]
+fn projected_gradient_tolerance_triggers_at_corner_minimum() {
+    let lower = Array1::from(vec![-1.0, -1.0]);
+    let upper = Array1::from(vec![1.0, 1.0]);
+    let problem = BoothBoxed::<Array1<f64>>::new(lower.clone(), upper.clone());
+    let initial = Array1::from(vec![0.0, 0.0]);
+
+    let result = Executor::new(
+        problem,
+        (ProjectedGradientDescent::with_line_search(Backtracking::new()))
+            .with_absolute_projected_gradient_tolerance(1e-7),
+        FirstOrderState::new(initial),
+    )
+    .max_iter(2000)
+    .run()
+    .unwrap();
+
+    assert_eq!(
+        result.report.code(),
+        TerminationCode::ProjectedGradientTolerance
+    );
+}
+
+#[path = "support/backend_aliases.rs"]
+mod backend_aliases;

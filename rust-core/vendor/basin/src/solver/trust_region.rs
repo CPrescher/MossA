@@ -1,0 +1,1458 @@
+//! Trust-region (Newton) minimization.
+//!
+//! [`TrustRegion`] is a general unconstrained minimizer over the
+//! second-order model `m(p) = f + gᵀp + ½ pᵀ B p`, where `g = ∇f(x)` and
+//! `B = ∇²f(x)` are supplied by the problem's
+//! [`Gradient`](crate::core::problem::Gradient) and [`Hessian`](crate::core::problem::Hessian) impls. Each iteration approximately
+//! minimizes `m` over a ball `‖p‖ ≤ Δ`, compares the achieved reduction to
+//! the model's prediction, and grows or shrinks the radius `Δ` accordingly
+//! (Nocedal & Wright, *Numerical Optimization*, 2e, Algorithm 4.1).
+//!
+//! The trust-region *subproblem*, the constrained quadratic minimization,
+//! is solved by a pluggable strategy implementing the crate-internal
+//! `Subproblem` seam. Four ship today:
+//!
+//! - [`Steihaug`]: truncated conjugate gradient (the default). Matrix-free
+//!   (needs only Hessian-vector products), handles indefinite `B` by
+//!   following a negative-curvature direction to the boundary. The
+//!   large-scale-capable workhorse; runs on every backend.
+//! - [`Dogleg`]: the Cauchy and Newton dogleg path (N&W eq. 4.16). Needs a
+//!   Cholesky solve for the Newton step, so it requires a backend with
+//!   [`LinearSolveSpd`](crate::core::math::LinearSolveSpd); it falls back to
+//!   the Cauchy point when `B` is not positive definite.
+//! - [`MoreSorensen`]: a near-exact global solve using the safeguarded secular
+//!   equation and explicit hard-case treatment (Moré & Sorensen 1983). It
+//!   needs a full eigendecomposition plus Cholesky solves; use it when
+//!   subproblem robustness matters more than large-scale cost.
+//! - [`CauchyPoint`]: the steepest-descent-to-boundary closed form (N&W
+//!   eq. 4.11–4.12). A bulletproof baseline with only linear convergence;
+//!   mostly a reference strategy.
+//!
+//! The solver runs in one of two modes, selected by the `Mode` type
+//! parameter: [`ExactHessian`] (the default) forms the full Hessian via the
+//! problem's [`Hessian`](crate::core::problem::Hessian) impl, while
+//! [`MatrixFree`] (via [`TrustRegion::matrix_free`]) drives the subproblem
+//! purely through the problem's
+//! [`HessianProduct`](crate::core::problem::HessianProduct) impl and never
+//! forms a matrix.
+
+pub mod diagnostics;
+pub mod dogleg;
+pub mod more_sorensen;
+pub mod steihaug;
+
+pub use dogleg::Dogleg;
+pub use more_sorensen::MoreSorensen;
+pub use steihaug::Steihaug;
+
+use std::marker::PhantomData;
+
+use crate::EvaluationBuffers;
+use crate::core::inner::InitialState;
+use crate::core::math::{
+    Dot, MatVec, NegInPlace, NormSquared, Scalar, ScaleInPlace, ScaledAdd,
+    VectorLen,
+};
+use crate::core::problem::buffers::BufferStorage;
+use crate::core::problem::{
+    CostFunction, Gradient, Hessian, HessianProduct, Problem,
+};
+use crate::core::solver::Solver;
+use crate::core::state::{FirstOrderState, State};
+use crate::core::termination::Termination;
+
+/// The outcome of an (approximate) trust-region subproblem solve: the step
+/// `d`, the predicted model decrease `m(0) − m(d)`, and whether the
+/// step landed on the trust-region boundary (which gates radius growth).
+pub(crate) struct Step<V, F> {
+    /// The step `d` (relative to the current iterate).
+    pub(crate) d: V,
+    /// Predicted reduction `m(0) − m(d) = −(gᵀd) − ½ dᵀBd`. Roundoff or
+    /// radius collapse can make this non-positive away from stationarity,
+    /// so the driver must check the gradient before reporting convergence.
+    /// A non-finite value signals an unusable model or subproblem solve;
+    /// the driver reports it as a solver failure.
+    pub(crate) predicted_reduction: F,
+    /// `true` when `‖d‖ ≈ Δ`: the constraint is active. Only then may the
+    /// driver grow the radius on a very good step (N&W Algorithm 4.1).
+    pub(crate) hit_boundary: bool,
+}
+
+/// A strategy that approximately minimizes the quadratic model
+/// `m(p) = gᵀp + ½ pᵀ B p` over the trust region `‖p‖ ≤ radius`.
+///
+/// Crate-internal: the shipped strategies ([`Steihaug`], [`Dogleg`],
+/// [`MoreSorensen`], [`CauchyPoint`]) are the closed set for now. Each binds
+/// `M` (the Hessian matrix type) on only the operations it needs: [`MatVec`]
+/// for the universal strategies, [`LinearSolveSpd`](crate::core::math::LinearSolveSpd)
+/// for [`Dogleg`], and Cholesky plus
+/// [`SymmetricEigen`](crate::core::math::SymmetricEigen) for
+/// [`MoreSorensen`]. A missing backend operation is therefore a compile error
+/// for that strategy alone (tenet 5). Promoting this trait to public is an
+/// additive, non-breaking change if user-defined subproblem solvers are ever
+/// wanted.
+pub(crate) trait Subproblem<V, M, F> {
+    /// Approximately minimize `m(p) = gᵀp + ½ pᵀ B p` over `‖p‖ ≤ radius`.
+    fn solve(&self, gradient: &V, hessian: &M, radius: F) -> Step<V, F>;
+}
+
+/// The matrix-free sibling of [`Subproblem`]: the Hessian is reachable only
+/// through the fallible product closure `bv: v ↦ B·v` (in practice the
+/// counted [`HessianProduct`] call, so
+/// errors are the problem's own and must propagate). Crate-internal, like
+/// [`Subproblem`]. [`Steihaug`] and [`CauchyPoint`] implement it; [`Dogleg`]
+/// and [`MoreSorensen`] need the actual matrix, so pairing either with
+/// [`MatrixFree`] mode is a compile error (tenet 5).
+pub(crate) trait SubproblemHvp<V, F> {
+    /// Approximately minimize `m(p) = gᵀp + ½ pᵀ B p` over `‖p‖ ≤ radius`,
+    /// touching `B` only through `bv`.
+    #[cfg(test)]
+    fn solve_hvp<E>(
+        &self,
+        gradient: &V,
+        radius: F,
+        mut bv: impl FnMut(&V) -> Result<V, E>,
+    ) -> Result<Step<V, F>, E> {
+        self.solve_hvp_into(gradient, radius, |v, out| {
+            *out = bv(v)?;
+            Ok(())
+        })
+    }
+
+    fn solve_hvp_into<E>(
+        &self,
+        gradient: &V,
+        radius: F,
+        bv: impl FnMut(&V, &mut V) -> Result<(), E>,
+    ) -> Result<Step<V, F>, E>;
+}
+
+/// Model decrease `m(0) − m(d) = −(gᵀd) − ½ dᵀBd` from a precomputed
+/// product `bd = B·d`. Shared by every subproblem strategy so the
+/// predicted-reduction convention lives in one place.
+pub(crate) fn model_decrease_from_bd<V, F>(g: &V, d: &V, bd: &V) -> F
+where
+    F: Scalar,
+    V: Dot<F>,
+{
+    let half = F::from_f64(0.5).unwrap();
+    -g.dot(d) - half * d.dot(bd)
+}
+
+/// [`model_decrease_from_bd`] with the product computed via [`MatVec`], for
+/// the matrix-based strategies.
+pub(crate) fn model_decrease<V, M, F>(g: &V, b: &M, d: &V) -> F
+where
+    F: Scalar,
+    V: Dot<F>,
+    M: MatVec<V>,
+{
+    let bd = b.matvec(d);
+    model_decrease_from_bd(g, d, &bd)
+}
+
+/// The largest `τ ≥ 0` with `‖z + τ d‖ = radius`: the positive root of the
+/// quadratic `‖z + τ d‖² = radius²`. Used to walk a CG iterate (Steihaug)
+/// or a negative-curvature direction out to the trust-region boundary.
+/// Assumes `z` lies inside the ball (`‖z‖ ≤ radius`), so the discriminant
+/// is non-negative; it is clamped to zero defensively against roundoff.
+pub(crate) fn tau_to_boundary<V, F>(z: &V, d: &V, radius: F) -> F
+where
+    F: Scalar,
+    V: Dot<F>,
+{
+    let dd = d.dot(d);
+    let zd = z.dot(d);
+    let zz = z.dot(z);
+    let rr = radius * radius;
+    let disc = zd * zd - dd * (zz - rr);
+    let disc = if disc < F::zero() { F::zero() } else { disc };
+    (-zd + disc.sqrt()) / dd
+}
+
+/// Cauchy-point subproblem strategy: minimize the model along the
+/// steepest-descent direction `−g`, capped at the trust-region boundary
+/// (Nocedal & Wright eq. 4.11–4.12).
+///
+/// The step is `p = −τ (Δ / ‖g‖) g`, with the scalar `τ` chosen to minimize
+/// the model along `−g` within the region: `τ = 1` when the curvature
+/// `gᵀBg ≤ 0` (the model decreases without bound, so go to the boundary),
+/// otherwise `τ = min(‖g‖³ / (Δ gᵀBg), 1)`. Robust but only linearly
+/// convergent; it ignores all curvature off the gradient direction. Useful
+/// as a baseline, and as [`Dogleg`]'s fallback when the Hessian is not
+/// positive definite.
+#[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct CauchyPoint;
+
+impl<V, M, F> Subproblem<V, M, F> for CauchyPoint
+where
+    F: Scalar,
+    V: Clone + Dot<F> + NormSquared<F> + ScaleInPlace<F> + NegInPlace,
+    M: MatVec<V>,
+{
+    fn solve(&self, g: &V, b: &M, radius: F) -> Step<V, F> {
+        let g_norm = g.norm_squared().sqrt();
+        if g_norm <= F::zero() {
+            // Gradient already negligible: the zero step is optimal.
+            let mut d = g.clone();
+            d.scale_in_place(F::zero());
+            return Step {
+                d,
+                predicted_reduction: F::zero(),
+                hit_boundary: false,
+            };
+        }
+        let bg = b.matvec(g);
+        let gbg = g.dot(&bg);
+        let tau = if gbg <= F::zero() {
+            F::one()
+        } else {
+            let t = g_norm * g_norm * g_norm / (radius * gbg);
+            if t < F::one() { t } else { F::one() }
+        };
+        // p = −τ (Δ / ‖g‖) g.
+        let mut d = g.clone();
+        d.scale_in_place(-(tau * radius / g_norm));
+        let predicted_reduction = model_decrease(g, b, &d);
+        Step {
+            d,
+            predicted_reduction,
+            // τ = 1 ⟺ the step is the full Δ-length steepest-descent step,
+            // i.e. it sits on the boundary.
+            hit_boundary: tau >= F::one(),
+        }
+    }
+}
+
+impl<V, F> SubproblemHvp<V, F> for CauchyPoint
+where
+    F: Scalar,
+    V: Clone + Dot<F> + NormSquared<F> + ScaleInPlace<F> + NegInPlace,
+{
+    fn solve_hvp_into<E>(
+        &self,
+        g: &V,
+        radius: F,
+        mut bv: impl FnMut(&V, &mut V) -> Result<(), E>,
+    ) -> Result<Step<V, F>, E> {
+        let g_norm = g.norm_squared().sqrt();
+        if g_norm <= F::zero() {
+            // Gradient already negligible: the zero step is optimal.
+            let mut d = g.clone();
+            d.scale_in_place(F::zero());
+            return Ok(Step {
+                d,
+                predicted_reduction: F::zero(),
+                hit_boundary: false,
+            });
+        }
+        let mut bg = g.clone();
+        bv(g, &mut bg)?;
+        let gbg = g.dot(&bg);
+        let tau = if gbg <= F::zero() {
+            F::one()
+        } else {
+            let t = g_norm * g_norm * g_norm / (radius * gbg);
+            if t < F::one() { t } else { F::one() }
+        };
+        // p = −τ (Δ / ‖g‖) g, so B·p is the already-computed B·g rescaled:
+        // one product per solve instead of two.
+        let c = -(tau * radius / g_norm);
+        let mut d = g.clone();
+        d.scale_in_place(c);
+        let mut bd = bg;
+        bd.scale_in_place(c);
+        let predicted_reduction = model_decrease_from_bd(g, &d, &bd);
+        Ok(Step {
+            d,
+            predicted_reduction,
+            // τ = 1 ⟺ the step is the full Δ-length steepest-descent step,
+            // i.e. it sits on the boundary.
+            hit_boundary: tau >= F::one(),
+        })
+    }
+}
+
+/// Trust-region Newton minimizer (Nocedal & Wright, *Numerical
+/// Optimization*, 2e, §4 / Algorithm 4.1).
+///
+/// At each iterate `x` the local quadratic model
+/// `m(p) = f(x) + ∇f(x)ᵀp + ½ pᵀ ∇²f(x) p` is approximately minimized over a
+/// ball `‖p‖ ≤ Δ` by the configured `Subproblem` strategy. The ratio of
+/// achieved to predicted reduction,
+/// `ρ = (f(x) − f(x + p)) / (m(0) − m(p))`, drives the radius: `Δ` shrinks
+/// when `ρ` is poor (`< ¼`), grows when `ρ` is excellent (`> ¾`) and the
+/// step is constrained by the boundary, and the step is accepted when
+/// `ρ > η`. A rejected step shrinks `Δ` and re-solves the subproblem with
+/// the *same* gradient and Hessian (no extra derivative evaluations) up to
+/// [`with_max_inner_attempts`](Self::with_max_inner_attempts) times per
+/// outer iteration (the same reuse pattern as
+/// [`LevenbergMarquardt`](crate::solver::LevenbergMarquardt)).
+///
+/// The subproblem strategy defaults to [`Steihaug`] (truncated CG); choose
+/// another with [`with_subproblem`](Self::with_subproblem). The radius `Δ`
+/// is solver-internal working state. Configure convergence with
+/// `with_absolute_gradient_tolerance`, `with_relative_gradient_tolerance`,
+/// or the observed step/cost-change setters, all disabled by default. Keep
+/// iteration and evaluation budgets on the executor.
+///
+/// A finite, non-positive predicted reduction stops the solver. It reports
+/// [`crate::TerminationCode::SolverConverged`] only if the computed gradient norm
+/// is zero; otherwise it reports [`crate::TerminationCode::NumericalNoProgress`],
+/// which does not establish stationarity. Configured gradient tolerances
+/// are checked before each iteration and can establish approximate
+/// convergence before this safeguard is reached.
+///
+/// Progress uses [`FirstOrderState<V, F>`]. Fresh initialization clears
+/// counters and incumbents, restores the configured radius, and reevaluates
+/// the seed. Exact checkpoints preserve the current radius and rejection
+/// history. Retain the solver with [`crate::Executor::run_with_solver`] and
+/// read [`Self::radius`] for the final radius. Hessian and Hessian-product
+/// evaluations retain their own categories in `state.counts()`; they do not
+/// increment `state.gradient_evals()`.
+///
+/// # Matrix-free mode
+///
+/// [`matrix_free`](Self::matrix_free) /
+/// [`matrix_free_with`](Self::matrix_free_with) switch the `Mode` parameter
+/// to [`MatrixFree`]: the problem then implements
+/// [`HessianProduct`] instead of
+/// [`Hessian`], and the subproblem reaches `B` only through counted
+/// `v ↦ ∇²f(x)·v` calls. No matrix is ever formed, so the mode scales to
+/// large `n` and runs on any vector backend, including plain `Vec<F>`
+/// (which has no Hessian matrix type at all). [`Steihaug`] and
+/// [`CauchyPoint`] support it; [`Dogleg`] and [`MoreSorensen`] need the actual
+/// matrix, so pairing either with matrix-free mode is a compile error.
+///
+/// One cost asymmetry to know about: exact mode evaluates one Hessian per
+/// outer iteration and reuses it across inner radius reductions for free,
+/// while matrix-free mode re-pays the CG products when a rejected step
+/// re-solves at the same iterate (the shrunken radius truncates CG earlier,
+/// so re-attempts get cheaper). This is inherent to truncated-CG trust
+/// regions; [`EvalCounts::hessian_product_evals`](crate::EvalCounts) makes
+/// the cost visible.
+///
+/// # Backends
+///
+/// The solver itself needs `Clone`, [`VectorLen`], [`ScaledAdd`], and
+/// [`NormSquared`] on the parameter vector, plus a [`Hessian`] impl in the
+/// default [`ExactHessian`] mode. There, the effective backend coverage is
+/// set by the chosen subproblem:
+/// [`Steihaug`] and [`CauchyPoint`] need only [`MatVec`] on the Hessian, so
+/// they run on every backend that has a dense matrix type (`Vec<f64>` via
+/// [`DenseMatrix`](crate::core::math::DenseMatrix), nalgebra, faer, and
+/// `ndarray`); [`Dogleg`] additionally needs
+/// [`LinearSolveSpd`](crate::core::math::LinearSolveSpd), while
+/// [`MoreSorensen`] needs that Cholesky solve plus
+/// [`SymmetricEigen`](crate::core::math::SymmetricEigen). Those operations are
+/// available on all four dense backends. In [`MatrixFree`] mode no matrix type
+/// is bound at all, so every vector backend works. Both scalar types, `f32`
+/// and `f64`, are supported on all four dense backends. All shipped strategies are
+/// wasm-clean in their pure-Rust configurations; the optional nalgebra LAPACK
+/// acceleration remains non-WASM as documented by that feature.
+///
+/// Second-order information can reach the solver by three routes: an
+/// analytic [`Hessian`] (exact mode), an analytic
+/// [`HessianProduct`] (matrix-free
+/// mode; see also the gradient-difference helpers
+/// [`forward_difference_hessian_product`](crate::core::numdiff::forward_difference_hessian_product)
+/// /
+/// [`central_difference_hessian_product`](crate::core::numdiff::central_difference_hessian_product)),
+/// or [`FiniteDiff`](crate::core::numdiff::FiniteDiff), which synthesizes
+/// both: a finite-difference [`Hessian`] over a backend with a dense matrix
+/// type (nalgebra / faer), or a finite-difference Hessian product on any
+/// backend.
+///
+/// # References
+///
+/// Nocedal, J., & Wright, S. J. (2006). *Numerical Optimization* (2nd ed.),
+/// Chapter 4 (trust-region methods). Springer.
+/// [doi:10.1007/978-0-387-40065-5](https://doi.org/10.1007/978-0-387-40065-5).
+///
+/// Moré, J. J., & Sorensen, D. C. (1983). Computing a trust region step.
+/// *SIAM Journal on Scientific and Statistical Computing*, 4(3), 553–572.
+/// [doi:10.1137/0904038](https://doi.org/10.1137/0904038).
+///
+/// # Examples
+///
+/// Minimize the 2-D Rosenbrock function with an analytic Hessian over the
+/// nalgebra backend (the dense-matrix backend the example's `DMatrix`
+/// Hessian uses):
+///
+/// ```
+/// # #[cfg(feature = "nalgebra_v0_35")] {
+/// use basin::{CostFunction, Executor, Gradient, Hessian, TrustRegion};
+/// use nalgebra::{DMatrix, DVector};
+///
+/// struct Rosenbrock;
+/// impl CostFunction for Rosenbrock {
+///     type Param = DVector<f64>;
+///     type Output = f64;
+///     type Error = std::convert::Infallible;
+///     fn cost(&self, x: &DVector<f64>) -> Result<f64, Self::Error> {
+///         Ok((1.0 - x[0]).powi(2) + 100.0 * (x[1] - x[0].powi(2)).powi(2))
+///     }
+/// }
+/// impl Gradient for Rosenbrock {
+///     type Gradient = DVector<f64>;
+///     fn gradient(&self, x: &DVector<f64>) -> Result<DVector<f64>, Self::Error> {
+///         Ok(DVector::from_vec(vec![
+///             -2.0 * (1.0 - x[0]) - 400.0 * x[0] * (x[1] - x[0].powi(2)),
+///             200.0 * (x[1] - x[0].powi(2)),
+///         ]))
+///     }
+/// }
+/// impl Hessian for Rosenbrock {
+///     type Hessian = DMatrix<f64>;
+///     fn hessian(&self, x: &DVector<f64>) -> Result<DMatrix<f64>, Self::Error> {
+///         let h11 = 2.0 - 400.0 * (x[1] - 3.0 * x[0].powi(2));
+///         Ok(DMatrix::from_row_slice(2, 2, &[
+///             h11, -400.0 * x[0],
+///             -400.0 * x[0], 200.0,
+///         ]))
+///     }
+/// }
+///
+/// let result = Executor::new(Rosenbrock, (TrustRegion::new()).with_absolute_gradient_tolerance(1e-8), basin::FirstOrderState::new(DVector::from_vec(vec![-1.2, 1.0])))
+///     .max_iter(100)
+///
+///     .run()
+///     .unwrap();
+/// assert!(result.cost() < 1e-10);
+/// # }
+/// ```
+///
+/// Matrix-free on the dependency-free `Vec<f64>` backend: the problem
+/// implements [`HessianProduct`]
+/// (here `∇²f = diag(1, 100)`, so `∇²f·v` is a componentwise scale) and no
+/// Hessian matrix ever exists:
+///
+/// ```
+/// use basin::{
+///     FirstOrderState, CostFunction, Executor, Gradient, HessianProduct,
+///     TrustRegion};
+///
+/// struct IllQuadratic;
+/// impl CostFunction for IllQuadratic {
+///     type Param = Vec<f64>;
+///     type Output = f64;
+///     type Error = std::convert::Infallible;
+///     fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+///         Ok(0.5 * (x[0] * x[0] + 100.0 * x[1] * x[1]))
+///     }
+/// }
+/// impl Gradient for IllQuadratic {
+///     type Gradient = Vec<f64>;
+///     fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+///         Ok(vec![x[0], 100.0 * x[1]])
+///     }
+/// }
+/// impl HessianProduct for IllQuadratic {
+///     fn hessian_product(
+///         &self,
+///         _x: &Vec<f64>,
+///         v: &Vec<f64>,
+///     ) -> Result<Vec<f64>, Self::Error> {
+///         Ok(vec![v[0], 100.0 * v[1]])
+///     }
+/// }
+///
+/// let result = Executor::new(
+///     IllQuadratic,
+///     TrustRegion::matrix_free().with_absolute_gradient_tolerance(1e-10),
+///     FirstOrderState::new(vec![5.0, 1.0]),
+/// )
+/// .max_iter(100)
+/// .run()
+/// .unwrap();
+/// assert!(result.cost() < 1e-16);
+/// ```
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct TrustRegion<
+    Sub = Steihaug,
+    F: Scalar = f64,
+    Mode = ExactHessian,
+    W = (),
+> {
+    subproblem: Sub,
+    /// Current trust radius `Δ`, mutated across iterations. Reset to
+    /// `initial_radius` by [`Solver::init`].
+    radius: F,
+    initial_radius: F,
+    max_radius: F,
+    eta: F,
+    max_inner: u32,
+    rejected_step: bool,
+    #[cfg_attr(feature = "serde", serde(skip))]
+    trials: Option<Vec<diagnostics::Trial<F>>>,
+    mode: PhantomData<Mode>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    workspace: W,
+}
+
+/// Marker for [`TrustRegion`]'s default mode: the full Hessian matrix `B`
+/// is formed once per outer iteration via the problem's
+/// [`Hessian`] impl and reused across inner
+/// radius reductions.
+#[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct ExactHessian;
+
+/// Marker for [`TrustRegion`]'s matrix-free mode: `B` is never formed; the
+/// subproblem touches it only through the problem's
+/// [`HessianProduct`] impl. See
+/// [`TrustRegion::matrix_free`].
+#[derive(Debug, Clone, Copy, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct MatrixFree;
+
+impl Default for TrustRegion<Steihaug> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TrustRegion<Steihaug> {
+    /// Trust-region solver with the default [`Steihaug`] (truncated CG)
+    /// subproblem: initial radius `1.0`, maximum radius `100.0`, acceptance
+    /// threshold `η = 0.125`, and up to `10` radius reductions per outer
+    /// iteration.
+    pub fn new() -> Self {
+        Self::with_subproblem(Steihaug::new())
+    }
+}
+
+impl TrustRegion<Steihaug, f64, MatrixFree> {
+    /// Matrix-free trust-region solver with the default [`Steihaug`]
+    /// subproblem and the same defaults as [`new`](TrustRegion::new). The
+    /// problem must implement
+    /// [`HessianProduct`] instead of
+    /// [`Hessian`]; no Hessian matrix is ever
+    /// formed. See the type-level "Matrix-free mode" section.
+    pub fn matrix_free() -> Self {
+        Self::matrix_free_with(Steihaug::new())
+    }
+}
+
+impl<Sub, F: Scalar> TrustRegion<Sub, F, MatrixFree> {
+    /// Matrix-free trust-region solver with an explicit subproblem strategy
+    /// ([`Steihaug`] or [`CauchyPoint`]; [`Dogleg`] and [`MoreSorensen`] need
+    /// the actual matrix and are compile errors here).
+    pub fn matrix_free_with(subproblem: Sub) -> Self {
+        Self {
+            subproblem,
+            radius: F::one(),
+            initial_radius: F::one(),
+            max_radius: F::from_f64(100.0).unwrap(),
+            eta: F::from_f64(0.125).unwrap(),
+            max_inner: 10,
+            rejected_step: false,
+            trials: None,
+            mode: PhantomData,
+            workspace: (),
+        }
+    }
+}
+
+impl<Sub, F: Scalar> TrustRegion<Sub, F> {
+    /// Retain a typed Hessian buffer between outer iterations.
+    ///
+    /// The matrix type is inferred from the problem. The first Hessian request
+    /// seeds the buffer through the owned callback; later requests call
+    /// [`Hessian::hessian_into`]. Fresh runs reevaluate the Hessian and permit
+    /// the callback to resize retained storage. Exact checkpoints retain it.
+    /// The original constructor and its backend bounds remain available.
+    pub fn with_evaluation_buffers<M>(
+        self,
+    ) -> TrustRegion<Sub, F, ExactHessian, EvaluationBuffers<(), M>> {
+        TrustRegion {
+            subproblem: self.subproblem,
+            radius: self.radius,
+            initial_radius: self.initial_radius,
+            max_radius: self.max_radius,
+            eta: self.eta,
+            max_inner: self.max_inner,
+            rejected_step: self.rejected_step,
+            trials: self.trials,
+            mode: PhantomData,
+            workspace: EvaluationBuffers::default(),
+        }
+    }
+
+    /// Trust-region solver with an explicit subproblem strategy
+    /// ([`Steihaug`], [`Dogleg`], [`MoreSorensen`], or [`CauchyPoint`]).
+    pub fn with_subproblem(subproblem: Sub) -> Self {
+        Self {
+            subproblem,
+            radius: F::one(),
+            initial_radius: F::one(),
+            max_radius: F::from_f64(100.0).unwrap(),
+            eta: F::from_f64(0.125).unwrap(),
+            max_inner: 10,
+            rejected_step: false,
+            trials: None,
+            mode: PhantomData,
+            workspace: (),
+        }
+    }
+}
+
+impl<Sub, F: Scalar, Mode, W> TrustRegion<Sub, F, Mode, W> {
+    /// Enable native trial records without changing the numerical policy.
+    pub fn with_trial_diagnostics(mut self, enabled: bool) -> Self {
+        self.trials = enabled.then(Vec::new);
+        self
+    }
+
+    /// Native inner attempts, including incomplete callback phases.
+    pub fn trial_observations(&self) -> &[diagnostics::Trial<F>] {
+        self.trials.as_deref().unwrap_or(&[])
+    }
+
+    /// Current trust radius, retained by solver-aware results and checkpoints.
+    pub fn radius(&self) -> F {
+        self.radius
+    }
+
+    /// Initial trust radius `Δ₀` (default `1.0`). Must be positive. A good
+    /// `Δ₀` is the order of magnitude of the expected step to the minimum.
+    pub fn with_radius(mut self, radius: F) -> Self {
+        assert!(radius > F::zero(), "initial radius must be > 0");
+        self.initial_radius = radius;
+        self.radius = radius;
+        self
+    }
+
+    /// Upper bound on the trust radius `Δ_max` (default `100.0`). Must be
+    /// positive. Caps radius growth on a run of excellent steps.
+    pub fn with_max_radius(mut self, max_radius: F) -> Self {
+        assert!(max_radius > F::zero(), "max radius must be > 0");
+        self.max_radius = max_radius;
+        self
+    }
+
+    /// Step-acceptance threshold `η` (default `0.125`): a step is accepted
+    /// when the reduction ratio `ρ > η`. Nocedal & Wright require
+    /// `η ∈ [0, ¼)`; this is asserted.
+    pub fn with_eta(mut self, eta: F) -> Self {
+        assert!(
+            eta >= F::zero() && eta < F::from_f64(0.25).unwrap(),
+            "eta must be in [0, 1/4)"
+        );
+        self.eta = eta;
+        self
+    }
+
+    /// Maximum radius reductions per outer iteration (default `10`). Each
+    /// rejected step shrinks `Δ` and re-solves the subproblem with the same
+    /// gradient and Hessian; after this many rejections the iteration
+    /// returns the iterate unmoved with the shrunken radius, and the next
+    /// outer iteration retries. Must be `≥ 1`.
+    pub fn with_max_inner_attempts(mut self, n: u32) -> Self {
+        assert!(n >= 1, "max inner attempts must be ≥ 1");
+        self.max_inner = n;
+        self
+    }
+}
+
+impl<Sub, V, F, Mode, W> InitialState<V> for TrustRegion<Sub, F, Mode, W>
+where
+    F: Scalar,
+    V: Clone,
+{
+    type State = FirstOrderState<V, F>;
+    fn seed(&self, x: &V) -> Self::State {
+        FirstOrderState::new(x.clone())
+    }
+}
+
+/// Shared `Solver::init` body for both modes: reset the radius and seed
+/// cost + gradient so iter-0 termination checks (e.g. `GradientTolerance`
+/// on a near-optimal start) see a complete state. Second-order information
+/// is (re)computed per iteration in `next_iter`, so none is seeded here.
+fn tr_init<P, V, F>(
+    radius: &mut F,
+    initial_radius: F,
+    problem: &mut Problem<P>,
+    mut state: FirstOrderState<V, F>,
+) -> Result<FirstOrderState<V, F>, P::Error>
+where
+    F: Scalar,
+    V: Clone + VectorLen,
+    P: CostFunction<Param = V, Output = F> + Gradient<Gradient = V>,
+{
+    state.reset();
+    // A reused solver instance must restart from the configured radius.
+    *radius = initial_radius;
+    let (cost, grad) =
+        problem.cost_and_gradient_reusing(state.param(), None)?;
+    state
+        .set_evaluation(cost, grad)
+        .expect("gradient dimension differs from parameter");
+    Ok(state)
+}
+
+/// Shared `Solver::next_iter` body for both modes: the accept/shrink loop
+/// of N&W Algorithm 4.1. The mode-specific part — how a subproblem attempt
+/// obtains `B·v` — is injected as `attempt(problem, x, g, radius)`, called
+/// once per inner radius reduction at the *same* iterate `x`.
+/// The final tuple element reports whether a step was accepted, so rejected
+/// iterations cannot trigger the generic iterate-change checks.
+#[allow(clippy::type_complexity, clippy::too_many_arguments)]
+fn tr_next_iter<P, V, F>(
+    radius: &mut F,
+    max_radius: F,
+    eta: F,
+    max_inner: u32,
+    trials: &mut Option<Vec<diagnostics::Trial<F>>>,
+    problem: &mut Problem<P>,
+    mut state: FirstOrderState<V, F>,
+    mut attempt: impl FnMut(
+        &mut Problem<P>,
+        &V,
+        &V,
+        F,
+    ) -> Result<Step<V, F>, P::Error>,
+) -> Result<(FirstOrderState<V, F>, Option<Termination<F>>, bool), P::Error>
+where
+    F: Scalar,
+    P: CostFunction<Param = V, Output = F> + Gradient<Gradient = V>,
+    V: Clone + ScaledAdd<F> + NormSquared<F> + VectorLen,
+{
+    let (cost_old, mut g) = state
+        .take_evaluation()
+        .expect("trust region requires initialized progress");
+
+    let quarter = F::from_f64(0.25).unwrap();
+    let three_quarters = F::from_f64(0.75).unwrap();
+    let two = F::from_f64(2.0).unwrap();
+
+    for _ in 0..max_inner {
+        if let Some(records) = trials.as_mut() {
+            records.push(diagnostics::Trial {
+                sequence: records.len() as u64 + 1,
+                phase: diagnostics::Phase::Subproblem,
+                radius_before: *radius,
+                radius_after: None,
+                gradient_norm_squared: g.norm_squared(),
+                step_norm_squared: None,
+                predicted_reduction: None,
+                trial_cost: None,
+                ratio: None,
+                hit_boundary: None,
+                eta,
+                counts_before: *problem.counts(),
+                counts_after: *problem.counts(),
+            });
+        }
+        let step = attempt(problem, state.param(), &g, *radius)?;
+        if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+            record.step_norm_squared = Some(step.d.norm_squared());
+            record.predicted_reduction = Some(step.predicted_reduction);
+            record.hit_boundary = Some(step.hit_boundary);
+            record.counts_after = *problem.counts();
+        }
+
+        // Non-finite model data or subproblem arithmetic makes the step
+        // untrustworthy, regardless of the gradient norm.
+        if !step.predicted_reduction.is_finite() {
+            if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+                record.phase = diagnostics::Phase::InvalidModel;
+            }
+            state
+                .set_evaluation(cost_old, g)
+                .expect("gradient dimension differs from parameter");
+            return Ok((
+                state,
+                Some(Termination::numerical_failure(
+                    "The trust-region subproblem returned a non-finite predicted reduction.",
+                )),
+                false,
+            ));
+        }
+
+        // Radius collapse or roundoff can erase the predicted reduction
+        // away from stationarity. Configured gradient tolerances are
+        // checked before next_iter; only a zero norm establishes
+        // convergence here without adding an implicit tolerance.
+        if step.predicted_reduction <= F::zero() {
+            if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+                record.phase = diagnostics::Phase::NoProgress;
+            }
+            let gradient_norm = g.norm_l2();
+            let reason = if gradient_norm == F::zero() {
+                Termination::custom(
+                    "trust_region.zero_gradient",
+                    "The Euclidean gradient norm is exactly zero.",
+                    vec![crate::Measurement {
+                        name: "gradient_norm".into(),
+                        value: gradient_norm,
+                    }],
+                )
+            } else {
+                Termination::numerical_stall(
+                    "trust_region: no numerical progress",
+                )
+            };
+            state
+                .set_evaluation(cost_old, g)
+                .expect("gradient dimension differs from parameter");
+            return Ok((state, Some(reason), false));
+        }
+
+        let mut trial = state.param().clone();
+        trial.scaled_add(F::one(), &step.d);
+        if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+            record.phase = diagnostics::Phase::TrialEvaluation;
+        }
+        let cost_trial = problem.cost(&trial)?;
+        if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+            record.trial_cost = Some(cost_trial);
+            record.counts_after = *problem.counts();
+        }
+
+        let rho = (cost_old - cost_trial) / step.predicted_reduction;
+        let step_norm = step.d.norm_squared().sqrt();
+
+        // Radius update (N&W Algorithm 4.1). A non-finite ρ (trial cost
+        // Inf/NaN from a soft rejection) routes to the shrink branch, so
+        // the radius always decreases on a bad step and the inner loop
+        // can't stall.
+        //
+        // The shrink uses ¼‖p‖ rather than the literal ¼Δ of Algorithm
+        // 4.1: the two agree for a boundary step (‖p‖ ≈ Δ) but ¼‖p‖
+        // shrinks harder on a rejected *interior* step, anchoring the new
+        // radius to the step the model actually mispredicted. This
+        // follows argmin's `TrustRegion` (0.25 * pk_norm); deliberate, not
+        // the textbook ¼Δ.
+        if rho < quarter || !rho.is_finite() {
+            *radius = quarter * step_norm;
+        } else if rho > three_quarters && step.hit_boundary {
+            let grown = two * *radius;
+            *radius = if grown < max_radius {
+                grown
+            } else {
+                max_radius
+            };
+        }
+
+        if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+            record.ratio = Some(rho);
+            record.radius_after = Some(*radius);
+            record.phase = if rho > eta {
+                diagnostics::Phase::GradientRefresh
+            } else {
+                diagnostics::Phase::Rejected
+            };
+        }
+        if rho > eta {
+            // Accept: move to the trial point and refresh the gradient
+            // there (second-order information is recomputed by the next
+            // iteration).
+            problem.gradient_into(&trial, &mut g)?;
+            if let Some(record) = trials.as_mut().and_then(|r| r.last_mut()) {
+                record.phase = diagnostics::Phase::Accepted;
+                record.counts_after = *problem.counts();
+            }
+            state
+                .replace(trial, cost_trial, g)
+                .expect("gradient dimension differs from parameter");
+            return Ok((state, None, true));
+        }
+        // Reject: radius has shrunk; retry at the same iterate.
+    }
+
+    // Inner attempts exhausted without an acceptable step. Keep the
+    // shrunken radius and the current iterate; restore the gradient so
+    // the state stays consistent and let the next outer iteration retry
+    // (or a termination criterion fire).
+    state
+        .set_evaluation(cost_old, g)
+        .expect("gradient dimension differs from parameter");
+    Ok((state, None, false))
+}
+
+impl<P, Sub, V, M, F, W> Solver<P, FirstOrderState<V, F>>
+    for TrustRegion<Sub, F, ExactHessian, W>
+where
+    F: Scalar,
+    P: CostFunction<Param = V, Output = F>
+        + Gradient<Gradient = V>
+        + Hessian<Hessian = M>,
+    V: Clone + ScaledAdd<F> + NormSquared<F> + VectorLen,
+    Sub: Subproblem<V, M, F>,
+    W: BufferStorage<(), M>,
+{
+    type Error = P::Error;
+
+    fn should_check_iterate_change(&self) -> bool {
+        !self.rejected_step
+    }
+
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: FirstOrderState<V, F>,
+    ) -> Result<FirstOrderState<V, F>, Self::Error> {
+        self.rejected_step = false;
+        if let Some(records) = self.trials.as_mut() {
+            records.clear();
+        }
+        tr_init(&mut self.radius, self.initial_radius, problem, state)
+    }
+
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: FirstOrderState<V, F>,
+    ) -> Result<crate::SolverStep<FirstOrderState<V, F>>, Self::Error> {
+        // One Hessian per outer iteration, reused across all inner radius
+        // reductions at zero extra derivative evaluations (the gradient is
+        // likewise fixed while x is).
+        self.workspace.with_buffers(|_, buffer| {
+            let b = if let Some(mut b) = buffer.take() {
+                problem.hessian_into(state.param(), &mut b)?;
+                b
+            } else {
+                problem.hessian(state.param())?
+            };
+            let subproblem = &self.subproblem;
+            let result = tr_next_iter(
+                &mut self.radius,
+                self.max_radius,
+                self.eta,
+                self.max_inner,
+                &mut self.trials,
+                problem,
+                state,
+                |_, _, g, radius| Ok(subproblem.solve(g, &b, radius)),
+            );
+            *buffer = Some(b);
+            let (state, reason, accepted) = result?;
+            self.rejected_step = !accepted;
+            Ok(crate::SolverStep::from((state, reason)))
+        })
+    }
+}
+
+impl<P, Sub, V, F> Solver<P, FirstOrderState<V, F>>
+    for TrustRegion<Sub, F, MatrixFree>
+where
+    F: Scalar,
+    P: CostFunction<Param = V, Output = F>
+        + Gradient<Gradient = V>
+        + HessianProduct,
+    V: Clone + ScaledAdd<F> + NormSquared<F> + VectorLen,
+    Sub: SubproblemHvp<V, F>,
+{
+    type Error = P::Error;
+
+    fn should_check_iterate_change(&self) -> bool {
+        !self.rejected_step
+    }
+
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: FirstOrderState<V, F>,
+    ) -> Result<FirstOrderState<V, F>, Self::Error> {
+        self.rejected_step = false;
+        if let Some(records) = self.trials.as_mut() {
+            records.clear();
+        }
+        tr_init(&mut self.radius, self.initial_radius, problem, state)
+    }
+
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: FirstOrderState<V, F>,
+    ) -> Result<crate::SolverStep<FirstOrderState<V, F>>, Self::Error> {
+        // No Hessian is formed: every product goes through the problem's
+        // counted `hessian_product`. Unlike exact mode, an inner radius
+        // reduction re-pays its CG products at the same iterate (the
+        // shrunken radius truncates CG earlier, so re-attempts get
+        // cheaper); `hessian_product_evals` makes that cost visible.
+        let subproblem = &self.subproblem;
+        let (state, reason, accepted) = tr_next_iter(
+            &mut self.radius,
+            self.max_radius,
+            self.eta,
+            self.max_inner,
+            &mut self.trials,
+            problem,
+            state,
+            |problem, x, g, radius| {
+                subproblem.solve_hvp_into(g, radius, |v, out| {
+                    problem.hessian_product_into(x, v, out)
+                })
+            },
+        )?;
+        self.rejected_step = !accepted;
+        Ok(crate::SolverStep::from((state, reason)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Executor, FirstOrderState};
+
+    /// Ill-conditioned quadratic `f(x) = ½ xᵀ A x` with `A = diag(1, 100)`,
+    /// gradient `A x`, constant Hessian `A`. A single Newton step solves it
+    /// exactly, so any curvature-aware trust-region run reaches the origin
+    /// fast.
+    struct Quadratic;
+
+    impl crate::Constraints for Quadratic {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for Quadratic {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Ok(0.5 * (x[0] * x[0] + 100.0 * x[1] * x[1]))
+        }
+    }
+    impl Gradient for Quadratic {
+        type Gradient = Vec<f64>;
+        fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![x[0], 100.0 * x[1]])
+        }
+    }
+    impl Hessian for Quadratic {
+        type Hessian = crate::core::math::DenseMatrix<f64>;
+        fn hessian(&self, _x: &Vec<f64>) -> Result<Self::Hessian, Self::Error> {
+            Ok(crate::core::math::DenseMatrix::from_row_slice(
+                2,
+                2,
+                &[1.0, 0.0, 0.0, 100.0],
+            ))
+        }
+    }
+
+    /// 2-D Rosenbrock with an analytic Hessian over the dependency-free
+    /// `Vec<f64>` backend (`DenseMatrix`). The classic nonconvex test: the
+    /// Hessian is indefinite far from the valley floor, so it exercises the
+    /// curvature handling of every subproblem.
+    struct Rosenbrock;
+
+    impl crate::Constraints for Rosenbrock {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for Rosenbrock {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Ok((1.0 - x[0]).powi(2) + 100.0 * (x[1] - x[0].powi(2)).powi(2))
+        }
+    }
+    impl Gradient for Rosenbrock {
+        type Gradient = Vec<f64>;
+        fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![
+                -2.0 * (1.0 - x[0]) - 400.0 * x[0] * (x[1] - x[0].powi(2)),
+                200.0 * (x[1] - x[0].powi(2)),
+            ])
+        }
+    }
+    impl Hessian for Rosenbrock {
+        type Hessian = crate::core::math::DenseMatrix<f64>;
+        fn hessian(&self, x: &Vec<f64>) -> Result<Self::Hessian, Self::Error> {
+            let h11 = 2.0 + 1200.0 * x[0] * x[0] - 400.0 * x[1];
+            let h12 = -400.0 * x[0];
+            Ok(crate::core::math::DenseMatrix::from_row_slice(
+                2,
+                2,
+                &[h11, h12, h12, 200.0],
+            ))
+        }
+    }
+
+    #[test]
+    fn cauchy_point_minimizes_quadratic() {
+        let result = Executor::new(
+            Quadratic,
+            (TrustRegion::with_subproblem(CauchyPoint))
+                .with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(500)
+        .run()
+        .unwrap();
+        // Cauchy point is only linearly convergent on this conditioning, so
+        // a strong-but-not-machine-precision bound is the honest check.
+        assert!(result.cost() < 1e-8, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn steihaug_minimizes_quadratic() {
+        // Truncated CG is curvature-aware: it reaches the minimizer of a
+        // quadratic to machine precision in a handful of iterations.
+        let result = Executor::new(
+            Quadratic,
+            (TrustRegion::with_subproblem(Steihaug::new()))
+                .with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-16, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn dogleg_minimizes_quadratic() {
+        let result = Executor::new(
+            Quadratic,
+            (TrustRegion::with_subproblem(Dogleg))
+                .with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-16, "cost = {}", result.cost());
+    }
+
+    /// A quadratic whose gradient is poisoned with a NaN: the subproblem
+    /// cannot produce a trustworthy step from it.
+    struct NonFiniteGradient;
+
+    impl crate::Constraints for NonFiniteGradient {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for NonFiniteGradient {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Ok(0.5 * (x[0] * x[0] + x[1] * x[1]))
+        }
+    }
+    impl Gradient for NonFiniteGradient {
+        type Gradient = Vec<f64>;
+        fn gradient(&self, _x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![f64::NAN, 1.0])
+        }
+    }
+    impl Hessian for NonFiniteGradient {
+        type Hessian = crate::core::math::DenseMatrix<f64>;
+        fn hessian(&self, _x: &Vec<f64>) -> Result<Self::Hessian, Self::Error> {
+            Ok(crate::core::math::DenseMatrix::from_row_slice(
+                2,
+                2,
+                &[1.0, 0.0, 0.0, 1.0],
+            ))
+        }
+    }
+
+    #[test]
+    fn nonfinite_gradient_is_reported_as_a_failure_not_convergence() {
+        let result = Executor::new(
+            NonFiniteGradient,
+            TrustRegion::with_subproblem(MoreSorensen::new()),
+            FirstOrderState::new(vec![3.0, 3.0]),
+        )
+        .max_iter(10)
+        .run()
+        .unwrap();
+
+        assert_eq!(result.report.code(), crate::TerminationCode::SolverFailed);
+        assert!(result.report.termination.is_failure());
+    }
+
+    #[test]
+    fn invalid_model_reduction_preserves_the_nonstationary_state() {
+        for (predicted_reduction, expected_reason) in [
+            (0.0, crate::TerminationCode::NumericalNoProgress),
+            (-1.0, crate::TerminationCode::NumericalNoProgress),
+            (f64::NAN, crate::TerminationCode::SolverFailed),
+            (f64::INFINITY, crate::TerminationCode::SolverFailed),
+            (f64::NEG_INFINITY, crate::TerminationCode::SolverFailed),
+        ] {
+            let mut problem = Problem::new(Quadratic);
+            let mut radius = 1.0;
+            let state = tr_init(
+                &mut radius,
+                1.0,
+                &mut problem,
+                FirstOrderState::new(vec![1.0, 0.0]),
+            )
+            .unwrap();
+            let counts = *problem.counts();
+            let (state, reason, _) = tr_next_iter(
+                &mut radius,
+                100.0,
+                0.125,
+                10,
+                &mut None,
+                &mut problem,
+                state,
+                |_, _, _, _| {
+                    Ok(Step {
+                        d: vec![0.0, 0.0],
+                        predicted_reduction,
+                        hit_boundary: false,
+                    })
+                },
+            )
+            .unwrap();
+
+            assert_eq!(
+                reason.as_ref().map(|stop| stop.code()),
+                Some(expected_reason)
+            );
+            assert_eq!(state.param(), &vec![1.0, 0.0]);
+            assert_eq!(state.current().unwrap().2, &vec![1.0, 0.0]);
+            assert_eq!(state.cost(), 0.5);
+            assert_eq!(*problem.counts(), counts);
+        }
+    }
+
+    #[test]
+    fn more_sorensen_minimizes_quadratic() {
+        let result = Executor::new(
+            Quadratic,
+            (TrustRegion::with_subproblem(MoreSorensen::new()))
+                .with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-16, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn steihaug_minimizes_rosenbrock() {
+        // The default subproblem on the canonical nonconvex problem, from
+        // the standard hard start. Indefinite Hessians along the way are
+        // handled by the negative-curvature-to-boundary rule.
+        let result = Executor::new(
+            Rosenbrock,
+            (TrustRegion::new()).with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![-1.2, 1.0]),
+        )
+        .max_iter(200)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-10, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn dogleg_minimizes_rosenbrock() {
+        // Dogleg falls back to the Cauchy point wherever the Hessian is
+        // indefinite, so it still drives Rosenbrock to the minimum.
+        let result = Executor::new(
+            Rosenbrock,
+            (TrustRegion::with_subproblem(Dogleg))
+                .with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![-1.2, 1.0]),
+        )
+        .max_iter(500)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-10, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn more_sorensen_minimizes_rosenbrock() {
+        let result = Executor::new(
+            Rosenbrock,
+            (TrustRegion::with_subproblem(MoreSorensen::new()))
+                .with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![-1.2, 1.0]),
+        )
+        .max_iter(200)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-10, "cost = {}", result.cost());
+    }
+
+    /// The quadratic again, but exposing only a Hessian-vector product and
+    /// deliberately *not* implementing `Hessian`: that these tests compile
+    /// is the proof that matrix-free mode never forms (or names) a matrix.
+    struct QuadraticHvOnly;
+
+    impl crate::Constraints for QuadraticHvOnly {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for QuadraticHvOnly {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Ok(0.5 * (x[0] * x[0] + 100.0 * x[1] * x[1]))
+        }
+    }
+    impl Gradient for QuadraticHvOnly {
+        type Gradient = Vec<f64>;
+        fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![x[0], 100.0 * x[1]])
+        }
+    }
+    impl HessianProduct for QuadraticHvOnly {
+        fn hessian_product(
+            &self,
+            _x: &Vec<f64>,
+            v: &Vec<f64>,
+        ) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![v[0], 100.0 * v[1]])
+        }
+    }
+
+    /// Rosenbrock with only an analytic Hessian-vector product (no
+    /// `Hessian` impl).
+    struct RosenbrockHvOnly;
+
+    impl crate::Constraints for RosenbrockHvOnly {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl CostFunction for RosenbrockHvOnly {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Rosenbrock.cost(x)
+        }
+    }
+    impl Gradient for RosenbrockHvOnly {
+        type Gradient = Vec<f64>;
+        fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Rosenbrock.gradient(x)
+        }
+    }
+    impl HessianProduct for RosenbrockHvOnly {
+        fn hessian_product(
+            &self,
+            x: &Vec<f64>,
+            v: &Vec<f64>,
+        ) -> Result<Vec<f64>, Self::Error> {
+            let h11 = 2.0 + 1200.0 * x[0] * x[0] - 400.0 * x[1];
+            let h12 = -400.0 * x[0];
+            Ok(vec![h11 * v[0] + h12 * v[1], h12 * v[0] + 200.0 * v[1]])
+        }
+    }
+
+    #[test]
+    fn matrix_free_steihaug_minimizes_quadratic() {
+        let result = Executor::new(
+            QuadraticHvOnly,
+            (TrustRegion::matrix_free())
+                .with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-16, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn matrix_free_steihaug_minimizes_rosenbrock() {
+        let result = Executor::new(
+            RosenbrockHvOnly,
+            (TrustRegion::matrix_free()).with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![-1.2, 1.0]),
+        )
+        .max_iter(200)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-10, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn matrix_free_cauchy_point_minimizes_quadratic() {
+        let result = Executor::new(
+            QuadraticHvOnly,
+            (TrustRegion::matrix_free_with(CauchyPoint))
+                .with_absolute_gradient_tolerance(1e-8),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(500)
+        .run()
+        .unwrap();
+        assert!(result.cost() < 1e-8, "cost = {}", result.cost());
+    }
+
+    #[test]
+    fn matrix_free_matches_exact_steihaug() {
+        // The two modes run the identical CG arithmetic (one via `MatVec` on
+        // the formed matrix, one via the analytic product), so on the same
+        // problem they must land on the same iterate in the same number of
+        // iterations, up to product-vs-matvec rounding.
+        let exact = Executor::new(
+            Quadratic,
+            (TrustRegion::new()).with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        let free = Executor::new(
+            QuadraticHvOnly,
+            (TrustRegion::matrix_free())
+                .with_absolute_gradient_tolerance(1e-10),
+            FirstOrderState::new(vec![5.0, 1.0]),
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert_eq!(exact.state.iter(), free.state.iter());
+        assert!((exact.cost() - free.cost()).abs() < 1e-15);
+    }
+
+    #[test]
+    fn matrix_free_counts_products_not_hessians() {
+        use crate::core::solver::Solver as _;
+
+        let mut problem = Problem::new(RosenbrockHvOnly);
+        let mut solver = TrustRegion::matrix_free();
+        let mut state = solver
+            .init(&mut problem, FirstOrderState::new(vec![-1.2, 1.0]))
+            .unwrap();
+        for _ in 0..3 {
+            let (next, _, _) =
+                solver.next_iter(&mut problem, state).unwrap().into_parts();
+            state = next;
+        }
+        let counts = problem.counts();
+        assert!(counts.hessian_product_evals > 0);
+        assert_eq!(counts.hessian_evals, 0);
+
+        // Product calls retain their category when the executor publishes progress.
+        use crate::core::state::{CountsMirror as _, GradientState as _};
+        state.mirror(counts);
+        assert_eq!(state.counts(), counts);
+        assert_eq!(state.gradient_evals(), counts.gradient_evals);
+    }
+}

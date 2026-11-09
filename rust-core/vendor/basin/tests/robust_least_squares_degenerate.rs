@@ -1,0 +1,241 @@
+use basin::{
+    BoundedLevenbergMarquardt, CostFunction, DenseMatrix, Executor,
+    GaussNewton, Gradient, HuberLoss, Jacobian, LevenbergMarquardt,
+    LevenbergMarquardtQr, PointState, Residual, RobustLeastSquares, Scalar,
+    Solver, SquaredLoss, TerminationCode, TrustRegionReflective,
+};
+use std::{cell::Cell, convert::Infallible, rc::Rc};
+
+struct Fit {
+    outlier: bool,
+    invalid_jacobian: bool,
+    fused_calls: Rc<Cell<usize>>,
+    lower: Vec<f64>,
+    upper: Vec<f64>,
+}
+impl Fit {
+    fn new(outlier: bool) -> Self {
+        Self {
+            outlier,
+            invalid_jacobian: false,
+            fused_calls: Rc::default(),
+            lower: vec![-1.0; 2],
+            upper: vec![1.0; 2],
+        }
+    }
+}
+
+impl basin::Constraints for Fit {
+    type Set = basin::ConstraintSet<basin::BoxBounds<Vec<f64>>>;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new().with_bounds(basin::BoxBounds::new(
+            Some(&self.lower),
+            Some(&self.upper),
+        ))
+    }
+}
+impl CostFunction for Fit {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = Infallible;
+    fn cost(&self, _: &Vec<f64>) -> Result<f64, Infallible> {
+        panic!("the raw cost must not be called")
+    }
+}
+impl Residual for Fit {
+    type Param = Vec<f64>;
+    type Output = Vec<f64>;
+    type Error = Infallible;
+    fn residual(&self, x: &Vec<f64>) -> Result<Vec<f64>, Infallible> {
+        let sum = x[0] + x[1];
+        Ok(vec![
+            sum,
+            sum,
+            sum,
+            sum - if self.outlier { 10.0 } else { 0.0 },
+        ])
+    }
+}
+impl Jacobian for Fit {
+    type Jacobian = DenseMatrix;
+    fn jacobian(&self, _: &Vec<f64>) -> Result<DenseMatrix, Infallible> {
+        Ok(DenseMatrix::from_row_slice(
+            4,
+            2,
+            &[if self.invalid_jacobian { f64::NAN } else { 1.0 }; 8],
+        ))
+    }
+    fn residual_and_jacobian(
+        &self,
+        x: &Vec<f64>,
+    ) -> Result<(Vec<f64>, DenseMatrix), Infallible> {
+        self.fused_calls.set(self.fused_calls.get() + 1);
+        Ok((self.residual(x)?, self.jacobian(x)?))
+    }
+}
+
+fn check_initial<S, P, E>(solver: impl Fn() -> S, prepare: impl Fn(Fit) -> P)
+where
+    P: Residual<
+            Param = Vec<f64>,
+            Output = Vec<f64>,
+            Error = std::convert::Infallible,
+        >,
+    E: std::fmt::Debug,
+    S: Solver<
+            RobustLeastSquares<P, HuberLoss>,
+            PointState<Vec<f64>>,
+            Error = E,
+        >,
+{
+    for invalid in [false, true] {
+        let mut fit = Fit::new(false);
+        fit.invalid_jacobian = invalid;
+        let calls = Rc::clone(&fit.fused_calls);
+        let result = Executor::new(
+            RobustLeastSquares::new(prepare(fit), HuberLoss),
+            solver(),
+            PointState::new(vec![0.0; 2]),
+        )
+        .max_iter(10)
+        .run_with_solver()
+        .unwrap();
+        assert_eq!(
+            result.report.code(),
+            if invalid {
+                TerminationCode::SolverFailed
+            } else {
+                TerminationCode::SolverConverged
+            }
+        );
+        assert_eq!(result.cost(), 0.0);
+        assert_eq!(result.counts.residual_evals, 1);
+        assert_eq!(result.counts.jacobian_evals, 1);
+        assert_eq!(result.counts.cost_evals, 0);
+        assert_eq!(calls.get(), 1);
+    }
+}
+
+#[test]
+fn zero_residuals_and_invalid_derivatives_use_one_fused_evaluation() {
+    check_initial(GaussNewton::new, basin::SamplingDomain::new);
+    check_initial(LevenbergMarquardt::new, basin::SamplingDomain::new);
+    check_initial(LevenbergMarquardtQr::new, basin::SamplingDomain::new);
+    check_initial(BoundedLevenbergMarquardt::new, std::convert::identity);
+    check_initial(TrustRegionReflective::new, std::convert::identity);
+}
+
+fn check_rank_deficient<S, P, E>(solver: S, prepare: impl Fn(Fit) -> P)
+where
+    P: Residual<
+            Param = Vec<f64>,
+            Output = Vec<f64>,
+            Error = std::convert::Infallible,
+        >,
+    E: std::fmt::Debug,
+    S: Solver<
+            RobustLeastSquares<P, HuberLoss>,
+            PointState<Vec<f64>>,
+            Error = E,
+        >,
+{
+    let result = Executor::new(
+        RobustLeastSquares::new(prepare(Fit::new(true)), HuberLoss),
+        solver,
+        PointState::new(vec![0.0; 2]),
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!((result.param().iter().sum::<f64>() - 1.0 / 3.0).abs() < 1e-7);
+    assert!((result.cost() - 28.0 / 3.0).abs() < 1e-12);
+}
+
+#[test]
+fn damping_and_dense_svd_handle_a_rank_deficient_robust_model() {
+    check_rank_deficient(LevenbergMarquardt::new(), basin::SamplingDomain::new);
+    check_rank_deficient(
+        LevenbergMarquardtQr::new(),
+        basin::SamplingDomain::new,
+    );
+    check_rank_deficient(
+        BoundedLevenbergMarquardt::new(),
+        std::convert::identity,
+    );
+    check_rank_deficient(TrustRegionReflective::new(), std::convert::identity);
+}
+
+struct IdentityResidual<F>(std::marker::PhantomData<F>);
+
+impl<F: Scalar> basin::Constraints for IdentityResidual<F> {
+    type Set = basin::NoConstraints;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new()
+    }
+}
+impl<F: Scalar> Residual for IdentityResidual<F> {
+    type Param = Vec<F>;
+    type Output = Vec<F>;
+    type Error = Infallible;
+
+    fn residual(&self, x: &Vec<F>) -> Result<Vec<F>, Infallible> {
+        Ok(x.clone())
+    }
+}
+
+impl<F: Scalar> Jacobian for IdentityResidual<F> {
+    type Jacobian = DenseMatrix<F>;
+
+    fn jacobian(&self, _: &Vec<F>) -> Result<DenseMatrix<F>, Infallible> {
+        Ok(DenseMatrix::from_row_slice(1, 1, &[F::one()]))
+    }
+}
+
+fn check_extreme_scales<F: Scalar>(large: F, small: F) {
+    let one = F::one();
+    let half = F::from_f64(0.5).unwrap();
+    let tolerance = F::epsilon().sqrt();
+    for scale in [large, small, F::max_value(), F::min_positive_value()] {
+        let objective = RobustLeastSquares::new(
+            IdentityResidual::<F>(std::marker::PhantomData),
+            SquaredLoss,
+        )
+        .with_scale(scale);
+        assert_eq!(
+            objective.cost(&vec![one]).unwrap(),
+            half,
+            "scale={scale:?}"
+        );
+        assert_eq!(objective.gradient(&vec![one]).unwrap(), vec![one]);
+        let result = Executor::from_start(
+            objective,
+            LevenbergMarquardt::<Vec<F>, DenseMatrix<F>, F>::default()
+                .with_absolute_gradient_tolerance(tolerance),
+            vec![one],
+        )
+        .max_iter(100)
+        .run()
+        .unwrap();
+        assert_eq!(
+            result.report.code(),
+            TerminationCode::SolverConverged,
+            "scale={scale:?}"
+        );
+        assert!(result.param()[0].abs() <= tolerance, "scale={scale:?}");
+        assert!(
+            result.cost() <= half * tolerance * tolerance,
+            "scale={scale:?}"
+        );
+    }
+}
+
+#[test]
+fn squared_loss_scale_cancels_in_cost_gradient_and_lm() {
+    check_extreme_scales::<f32>(1e23, 1e-23);
+    check_extreme_scales::<f64>(1e200, 1e-200);
+}

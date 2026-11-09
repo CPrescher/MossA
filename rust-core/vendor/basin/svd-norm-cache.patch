@@ -1,0 +1,297 @@
+--- upstream/src/core/math/dense_svd.rs
++++ patched/src/core/math/dense_svd.rs
+@@ -23,11 +23,7 @@
+ impl<F: Scalar> DenseSvd<F> {
+     /// Input and factors use row-major storage; zero singular vectors in U
+     /// remain zero because least-squares solves never use their coefficients.
+-    pub(crate) fn factor(
+-        rows: usize,
+-        cols: usize,
+-        mut a: Vec<F>,
+-    ) -> Option<Self> {
++    pub(crate) fn factor(rows: usize, cols: usize, mut a: Vec<F>) -> Option<Self> {
+         assert!(rows >= cols && cols > 0);
+         assert_eq!(a.len(), rows * cols);
+         if a.iter().any(|x| !x.is_finite()) {
+@@ -45,21 +41,23 @@
+         }
+         let tol = F::epsilon() * F::from_usize(rows).unwrap().sqrt();
+         let mut converged = false;
++        // Cached values use the original hypot fold, not an updated/approximate norm.
++        let mut norms: Vec<Option<F>> = vec![None; cols];
+         for _ in 0..100 {
+             let mut changed = false;
+             for p in 0..cols {
+                 for q in p + 1..cols {
+-                    let pn = (0..rows)
+-                        .fold(F::zero(), |s, i| s.hypot(a[i * cols + p]));
+-                    let qn = (0..rows)
+-                        .fold(F::zero(), |s, i| s.hypot(a[i * cols + q]));
++                    let pn = *norms[p].get_or_insert_with(|| {
++                        (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + p]))
++                    });
++                    let qn = *norms[q].get_or_insert_with(|| {
++                        (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + q]))
++                    });
+                     if pn == F::zero() || qn == F::zero() {
+                         continue;
+                     }
+                     let corr: F = (0..rows)
+-                        .map(|i| {
+-                            (a[i * cols + p] / pn) * (a[i * cols + q] / qn)
+-                        })
++                        .map(|i| (a[i * cols + p] / pn) * (a[i * cols + q] / qn))
+                         .sum();
+                     if corr.abs() <= tol {
+                         continue;
+@@ -89,6 +87,10 @@
+                         a[i * cols + p] = c * x - s * y;
+                         a[i * cols + q] = s * x + c * y;
+                     }
++                    // Only the rotated columns changed. Recompute their norms
++                    // at next use with exactly the upstream operation order.
++                    norms[p] = None;
++                    norms[q] = None;
+                     for i in 0..cols {
+                         let (x, y) = (v[i * cols + p], v[i * cols + q]);
+                         v[i * cols + p] = c * x - s * y;
+@@ -107,8 +109,8 @@
+         }
+         let mut singular = vec![F::zero(); cols];
+         for j in 0..cols {
+-            let length =
+-                (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + j]));
++            let length = norms[j]
++                .unwrap_or_else(|| (0..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + j])));
+             if length > F::zero() {
+                 for i in 0..rows {
+                     a[i * cols + j] = a[i * cols + j] / length;
+@@ -141,17 +143,14 @@
+         assert_eq!(rhs.len(), self.rows);
+         let n = self.singular.len();
+         let largest = self.singular.iter().copied().fold(F::zero(), F::max);
+-        if !radius.is_finite()
+-            || radius <= F::zero()
+-            || rhs.iter().any(|x| !x.is_finite())
+-        {
++        if !radius.is_finite() || radius <= F::zero() || rhs.iter().any(|x| !x.is_finite()) {
+             return None;
+         }
+         if largest == F::zero() {
+             return Some(vec![F::zero(); n]);
+         }
+-        let cutoff = rank_tolerance
+-            .unwrap_or(F::epsilon() * F::from_usize(self.rows.max(n)).unwrap());
++        let cutoff =
++            rank_tolerance.unwrap_or(F::epsilon() * F::from_usize(self.rows.max(n)).unwrap());
+         let mut s = vec![F::zero(); n];
+         let mut coeff = vec![F::zero(); n];
+         let mut z = vec![F::zero(); n];
+@@ -161,8 +160,7 @@
+                 s[j] = F::zero();
+                 continue;
+             }
+-            let uf: F =
+-                (0..self.rows).map(|i| self.u[i * n + j] * rhs[i]).sum();
++            let uf: F = (0..self.rows).map(|i| self.u[i * n + j] * rhs[i]).sum();
+             coeff[j] = s[j] * (uf / largest);
+             z[j] = -uf / self.singular[j];
+         }
+@@ -187,16 +185,14 @@
+         // step at zero bounds the root from below on the retained subspace.
+         let mut low = F::zero();
+         if length.is_finite() {
+-            let lower = (F::one() - radius / length)
+-                / derivative(&z, length, F::zero());
++            let lower = (F::one() - radius / length) / derivative(&z, length, F::zero());
+             if lower.is_finite() {
+                 low = lower.max(low).min(high);
+             }
+         }
+         // Keep a fraction of the upper bound so that large roots also start
+         // within a few Newton steps of the solution.
+-        let mut alpha =
+-            (low.sqrt() * high.sqrt()).max(F::from_f64(0.001).unwrap() * high);
++        let mut alpha = (low.sqrt() * high.sqrt()).max(F::from_f64(0.001).unwrap() * high);
+         let half = F::from_f64(0.5).unwrap();
+         for _ in 0..max_iter {
+             for j in 0..n {
+@@ -210,8 +206,7 @@
+             if !length.is_finite() || length == F::zero() {
+                 return None;
+             }
+-            if (length / radius - F::one()).abs() <= F::from_f64(0.01).unwrap()
+-            {
++            if (length / radius - F::one()).abs() <= F::from_f64(0.01).unwrap() {
+                 for x in &mut z {
+                     *x = (*x / length) * radius;
+                 }
+@@ -222,8 +217,7 @@
+             } else {
+                 high = alpha;
+             }
+-            let newton = alpha
+-                + (F::one() - radius / length) / derivative(&z, length, alpha);
++            let newton = alpha + (F::one() - radius / length) / derivative(&z, length, alpha);
+             alpha = if newton.is_finite() && newton > low && newton < high {
+                 newton
+             } else if low > F::zero() {
+@@ -249,6 +243,53 @@
+ #[cfg(test)]
+ mod tests {
+     use super::*;
++
++    #[test]
++    fn cached_norms_match_frozen_upstream_factors_and_steps_bit_for_bit() {
++        use super::super::dense_svd_reference::DenseSvd as Reference;
++        for (rows, cols) in [(1, 1), (3, 2), (19, 5), (64, 8), (48, 16)] {
++            for seed in 0..8_u64 {
++                for scale in [1.0, 1e150, 1e-150] {
++                    let mut state = seed + 123;
++                    let a: Vec<f64> = (0..rows * cols)
++                        .map(|i| {
++                            state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
++                            let value =
++                                ((state >> 11) as f64 / ((1_u64 << 53) as f64) - 0.5) * scale;
++                            if seed == 0 {
++                                if i / cols == i % cols {
++                                    scale
++                                } else {
++                                    0.0
++                                }
++                            } else if seed == 1 {
++                                (i / cols) as f64 * scale
++                            } else {
++                                value
++                            }
++                        })
++                        .collect();
++                    let expected = Reference::factor(rows, cols, a.clone());
++                    let actual = DenseSvd::factor(rows, cols, a);
++                    // Debug float formatting is round-trippable; this compares
++                    // U, V and singular values, including negative zero.
++                    assert_eq!(
++                        format!("{actual:?}"),
++                        format!("{expected:?}"),
++                        "{rows}/{cols}/{seed}/{scale}"
++                    );
++                    if let (Some(actual), Some(expected)) = (actual, expected) {
++                        let rhs: Vec<_> = (0..rows).map(|i| (i as f64 - 0.4) * scale).collect();
++                        for radius in [0.1, 1.0, 10.0] {
++                            let got = actual.trust_step(&rhs, radius, None, 50);
++                            let wanted = expected.trust_step(&rhs, radius, None, 50);
++                            assert_eq!(format!("{got:?}"), format!("{wanted:?}"));
++                        }
++                    }
++                }
++            }
++        }
++    }
+ 
+     #[test]
+     fn larger_deficient_models_reconstruct_and_solve() {
+@@ -262,23 +303,15 @@
+                     })
+                 })
+                 .collect();
+-            let svd = DenseSvd::factor(m, n, a.clone())
+-                .expect("rank-deficient SVD must converge");
+-            let rhs: Vec<f64> =
+-                a.chunks(n).map(|row| -row.iter().sum::<f64>()).collect();
++            let svd = DenseSvd::factor(m, n, a.clone()).expect("rank-deficient SVD must converge");
++            let rhs: Vec<f64> = a.chunks(n).map(|row| -row.iter().sum::<f64>()).collect();
+             let p = svd.trust_step(&rhs, 100.0, None, 50).unwrap();
+             for (i, row) in a.chunks(n).enumerate() {
+-                let residual: f64 =
+-                    row.iter().zip(&p).map(|(a, p)| a * p).sum::<f64>()
+-                        + rhs[i];
++                let residual: f64 = row.iter().zip(&p).map(|(a, p)| a * p).sum::<f64>() + rhs[i];
+                 assert!(residual.abs() < 1e-12, "n={n}, residual={residual}");
+                 for (j, &entry) in row.iter().enumerate() {
+                     let got: f64 = (0..n)
+-                        .map(|k| {
+-                            svd.u[i * n + k]
+-                                * svd.singular[k]
+-                                * svd.v[j * n + k]
+-                        })
++                        .map(|k| svd.u[i * n + k] * svd.singular[k] * svd.v[j * n + k])
+                         .sum();
+                     assert!((got - entry).abs() < 1e-13);
+                 }
+@@ -297,43 +330,31 @@
+             for i in 0..3 {
+                 for j in 0..2 {
+                     let got: f64 = (0..2)
+-                        .map(|k| {
+-                            svd.u[i * 2 + k]
+-                                * svd.singular[k]
+-                                * svd.v[j * 2 + k]
+-                        })
++                        .map(|k| svd.u[i * 2 + k] * svd.singular[k] * svd.v[j * 2 + k])
+                         .sum();
+                     assert!((got - a[i * 2 + j]).abs() / scale < 1e-14);
+                 }
+             }
+             for i in 0..2 {
+                 for j in 0..2 {
+-                    let dot: f64 = (0..3)
+-                        .map(|k| svd.u[k * 2 + i] * svd.u[k * 2 + j])
+-                        .sum();
++                    let dot: f64 = (0..3).map(|k| svd.u[k * 2 + i] * svd.u[k * 2 + j]).sum();
+                     assert!((dot - f64::from(i == j)).abs() < 1e-14);
+                 }
+             }
+-            let smallest =
+-                svd.singular.iter().copied().fold(f64::INFINITY, f64::min);
+-            assert!(
+-                (smallest / scale / (1e-10 / 2.0_f64.sqrt()) - 1.0).abs()
+-                    < 1e-6
+-            );
++            let smallest = svd.singular.iter().copied().fold(f64::INFINITY, f64::min);
++            assert!((smallest / scale / (1e-10 / 2.0_f64.sqrt()) - 1.0).abs() < 1e-6);
+         }
+     }
+ 
+     #[test]
+     fn rank_deficient_minimum_norm_and_boundary_kkt() {
+-        let svd =
+-            DenseSvd::<f64>::factor(2, 2, vec![1.0, 1.0, 2.0, 2.0]).unwrap();
++        let svd = DenseSvd::<f64>::factor(2, 2, vec![1.0, 1.0, 2.0, 2.0]).unwrap();
+         let p = svd.trust_step(&[-1.0, -2.0], 10.0, None, 50).unwrap();
+         assert!((p[0] - 0.5).abs() < 1e-14 && (p[1] - 0.5).abs() < 1e-14);
+         let p = svd.trust_step(&[-1.0, -2.0], 0.1, None, 50).unwrap();
+         assert!((norm(&p) - 0.1).abs() < 1e-14);
+         assert!((p[0] - p[1]).abs() < 1e-14);
+-        let svd =
+-            DenseSvd::<f64>::factor(2, 2, vec![1.0, 0.0, 0.0, 3.0]).unwrap();
++        let svd = DenseSvd::<f64>::factor(2, 2, vec![1.0, 0.0, 0.0, 3.0]).unwrap();
+         let p = svd.trust_step(&[1.0, 1.0], 0.2, None, 50).unwrap();
+         let alpha = (-1.0 - p[0]) / p[0];
+         assert!(alpha > 0.0);
+@@ -345,12 +366,9 @@
+         for small in [1e-4_f64, 1e-8, 1e-10, 1e-14] {
+             for deficient in [false, true] {
+                 let last = if deficient { 0.0 } else { 1.0 };
+-                let svd = DenseSvd::factor(
+-                    3,
+-                    3,
+-                    vec![1.0, 0.0, 0.0, 0.0, small, 0.0, 0.0, 0.0, last],
+-                )
+-                .unwrap();
++                let svd =
++                    DenseSvd::factor(3, 3, vec![1.0, 0.0, 0.0, 0.0, small, 0.0, 0.0, 0.0, last])
++                        .unwrap();
+                 let p = svd
+                     .trust_step(&[-1.0, -10.0 * small, 0.0], 2.0, None, 50)
+                     .expect("small retained singular values must converge");
+--- upstream/src/core/math.rs
++++ patched/src/core/math.rs
+@@ -367,3 +367,8 @@
+ // solver's internals, so they stay off the frozen public surface.
+ pub(crate) use cl_scaling::BoxAffineScaling;
+ pub(crate) use linalg::{MatDiagonal, RankOneUpdate};
++
++// Frozen upstream implementation for bit-exact regression tests of the local cache.
++#[cfg(test)]
++#[path = "math/dense_svd_reference.rs"]
++pub(crate) mod dense_svd_reference;

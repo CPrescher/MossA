@@ -1,0 +1,63 @@
+#![cfg(all(feature = "ndarray_all", feature = "problems"))]
+
+//! Bfgs convergence over the ndarray backend (`Array1<f64>` and `Array2<f64>`).
+//!
+//! Mirrors `tests/bfgs.rs` (nalgebra), `tests/bfgs_vec.rs` (`Vec<f64>`), and
+//! `tests/bfgs_faer.rs` (faer): the same generic `Solver` impl drives
+//! ndarray's dense inverse-Hessian via `MatVec` + `GeneralRankOneUpdate` on
+//! `Array2<f64>`.
+
+use crate::backend_aliases::ndarray::array;
+use basin::problems::Rosenbrock;
+use basin::{Bfgs, Executor, FirstOrderState, TerminationCode};
+
+#[test]
+fn bfgs_converges_on_rosenbrock() {
+    let problem =
+        Rosenbrock::<crate::backend_aliases::ndarray::Array1<f64>>::default();
+    let initial = array![-1.2, 1.0];
+
+    let result =
+        Executor::new(problem, Bfgs::new(), FirstOrderState::new(initial))
+            .max_iter(100)
+            .run()
+            .unwrap();
+
+    assert!(
+        result.cost() < 1e-8,
+        "expected near-zero cost, got {}",
+        result.cost()
+    );
+    assert!(
+        (result.param()[0] - 1.0).abs() < 1e-4,
+        "x[0] = {}",
+        result.param()[0]
+    );
+    assert!(
+        (result.param()[1] - 1.0).abs() < 1e-4,
+        "x[1] = {}",
+        result.param()[1]
+    );
+}
+
+#[test]
+fn bfgs_terminates_on_gradient_tolerance() {
+    let problem =
+        Rosenbrock::<crate::backend_aliases::ndarray::Array1<f64>>::default();
+    let initial = array![-1.2, 1.0];
+
+    let result = Executor::new(
+        problem,
+        (Bfgs::new()).with_absolute_gradient_tolerance(1e-6),
+        FirstOrderState::new(initial),
+    )
+    .max_iter(200)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::GradientTolerance);
+    assert!(result.cost() < 1e-10, "cost = {}", result.cost());
+}
+
+#[path = "support/backend_aliases.rs"]
+mod backend_aliases;

@@ -1,0 +1,765 @@
+use ndarray::{Array1, Array2, ArrayBase, Data, DataMut, Dimension};
+use rand::{Rng, RngExt};
+use rand_distr::{Distribution, StandardNormal, uniform::SampleUniform};
+
+use super::Scalar;
+use super::cl_scaling::{
+    BoxAffineScaling, cl_scaling_pair, max_feasible_step_component,
+    project_strictly_inside_component,
+};
+use super::sample::{
+    SampleStandardNormal, SampleUniformBox, assert_finite_box,
+};
+use super::{
+    AddDiagonalVectorInPlace, ClampInPlace, ComponentDivAssign,
+    ComponentMaxAssign, ComponentMulAssign, ComponentZip, Dot,
+    FloorZerosInPlace, GeneralRankOneUpdate, GramMatrix, LinearSolveError,
+    LinearSolveSpd, MatDiagonal, MatTransposeVec, MatVec, MatrixFromDiagonal,
+    MatrixIdentity, MaxDiagonal, NegInPlace, NormInfinity, NormSquared,
+    RankOneUpdate, ScaleInPlace, ScaledAdd, SymmetricEigen,
+    SymmetricEigenError, VectorIndex, VectorLen,
+};
+
+impl<F, S, D> ScaledAdd<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn scaled_add(&mut self, scalar: F, other: &Self) {
+        assert_eq!(self.shape(), other.shape(), "scaled_add: shape mismatch");
+        self.zip_mut_with(other, |x, y| *x = *x + scalar * *y);
+    }
+}
+
+impl<F, S, D> NormSquared<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: Data<Elem = F>,
+    D: Dimension,
+{
+    fn norm_squared(&self) -> F {
+        self.iter().map(|x| *x * *x).sum()
+    }
+
+    fn norm_l2(&self) -> F {
+        super::norm_l2(self.iter().copied())
+    }
+}
+
+impl<F, S, D> NormInfinity<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: Data<Elem = F>,
+    D: Dimension,
+{
+    fn norm_infinity(&self) -> F {
+        super::norm_infinity(self.iter().copied())
+    }
+}
+
+impl<F, S, D> Dot<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: Data<Elem = F>,
+    D: Dimension,
+{
+    fn dot(&self, other: &Self) -> F {
+        assert_eq!(self.shape(), other.shape(), "dot: shape mismatch");
+        self.iter().zip(other.iter()).map(|(a, b)| *a * *b).sum()
+    }
+}
+
+impl<F, S, D> NegInPlace for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn neg_in_place(&mut self) {
+        self.map_inplace(|x| *x = -*x);
+    }
+}
+
+impl<F: Scalar + SampleUniform> SampleUniformBox for Array1<F> {
+    fn sample_uniform_box<R: Rng + ?Sized>(
+        lower: &Self,
+        upper: &Self,
+        rng: &mut R,
+    ) -> Self {
+        assert_eq!(
+            lower.len(),
+            upper.len(),
+            "sample_uniform_box: bounds length mismatch"
+        );
+        assert_finite_box(lower, upper);
+        Array1::from_shape_fn(lower.len(), |i| {
+            rng.random_range(lower[i]..=upper[i])
+        })
+    }
+}
+
+impl<F: Scalar> VectorLen for Array1<F> {
+    fn vec_len(&self) -> usize {
+        self.len()
+    }
+}
+
+// Matrix-vector ops (the only `linalg`-tier traits ndarray implements). They
+// lift the backend gate on the linear-constraint solvers; the factorization
+// ops stay nalgebra/faer-only, since `ndarray-linalg` needs system BLAS/LAPACK
+// (breaks the wasm-default tenet).
+//
+// These iterate rows and columns explicitly rather than calling ndarray's inherent
+// `.dot()`: with basin's own [`Dot`] trait in scope, the bare `dot` method name
+// makes inference explore ndarray's recursive `Dot`/`Not` bounds and overflow.
+// `assert_eq!` on the lengths matches the panic-on-shape-mismatch contract.
+
+impl<F: Scalar> MatVec<Array1<F>> for Array2<F> {
+    fn matvec(&self, x: &Array1<F>) -> Array1<F> {
+        assert_eq!(
+            x.len(),
+            self.ncols(),
+            "matvec: x has length {} but the matrix has {} columns",
+            x.len(),
+            self.ncols()
+        );
+        Array1::from_shape_fn(self.nrows(), |i| {
+            self.row(i)
+                .iter()
+                .zip(x.iter())
+                .map(|(a, xj)| *a * *xj)
+                .sum()
+        })
+    }
+}
+
+impl<F: Scalar> MatTransposeVec<Array1<F>> for Array2<F> {
+    fn mat_transpose_vec(&self, x: &Array1<F>) -> Array1<F> {
+        assert_eq!(
+            x.len(),
+            self.nrows(),
+            "mat_transpose_vec: x has length {} but the matrix has {} rows",
+            x.len(),
+            self.nrows()
+        );
+        Array1::from_shape_fn(self.ncols(), |j| {
+            self.column(j)
+                .iter()
+                .zip(x.iter())
+                .map(|(a, xi)| *a * *xi)
+                .sum()
+        })
+    }
+}
+
+impl<F: Scalar> MatrixIdentity for Array2<F> {
+    fn identity(n: usize) -> Self {
+        Array2::eye(n)
+    }
+}
+
+impl<F: Scalar> MatrixFromDiagonal<Array1<F>> for Array2<F> {
+    fn from_diagonal(diag: &Array1<F>) -> Self {
+        Array2::from_diag(diag)
+    }
+}
+
+impl<F: Scalar> MatDiagonal<Array1<F>> for Array2<F> {
+    fn diagonal(&self) -> Array1<F> {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "diagonal: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        self.diag().to_owned()
+    }
+}
+
+impl<F: Scalar> GeneralRankOneUpdate<Array1<F>, F> for Array2<F> {
+    fn general_rank_one_update(
+        &mut self,
+        alpha: F,
+        u: &Array1<F>,
+        v: &Array1<F>,
+    ) {
+        assert_eq!(
+            self.nrows(),
+            u.len(),
+            "general_rank_one_update: matrix is {}x{} but u has length {}",
+            self.nrows(),
+            self.ncols(),
+            u.len()
+        );
+        assert_eq!(
+            self.ncols(),
+            v.len(),
+            "general_rank_one_update: matrix is {}x{} but v has length {}",
+            self.nrows(),
+            self.ncols(),
+            v.len()
+        );
+        // self[i, j] ← self[i, j] + α · u[i] · v[j]. Explicit double-loop
+        // matches the `DenseMatrix` pattern; ndarray's `outer`/broadcasting
+        // forms would allocate.
+        for i in 0..self.nrows() {
+            let au = alpha * u[i];
+            let mut row = self.row_mut(i);
+            for (entry, &vj) in row.iter_mut().zip(v.iter()) {
+                *entry = *entry + au * vj;
+            }
+        }
+    }
+}
+
+impl<F: Scalar> RankOneUpdate<Array1<F>, F> for Array2<F> {
+    fn rank_one_update(&mut self, alpha: F, v: &Array1<F>) {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "rank_one_update: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        assert_eq!(
+            self.nrows(),
+            v.len(),
+            "rank_one_update: matrix is {}x{} but v has length {}",
+            self.nrows(),
+            self.ncols(),
+            v.len()
+        );
+        // self[i, j] ← self[i, j] + α · v[i] · v[j], the symmetric `u == v`
+        // case of `general_rank_one_update`. Explicit double-loop matches the
+        // `DenseMatrix` pattern; ndarray's `outer`/broadcasting forms would
+        // allocate.
+        let n = self.nrows();
+        for i in 0..n {
+            let av = alpha * v[i];
+            let mut row = self.row_mut(i);
+            for j in 0..n {
+                let entry = &mut row[j];
+                *entry = *entry + av * v[j];
+            }
+        }
+    }
+}
+
+impl<F: Scalar> SymmetricEigen<Array1<F>> for Array2<F> {
+    fn try_eigh(&self) -> Result<(Self, Array1<F>), SymmetricEigenError> {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "try_eigh: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        let n = self.nrows();
+        // `jacobi_eigen` takes a row-major `&[F]`. `as_standard_layout`
+        // returns a `CowArray` that is contiguous in row-major (C) order,
+        // borrowing when `self` is already standard, otherwise cloning.
+        let standard = self.as_standard_layout();
+        let slice = standard
+            .as_slice()
+            .expect("as_standard_layout produces a contiguous row-major slice");
+        let (eigenvalues, eigenvectors) =
+            super::dense_eig::jacobi_eigen(slice, n)
+                .ok_or(SymmetricEigenError::Failed)?;
+        // `jacobi_eigen` returns the eigenvectors row-major with column `k`
+        // the eigenvector for `eigenvalues[k]`, exactly what
+        // `Array2::from_shape_vec` with the default C-order produces.
+        let b = Array2::from_shape_vec((n, n), eigenvectors)
+            .expect("jacobi_eigen returns n*n entries");
+        Ok((b, Array1::from_vec(eigenvalues)))
+    }
+}
+
+impl<F: Scalar> GramMatrix for Array2<F> {
+    fn gram(&self) -> Self {
+        // G = AᵀA: an `n × n` matrix with G[i][j] = Σ_k A[k][i] · A[k][j].
+        // Row-outer-product accumulation matches the `DenseMatrix` impl; using
+        // ndarray's `.t().dot(self)` would drag in the recursive `Dot`/`Not`
+        // trait bounds the matvec impls deliberately avoid.
+        let n = self.ncols();
+        let mut g = Array2::zeros((n, n));
+        for row in self.rows() {
+            for (i, &ci) in row.iter().enumerate() {
+                let mut grow = g.row_mut(i);
+                for (gij, &cj) in grow.iter_mut().zip(row.iter()) {
+                    *gij = *gij + ci * cj;
+                }
+            }
+        }
+        g
+    }
+}
+
+impl<F: Scalar> AddDiagonalVectorInPlace<Array1<F>> for Array2<F> {
+    fn add_diagonal_vector_in_place(&mut self, diag: &Array1<F>) {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "add_diagonal_vector_in_place: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        assert_eq!(
+            self.nrows(),
+            diag.len(),
+            "add_diagonal_vector_in_place: matrix is {}x{} but diag has length {}",
+            self.nrows(),
+            self.ncols(),
+            diag.len()
+        );
+        let mut d = self.diag_mut();
+        for (entry, &di) in d.iter_mut().zip(diag.iter()) {
+            *entry = *entry + di;
+        }
+    }
+}
+
+impl<F: Scalar> MaxDiagonal<F> for Array2<F> {
+    fn max_diagonal(&self) -> F {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "max_diagonal: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        self.diag().iter().copied().fold(F::neg_infinity(), F::max)
+    }
+}
+
+impl<F: Scalar> LinearSolveSpd<Array1<F>> for Array2<F> {
+    fn solve_spd(&self, b: &Array1<F>) -> Result<Array1<F>, LinearSolveError> {
+        assert_eq!(
+            self.nrows(),
+            self.ncols(),
+            "solve_spd: matrix must be square, got {}x{}",
+            self.nrows(),
+            self.ncols()
+        );
+        assert_eq!(
+            self.nrows(),
+            b.len(),
+            "solve_spd: matrix is {}x{} but rhs has length {}",
+            self.nrows(),
+            self.ncols(),
+            b.len()
+        );
+        let n = self.nrows();
+        // `cholesky_solve_spd` takes a row-major `&[F]`. `as_standard_layout`
+        // returns a contiguous C-order view (borrowing when `self` is already
+        // standard, otherwise cloning), exactly like the `SymmetricEigen` impl.
+        let standard = self.as_standard_layout();
+        let slice = standard
+            .as_slice()
+            .expect("as_standard_layout produces a contiguous row-major slice");
+        let b_slice =
+            b.as_slice().expect("Array1 right-hand side is contiguous");
+        super::dense_chol::cholesky_solve_spd(slice, n, b_slice)
+            .map(Array1::from_vec)
+            .ok_or(LinearSolveError::NotPositiveDefinite)
+    }
+}
+
+impl<F: Scalar> VectorIndex<F> for Array1<F> {
+    fn get_scalar(&self, i: usize) -> F {
+        self[i]
+    }
+    fn set_scalar(&mut self, i: usize, value: F) {
+        self[i] = value;
+    }
+}
+
+impl<F: Scalar> SampleStandardNormal for Array1<F>
+where
+    StandardNormal: Distribution<F>,
+{
+    fn sample_standard_normal<R: Rng + ?Sized>(
+        template: &Self,
+        rng: &mut R,
+    ) -> Self {
+        Array1::from_shape_fn(template.len(), |_| StandardNormal.sample(rng))
+    }
+}
+
+impl<F, S, D> ScaleInPlace<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn scale_in_place(&mut self, scalar: F) {
+        self.map_inplace(|x| *x = *x * scalar);
+    }
+}
+
+impl<F, S, D> ComponentMulAssign for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn component_mul_assign(&mut self, other: &Self) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "component_mul_assign: shape mismatch"
+        );
+        self.zip_mut_with(other, |x, y| *x = *x * *y);
+    }
+}
+
+impl<F, S, D> ComponentMaxAssign for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn component_max_assign(&mut self, other: &Self) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "component_max_assign: shape mismatch"
+        );
+        self.zip_mut_with(other, |x, y| *x = x.max(*y));
+    }
+}
+
+impl<F, S, D> FloorZerosInPlace<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn floor_zeros_in_place(&mut self, value: F) {
+        self.map_inplace(|x| {
+            if *x <= F::zero() {
+                *x = value;
+            }
+        });
+    }
+}
+
+impl<F, S, D> ComponentDivAssign for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn component_div_assign(&mut self, other: &Self) {
+        assert_eq!(
+            self.shape(),
+            other.shape(),
+            "component_div_assign: shape mismatch"
+        );
+        self.zip_mut_with(other, |x, y| *x = *x / *y);
+    }
+}
+
+impl<F, S, D> ComponentZip<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: Data<Elem = F>,
+    D: Dimension,
+{
+    fn all_zip(
+        &self,
+        other: &Self,
+        mut predicate: impl FnMut(F, F) -> bool,
+    ) -> bool {
+        assert_eq!(self.shape(), other.shape(), "all_zip: shape mismatch");
+        self.iter()
+            .zip(other.iter())
+            .all(|(x, y)| predicate(*x, *y))
+    }
+}
+
+impl<F, S, D> ClampInPlace for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn clamp_in_place(&mut self, lower: &Self, upper: &Self) {
+        assert_eq!(
+            self.shape(),
+            lower.shape(),
+            "clamp_in_place: lower shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            upper.shape(),
+            "clamp_in_place: upper shape mismatch"
+        );
+        ndarray::Zip::from(self)
+            .and(lower)
+            .and(upper)
+            // `Float` has no `clamp`; `max(lo).min(hi)` matches the
+            // `f64::clamp` result on finite, ordered bounds.
+            .for_each(|x, &lo, &hi| *x = (*x).max(lo).min(hi));
+    }
+}
+
+impl<F, S, D> BoxAffineScaling<F> for ArrayBase<S, D>
+where
+    F: Scalar,
+    S: DataMut<Elem = F>,
+    D: Dimension,
+{
+    fn compute_cl_scaling(
+        &self,
+        gradient: &Self,
+        lower: &Self,
+        upper: &Self,
+        d_sq: &mut Self,
+        c_diag: &mut Self,
+    ) {
+        assert_eq!(
+            self.shape(),
+            gradient.shape(),
+            "compute_cl_scaling: gradient shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            lower.shape(),
+            "compute_cl_scaling: lower shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            upper.shape(),
+            "compute_cl_scaling: upper shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            d_sq.shape(),
+            "compute_cl_scaling: d_sq shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            c_diag.shape(),
+            "compute_cl_scaling: c_diag shape mismatch"
+        );
+        ndarray::Zip::from(d_sq)
+            .and(c_diag)
+            .and(self)
+            .and(gradient)
+            .and(lower)
+            .and(upper)
+            .for_each(|d, c, &x, &g, &l, &u| {
+                let (d_sq_i, c_i) = cl_scaling_pair::<F>(x, g, l, u);
+                *d = d_sq_i;
+                *c = c_i;
+            });
+    }
+
+    fn max_feasible_step(&self, step: &Self, lower: &Self, upper: &Self) -> F {
+        assert_eq!(
+            self.shape(),
+            step.shape(),
+            "max_feasible_step: step shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            lower.shape(),
+            "max_feasible_step: lower shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            upper.shape(),
+            "max_feasible_step: upper shape mismatch"
+        );
+        let mut tau = F::infinity();
+        ndarray::Zip::from(self)
+            .and(step)
+            .and(lower)
+            .and(upper)
+            .for_each(|&x, &s, &l, &u| {
+                let t = max_feasible_step_component::<F>(x, s, l, u);
+                if t < tau {
+                    tau = t;
+                }
+            });
+        tau
+    }
+
+    fn cl_kkt_inf_norm(&self, d_sq: &Self) -> F {
+        assert_eq!(
+            self.shape(),
+            d_sq.shape(),
+            "cl_kkt_inf_norm: shape mismatch"
+        );
+        let mut best = F::zero();
+        ndarray::Zip::from(self).and(d_sq).for_each(|&v, &d| {
+            let candidate = <F as num_traits::Float>::abs(v) / d;
+            if candidate > best {
+                best = candidate;
+            }
+        });
+        best
+    }
+
+    fn weighted_norm_squared(&self, weights: &Self) -> F {
+        assert_eq!(
+            self.shape(),
+            weights.shape(),
+            "weighted_norm_squared: shape mismatch"
+        );
+        let mut sum = F::zero();
+        ndarray::Zip::from(self)
+            .and(weights)
+            .for_each(|&v, &w| sum = sum + v * v * w);
+        sum
+    }
+
+    fn project_strictly_inside(
+        &mut self,
+        lower: &Self,
+        upper: &Self,
+        rstep: F,
+    ) {
+        assert_eq!(
+            self.shape(),
+            lower.shape(),
+            "project_strictly_inside: lower shape mismatch"
+        );
+        assert_eq!(
+            self.shape(),
+            upper.shape(),
+            "project_strictly_inside: upper shape mismatch"
+        );
+        ndarray::Zip::from(self)
+            .and(lower)
+            .and(upper)
+            .for_each(|x, &l, &u| {
+                *x = project_strictly_inside_component::<F>(*x, l, u, rstep);
+            });
+    }
+}
+
+impl<F: Scalar> super::FactorizePivotedQr<Array1<F>, F> for Array2<F> {
+    type Factorization = super::QrFactorization<F>;
+    fn factorize_pivoted_qr(
+        &self,
+        b: &Array1<F>,
+    ) -> Result<Self::Factorization, super::QrSolveError> {
+        let a = self.as_standard_layout().iter().copied().collect();
+        let rhs: Vec<_> = b.iter().copied().collect();
+        super::dense_qr::factorize(self.nrows(), self.ncols(), a, &rhs)
+    }
+}
+impl<F: Scalar> super::RegularizedQrSolve<Array1<F>, F>
+    for super::QrFactorization<F>
+{
+    fn column_norms_squared(&self) -> Array1<F> {
+        Array1::from_vec(self.norms_squared())
+    }
+    fn solve_regularized(
+        &self,
+        mu: F,
+        diagonal: &Array1<F>,
+        tolerance: Option<F>,
+    ) -> Result<Array1<F>, super::QrSolveError> {
+        let d: Vec<_> = diagonal.iter().copied().collect();
+        self.solve(mu, &d, tolerance).map(Array1::from_vec)
+    }
+}
+
+impl<F: Scalar> super::MatrixShape for Array2<F> {
+    fn matrix_rows(&self) -> usize {
+        self.nrows()
+    }
+    fn matrix_cols(&self) -> usize {
+        self.ncols()
+    }
+}
+impl<F: Scalar> super::MatrixFinite for Array2<F> {
+    fn matrix_is_finite(&self) -> bool {
+        (0..super::MatrixShape::matrix_rows(self)).all(|i| {
+            (0..super::MatrixShape::matrix_cols(self)).all(|j| {
+                super::MatrixIndex::matrix_entry(self, i, j).is_finite()
+            })
+        })
+    }
+}
+impl<F: Scalar> super::MatrixIndex<F> for Array2<F> {
+    fn matrix_entry(&self, row: usize, col: usize) -> F {
+        self[(row, col)]
+    }
+}
+
+impl<F: Scalar> super::DenseMatrixFromFn<F> for Array1<F> {
+    type Matrix = Array2<F>;
+    fn dense_from_fn<G: FnMut(usize, usize) -> F>(
+        rows: usize,
+        cols: usize,
+        mut f: G,
+    ) -> Self::Matrix {
+        Array2::from_shape_fn((rows, cols), |(i, j)| f(i, j))
+    }
+    fn dense_from_fn_into<G: FnMut(usize, usize) -> F>(
+        rows: usize,
+        cols: usize,
+        mut f: G,
+        out: &mut Self::Matrix,
+    ) {
+        if out.dim() != (rows, cols) {
+            *out = Array2::from_shape_fn((rows, cols), |(i, j)| f(i, j));
+        } else {
+            for ((i, j), value) in out.indexed_iter_mut() {
+                *value = f(i, j);
+            }
+        }
+    }
+}
+impl<F: Scalar> super::ScaleRowsInPlace<F> for Array2<F> {
+    fn scale_rows_in_place(&mut self, factors: &[F]) {
+        assert_eq!(self.nrows(), factors.len(), "row scale shape mismatch");
+        for (mut row, &factor) in self.rows_mut().into_iter().zip(factors) {
+            row.mapv_inplace(|v| v * factor);
+        }
+    }
+}
+
+impl<F: Scalar> super::DenseBackend<F> for ndarray::Array1<F> {
+    type Matrix = ndarray::Array2<F>;
+}
+
+impl<V, F> super::MatVecInto<V, F> for Array2<F>
+where
+    V: super::VectorLen + std::ops::Index<usize, Output = F>,
+    F: super::Scalar,
+{
+    fn matvec_into(&self, input: &V, output: &mut [F]) {
+        assert_eq!(input.vec_len(), super::MatrixShape::matrix_cols(self));
+        assert_eq!(output.len(), super::MatrixShape::matrix_rows(self));
+        for (i, value) in output.iter_mut().enumerate() {
+            *value = (0..super::MatrixShape::matrix_cols(self))
+                .map(|j| {
+                    super::MatrixIndex::matrix_entry(self, i, j) * input[j]
+                })
+                .sum();
+        }
+    }
+}
+impl<V, F> super::MatTransposeVecInto<V, F> for Array2<F>
+where
+    V: super::VectorLen + std::ops::IndexMut<usize, Output = F>,
+    F: super::Scalar,
+{
+    fn mat_transpose_vec_into(&self, input: &[F], output: &mut V) {
+        assert_eq!(input.len(), super::MatrixShape::matrix_rows(self));
+        assert_eq!(output.vec_len(), super::MatrixShape::matrix_cols(self));
+        for j in 0..super::MatrixShape::matrix_cols(self) {
+            output[j] = (0..super::MatrixShape::matrix_rows(self))
+                .map(|i| {
+                    super::MatrixIndex::matrix_entry(self, i, j) * input[i]
+                })
+                .sum();
+        }
+    }
+}
