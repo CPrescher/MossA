@@ -8,7 +8,7 @@ export function parameterValue(project: Project, evaluation: Evaluation | null, 
   const p = project.sites[site].params[key];
   return p.link ? evaluation?.parameters?.[`site:${site}:${key}`] ?? resolveValue(project, `site:${site}:${key}`, new Set()) : p.value;
 }
-function parameterAt(project: Project, id: string): Parameter | undefined {
+export function parameterAt(project: Project, id: string): Parameter | undefined {
   const bits = id.split(':');
   if(bits[0]==='site'&&project.sites[Number(bits[1])]?.xvbf) { const x=project.sites[Number(bits[1])].xvbf!;if(['cs','qs'].includes(bits[2]))return undefined;if(bits[2]==='delta')return x.delta; if(bits.length===5) {const c=(bits[2]==='csd'?x.cs:x.qs)[Number(bits[3])];return c?.[bits[4] as 'center'|'width'|'weight'];} }
   return bits[0] === 'site' ? project.sites[Number(bits[1])]?.params[bits[2]] : bits[0] === 'bkg' ? project.background[Number(bits[1])] : undefined;
@@ -61,4 +61,10 @@ export function formatParenthetical(value:number|null|undefined, std:number|null
   let displayed = (value / 10 ** exponent).toFixed(decimals);
   if(Number(displayed) === 0) displayed = (0).toFixed(decimals);
   return {value:displayed,suffix:`(${digits})${scientific ? `e${exponent}` : ''}`};
+}
+
+export function resultCellLabel(value:number|null|undefined, std:number|null|undefined, reason:string) {
+  const formatted = formatParenthetical(value,std);
+  const exponent = formatted.suffix.match(/e-?\d+$/)?.[0] ?? '';
+  return std != null ? `${formatted.value}${exponent}, plus or minus ${formatStd(std)}, approximate 1 std` : `${formatted.value}. ${reason}`;
 }

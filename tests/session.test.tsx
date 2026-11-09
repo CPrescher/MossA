@@ -39,3 +39,7 @@ test('autosave writes only the active fit once while history snapshots can carry
   const parsed=JSON.parse(text);assert.equal('fit' in parsed.snapshot,false);assert.equal('fitElapsed' in parsed.snapshot,false);assert.deepEqual(parsed.fit,fit);
   const restored=decodeSession(text);assert.deepEqual(restored.fit,fit);assert.equal(restored.elapsed,12);
 });
+
+test('site colors round-trip with saved results and invalid color metadata is rejected',()=>{
+ const s=fixture();s.snapshot.project.sites[0].color='#6633aa';const loaded=decodeSession(JSON.stringify(s));assert.equal(loaded.snapshot.project.sites[0].color,'#6633aa');s.snapshot.project.sites[0].color='url(invalid)';assert.throws(()=>decodeSession(JSON.stringify(s)),/Invalid saved model/);
+});

@@ -226,3 +226,28 @@ test('malformed collections, duplicate IDs, and missing active entries are rejec
   const session = decodeWorkspaceSession({ version: 1, workspace, layout: { resultsHeight: -10, sitesHeight: 999, tab: 'Invalid' } });
   assert.equal(session.layout.resultsHeight, 196); assert.equal(session.layout.sitesHeight, 300); assert.equal(session.layout.tab, 'Gen');
 });
+
+test('per-model figure settings round-trip portable files and restart autosave while completed fits stay exact',async()=>{
+ const {defaultFigureSettings,rememberFigureSettings,storeFigureSettings}=await import('../src/figure-settings');
+ const {updateFigureSettings}=await import('../src/workspace');
+ let workspace=addModel(workspaceFromSnapshot(snapshot()),true);
+ const model=activeModel(workspace),scientific=modelSnapshot(activeSpectrum(workspace),model);
+ const settings=defaultFigureSettings(scientific.project,'Sample A · Model copy');
+ settings.format='pdf';settings.dpi=600;settings.options={...settings.options,width:90,height:90,style:'transparent',fillOpacity:.35,legendFractions:true,legend:'above',range:[-2,2]};settings.options.sites[0].name='Custom Fe$^{3+}$';settings.options.sites[0].color='#123456';settings.options.sites.reverse();
+ const stored=storeFigureSettings(rememberFigureSettings(settings,scientific.project,'Sample A · Model copy'));
+ workspace=updateFigureSettings(workspace,model.id,stored);
+ assert.equal(activeModel(workspace).project,model.project);assert.equal(activeModel(workspace).fit,model.fit);
+ assert.deepEqual(activeSnapshot(workspace),scientific);assert.equal(updateFigureSettings(workspace,model.id,stored),workspace);
+ assert.equal('site' in stored.sourceSites[0],false);
+ const session={version:1,workspace,layout:{resultsHeight:200,sitesHeight:104,tab:'Gen',optionsOpen:false}};
+ const restarted=decodeWorkspaceSession(JSON.parse(JSON.stringify(session))).workspace;
+ assert.deepEqual(activeModel(restarted).figureExport,stored);
+ const saved=await createWorkspaceFile(workspace,{});
+ const reopened=await openWorkspaceFile(JSON.parse(JSON.stringify(saved)),scientific.cal,'Saved.mossa',evaluate);
+ assert.deepEqual(activeModel(reopened.workspace).figureExport,stored);
+ assert.deepEqual(activeSnapshot(reopened.workspace),scientific);
+ assert.equal(activeSpectrum(reopened.workspace).models[0].figureExport,undefined,'appearance is independent per model');
+ const malformed=structuredClone(workspace);activeModel(malformed).figureExport!.options.width=-100;
+ assert.equal(activeModel(decodeWorkspace(malformed)).figureExport,undefined);
+ assert.deepEqual(activeSnapshot(decodeWorkspace(malformed)),scientific,'bad appearance cannot discard or alter the analysis');
+});
