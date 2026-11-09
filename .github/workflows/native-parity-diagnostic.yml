@@ -1,6 +1,9 @@
 name: Diagnose native WASM release parity
 on:
   workflow_dispatch:
+  push:
+    branches: [codex/release-2.0.0-rc.1]
+    paths: [.github/workflows/native-parity-diagnostic.yml, scripts/diagnose-native-parity.ts]
 permissions:
   contents: read
 jobs:
