@@ -224,7 +224,7 @@ test('malformed collections, duplicate IDs, and missing active entries are rejec
   }
   const workspace = workspaceFromSnapshot(snapshot());
   const session = decodeWorkspaceSession({ version: 1, workspace, layout: { resultsHeight: -10, sitesHeight: 999, tab: 'Invalid' } });
-  assert.equal(session.layout.resultsHeight, 196); assert.equal(session.layout.sitesHeight, 300); assert.equal(session.layout.tab, 'Gen');
+  assert.equal(session.layout.resultsHeight, 152); assert.equal(session.layout.sitesHeight, 300); assert.equal(session.layout.tab, 'Gen');
 });
 
 test('per-model figure settings round-trip portable files and restart autosave while completed fits stay exact',async()=>{

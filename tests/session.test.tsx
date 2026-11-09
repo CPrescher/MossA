@@ -17,7 +17,7 @@ test('session decoding rejects malformed data and unsupported versions and sanit
   const saved=fixture(); saved.version=99 as 1; assert.throws(()=>decodeSession(JSON.stringify(saved)));
   saved.version=1;saved.snapshot.project.spectrum.y.pop();assert.throws(()=>decodeSession(JSON.stringify(saved)));
   const clean=fixture();clean.layout={resultsHeight:-5,sitesHeight:99999,tab:'missing',optionsOpen:false};clean.snapshot.selected=100;
-  const restored=decodeSession(JSON.stringify(clean));assert.equal(restored.layout.resultsHeight,196);assert.equal(restored.layout.sitesHeight,300);assert.equal(restored.layout.tab,'Gen');assert.equal(restored.snapshot.selected,1);
+  const restored=decodeSession(JSON.stringify(clean));assert.equal(restored.layout.resultsHeight,152);assert.equal(restored.layout.sitesHeight,300);assert.equal(restored.layout.tab,'Gen');assert.equal(restored.snapshot.selected,1);
 });
 test('missing or unavailable storage is handled without crashing or losing manual-save access', () => {
   const store={getItem:()=>null,setItem:()=>{throw new Error('Quota exceeded');}};

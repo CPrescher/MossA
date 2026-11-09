@@ -82,7 +82,7 @@ export function SourceCalibrationDialog({ project, filename, cal, spectrumImport
       if (!best) throw new Error(failure || 'Source fit failed.');
       if (importInfo) best.reference.importInfo = importInfo;
       setResult(best); setView({ project: best.fit.project, evaluation: best.fit.evaluation });
-      setProgress(`Converged · ${best.fit.iterations} iterations · RMS ${number(best.reference.rms, 3)} counts`);
+      setProgress(`Converged · ${best.fit.iterations} ${best.fit.iterations === 1 ? 'iteration' : 'iterations'} · RMS ${number(best.reference.rms, 3)} counts`);
     } catch (e) { if (id === token.current) { setError(String(e)); setProgress(''); } }
     finally { if (id === token.current) setBusy(false); }
   }
@@ -112,6 +112,6 @@ export function SourceCalibrationDialog({ project, filename, cal, spectrumImport
       {view && result && result.fit.warnings.length > 0 && <details className="calibration-warnings"><summary>Fit warnings ({result.fit.warnings.length})</summary>{result.fit.warnings.map(w => <p key={w}>{w}</p>)}</details>}
       {!result && saved && <p className="calibration-note">Last applied: {saved.gaussians ? `${saved.gaussians.length}-Gaussian source` : `${number(saved.sourceFwhm)} ± ${number(saved.sourceStd, 2)} mm/s`} from {saved.name}.</p>}
     </div><div className="calibration-preview"><div className="calibration-view">{view ? <Plot id="source-calibration-plot" project={view.project} evaluation={view.evaluation} fitted={!!result} picking={null} onPick={() => {}} onHover={() => {}} onCancelPick={() => {}}/> : <p>Open a singlet standard to preview its fit.</p>}</div>{view && <SourceShapePreview project={view.project}/>}</div></div>
-    <div className="calibration-footer"><p>Apply updates the source profile. Sample sites and data are retained; Undo restores the previous settings and fit. Raw references use the current folding and velocity controls.</p><button disabled={!result || busy} onClick={() => { if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before applying.'); return; } if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>Apply source profile</button></div>
+    <div className="calibration-footer"><p>Apply updates the source profile. Sample sites and data are retained; Undo restores the previous settings and fit. Raw references use the current folding and velocity controls.</p><button title="Apply the fitted source profile to this model; the sample’s velocity calibration is retained" disabled={!result || busy} onClick={() => { if (dialog.current?.querySelector('input[aria-invalid="true"]')) { setError('Correct the highlighted input before applying.'); return; } if (result) { try { onApply(result); dialog.current?.close(); } catch (e) { setError(String(e)); } } }}>Apply source profile</button></div>
   </dialog>;
 }

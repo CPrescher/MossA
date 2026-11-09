@@ -43,4 +43,3 @@ export function compare(reference, actual, diagnostic = false) {
   check(Math.abs(a.evaluation.objective - b.evaluation.objective) <= 1e-7 * Math.max(1, a.evaluation.objective), `${reference.id}: objective`);
   return stats;
 }
-

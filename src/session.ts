@@ -19,7 +19,7 @@ export function snapshotVersion(snapshot: Snapshot): 1 | 2 | 3 {
   if (snapshot.project.sites.some(s=>s.xvbf) || snapshot.project.source_gaussians || snapshot.cal.sourceReference?.gaussians) return 2;
   return [snapshot.project.nuclear_constants, snapshot.cal.nuclear_constants, snapshot.cal.reference?.settings.nuclear_constants].some(usesModernNuclearConstants) ? 2 : 1;
 }
-export const defaultLayout: Layout = { resultsHeight: 200, sitesHeight: 104, tab: 'Gen', optionsOpen: false, projectCollapsed: true, optionsCollapsed: false, projectSplit: .55 };
+export const defaultLayout: Layout = { resultsHeight: 160, sitesHeight: 104, tab: 'Gen', optionsOpen: false, projectCollapsed: true, optionsCollapsed: false, projectSplit: .55 };
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 export function validCalibration(value: unknown): value is Calibration {
@@ -81,7 +81,7 @@ export function decodeSession(text: string, allowEmptySpectrum = false): Session
   if (s.cal.sourceReference && !validSourceReference(s.cal.sourceReference)) throw new Error('Invalid saved source reference.');
   s.selected = Number.isInteger(s.selected) ? Math.max(0,Math.min(p.sites.length-1,s.selected)) : 0;
   const l = saved.layout ?? {};
-  const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(196,Math.min(2000,l.resultsHeight)) : 200, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true,
+  const layout: Layout = { resultsHeight: finite(l.resultsHeight) ? Math.max(152,Math.min(2000,l.resultsHeight)) : 160, sitesHeight: finite(l.sitesHeight) ? Math.max(52,Math.min(300,l.sitesHeight)) : 104, tab: ['Gen','Bnds','xVBF','Opt'].includes(l.tab) ? l.tab : 'Gen', optionsOpen: l.optionsOpen === true,
     projectCollapsed: l.projectCollapsed !== false, optionsCollapsed: l.optionsCollapsed === true, projectSplit: finite(l.projectSplit) ? Math.max(.2, Math.min(.8, l.projectSplit)) : .55 };
   const fit = decodeFitSummary(saved.fit, p.sites.length);
   return { version: saved.version, snapshot: s, layout, fit, elapsed: finite(saved.elapsed) ? saved.elapsed : null };
