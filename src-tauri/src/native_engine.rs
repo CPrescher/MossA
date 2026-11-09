@@ -35,12 +35,7 @@ pub fn native_compute_cancel(
 pub struct Response {
     result: Output,
     elapsed: f64,
-    execution: Execution,
-}
-#[derive(serde::Serialize)]
-struct Execution {
-    backend: &'static str,
-    derivative_workers: usize,
+    execution: native::Execution,
 }
 #[tauri::command]
 pub async fn native_compute(
@@ -50,6 +45,8 @@ pub async fn native_compute(
     operation: Operation,
     project: Project,
     progress: Option<JavaScriptChannelId>,
+    derivative_workers: Option<usize>,
+    state: Option<mossa_core::FitState>,
 ) -> Result<Response, String> {
     main_window(&window)?;
     let job = engine.job(&session)?;
@@ -65,17 +62,21 @@ pub async fn native_compute(
                 }
             }) as Box<dyn FnMut(FitProgress)>
         });
-        let result = native::compute(&project, operation, job.token.clone(), callback)?;
+        let computed = native::compute_with_state(
+            &project,
+            operation,
+            job.token.clone(),
+            callback,
+            derivative_workers,
+            state,
+        )?;
         if job.token.is_cancelled() {
             return Err("Calculation canceled.".into());
         }
         Ok(Response {
-            result,
+            result: computed.result,
             elapsed: start.elapsed().as_secs_f64() * 1000.,
-            execution: Execution {
-                backend: "native-rust",
-                derivative_workers: 1,
-            },
+            execution: computed.execution,
         })
     })
     .await

@@ -13,7 +13,7 @@ export function startComparison(simpler: Project, larger: Project, options: Comp
     if (!settled) onProgress({ ...progress, completed, phase: count > 1 ? `${count} workers · ${progress.phase}` : progress.phase });
   };
   const fit = async (project: Project, algorithm: 'trf' | 'bounded-lm' = 'trf') => {
-    const result = await fitMultiStartAsync(project, candidate => session.fit(candidate, algorithm), candidate => session.evaluate(candidate));
+    const result = await fitMultiStartAsync(project, candidate => session.fit(candidate, algorithm, undefined, { derivativeWorkers: 1 }), candidate => session.evaluate(candidate), undefined, pending => session.finalize(pending, { derivativeWorkers: 1 }));
     session.check(); return result;
   };
   const promise = Promise.resolve().then(async () => {

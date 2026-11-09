@@ -1,10 +1,10 @@
-import init, { evaluate_json, fit_json_with_progress, fit_recovery_json } from './wasm/mossa_core';
+import init, { evaluate_json, fit_json_with_progress, fit_recovery_json, finalize_fit_json } from './wasm/mossa_core';
 import { fitMultiStart } from './multistart.mjs';
 import { runComparison, prepareComparison, comparisonGenerator, fitComparisonSimulation, completeComparison, type PreparedComparison, type ComparisonProgress } from './comparison';
 const ready = init();
 const evaluate = (project: Parameters<typeof runComparison>[0]) => JSON.parse(evaluate_json(JSON.stringify(project)));
 const fit = (project: Parameters<typeof runComparison>[0], algorithm: 'trf' | 'bounded-lm' = 'trf') => fitMultiStart(project,
-  p => JSON.parse(algorithm === 'bounded-lm' ? fit_recovery_json(JSON.stringify(p)) : fit_json_with_progress(JSON.stringify(p), () => {})), evaluate);
+  p => JSON.parse(algorithm === 'bounded-lm' ? fit_recovery_json(JSON.stringify(p)) : fit_json_with_progress(JSON.stringify(p), () => {})), evaluate, undefined, pending => JSON.parse(finalize_fit_json(JSON.stringify(pending))));
 let prepared: PreparedComparison | null = null, next: ReturnType<typeof comparisonGenerator> | null = null;
 self.onmessage = async ({ data }) => {
   try {

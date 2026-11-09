@@ -1,18 +1,19 @@
-import { spawn } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { resolve } from 'node:path';
 import type { NativeTransport } from '../src/native-session';
 
 /** Real native core and job registry, with JSON lines replacing Tauri IPC. */
 export class NativeFixture {
-  private child = spawn(process.env.MOSSA_NATIVE_FIXTURE || resolve('rust-core/target/release/examples/native_fixture' + (process.platform === 'win32' ? '.exe' : '')), [], { stdio: ['pipe','pipe','pipe'] });
+  private child: ChildProcessWithoutNullStreams;
   private next = 0;
   private pending = new Map<number, { resolve: (value: any) => void; reject: (error: Error) => void; progress?: (value: any) => void }>();
   private exit: Promise<void>;
   readonly scopes = new Set<string>();
   highWater = 0;
   private active = 0;
-  constructor() {
+  constructor(executable = process.env.MOSSA_NATIVE_FIXTURE || resolve('rust-core/target/release/examples/native_fixture' + (process.platform === 'win32' ? '.exe' : ''))) {
+    this.child = spawn(executable, [], { stdio: ['pipe','pipe','pipe'] });
     let stderr = '';
     this.child.stderr.on('data', chunk => { stderr += chunk; });
     createInterface({ input: this.child.stdout }).on('line', line => {

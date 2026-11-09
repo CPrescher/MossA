@@ -36,39 +36,76 @@ export function searchCandidate(project, index) {
   return p;
 }
 
-function* search(project, onProgress) {
+// A single validation sequence is used by ordered and speculative restarts.
+function* prepareCandidate(base, start, count) {
+  let rejected = 0;
+  for (let retry = 0; retry < 12; retry++) {
+    const project = searchCandidate(base, start + retry * count);
+    try { yield { method: 'evaluate', project }; return { project, rejected }; }
+    catch { rejected++; }
+  }
+  return { project: null, rejected };
+}
+
+function* search(project, onProgress, finalize, parallel = false) {
+  // Probe controls belong to this invocation, never to imported projects or
+  // an earlier local fit. In particular the first fit must remain unpruned.
+  project = copy(project);
+  delete project.search_probe;
+  delete project.search_defer_uncertainties;
   const count = project.search_starts ?? 1;
   if (!Number.isInteger(count) || count < 1 || count > 32) throw new Error('Search starts must be an integer from 1 to 32.');
-  if (count === 1) return yield { method: 'fit', project, progress: onProgress };
+  if (count === 1) {
+    const result = yield { method: 'fit', project, progress: onProgress };
+    if (result.finalization) throw new Error('Single-start fit returned deferred uncertainty data.');
+    return result;
+  }
   // Fail on invalid user input before starting any search. Keep the original
   // trial first, ensuring exploration cannot worsen its objective.
-  yield { method: 'evaluate', project };
+  yield { method: 'evaluate', project, initial: true };
   let best = null, bestStart = 1, completed = 0, rejected = 0, failures = 0, totalIterations = 0;
   const objectives = [];
   const started = performance.now();
   for (let start = 0; start < count; start++) {
     let trial = project;
     if (start) {
-      let valid = false;
-      for (let retry = 0; retry < 12; retry++) {
-        trial = searchCandidate(start % 3 === 0 ? project : best.project, start + retry * count);
-        try { yield { method: 'evaluate', project: trial }; valid = true; break; } catch { rejected++; }
-      }
-      if (!valid) continue;
+      const prepared = parallel && start % 3 === 0
+        ? yield { method: 'restart', start }
+        : yield* prepareCandidate(start % 3 === 0 ? project : best.project, start, count);
+      rejected += prepared.rejected;
+      if (!prepared.project) continue;
+      trial = prepared.project;
     }
     const notify = state => {
       const shown = best && best.evaluation.objective <= state.evaluation.objective ? { project: best.project, evaluation: best.evaluation } : state;
-      onProgress?.({ ...state, ...shown, iteration: totalIterations + state.iteration, elapsed_ms: performance.now() - started, search_start: start + 1, search_starts: count });
+      const snapshot = { ...shown.project, max_iterations: project.max_iterations, search_starts: count };
+      delete snapshot.search_probe;
+      delete snapshot.search_defer_uncertainties;
+      onProgress?.({ ...state, ...shown, project: snapshot, iteration: totalIterations + state.iteration, elapsed_ms: performance.now() - started, search_start: start + 1, search_starts: count });
     };
     let result;
-    try { result = yield { method: 'fit', project: copy(trial), progress: notify }; }
+    const candidate = copy(trial);
+    if (finalize) candidate.search_defer_uncertainties = true;
+    try { result = yield { method: 'fit', project: candidate, progress: notify, start }; }
     catch (error) { if (!best) throw error; failures++; continue; }
     completed++; totalIterations += result.iterations;
     objectives.push(result.evaluation.objective);
     if (!best || result.evaluation.objective < best.evaluation.objective) { best = result; bestStart = start + 1; }
     notify({ project: best.project, evaluation: best.evaluation, iteration: 0 });
   }
+  if (best.finalization) {
+    if (!finalize) throw new Error('A search candidate needs uncertainty finalization.');
+    const selected = best;
+    best = yield { method: 'finalize', finalization: best.finalization };
+    if (best.finalization || !best.errors || !Array.isArray(best.warnings)
+      || best.evaluation.objective !== selected.evaluation.objective || best.iterations !== selected.iterations
+      || best.termination !== selected.termination || best.converged !== selected.converged) {
+      throw new Error('Uncertainty finalization changed the selected fit or returned an incomplete result.');
+    }
+  }
   best.project.search_starts = count;
+  delete best.project.search_probe;
+  delete best.project.search_defer_uncertainties;
   best.search = { requested: count, completed, best_start: bestStart, rejected_candidates: rejected, failed_starts: failures, objectives, total_iterations: totalIterations };
   best.warnings.push(`Search explored ${completed} starts; best result from start ${bestStart}. A global optimum is not guaranteed.`);
   if (failures || completed < count) best.warnings.push('Some search starts could not be completed; inspect the search diagnostics.');
@@ -78,23 +115,89 @@ function* search(project, onProgress) {
 
 // Shared ordered search, driven synchronously by browser comparison workers or
 // asynchronously by native commands. Validation and recovery are identical.
-export function fitMultiStart(project, fitLocal, evaluate, onProgress) {
-  const steps = search(project, onProgress); let state = steps.next();
+export function fitMultiStart(project, fitLocal, evaluate, onProgress, finalize) {
+  const steps = search(project, onProgress, finalize); let state = steps.next();
   while (!state.done) {
     let value;
-    try { const step = state.value; value = step.method === 'evaluate' ? evaluate(step.project) : fitLocal(step.project, step.progress); }
+    try { const step = state.value; value = step.method === 'evaluate' ? evaluate(step.project) : step.method === 'finalize' ? finalize(step.finalization) : fitLocal(step.project, step.progress); }
     catch (error) { state = steps.throw(error); continue; }
     state = steps.next(value);
   }
   return state.value;
 }
-export async function fitMultiStartAsync(project, fitLocal, evaluate, onProgress) {
-  const steps = search(project, onProgress); let state = steps.next();
-  while (!state.done) {
-    let value;
-    try { const step = state.value; value = await (step.method === 'evaluate' ? evaluate(step.project) : fitLocal(step.project, step.progress)); }
-    catch (error) { state = steps.throw(error); continue; }
-    state = steps.next(value);
+export async function fitMultiStartAsync(project, fitLocal, evaluate, onProgress, finalize, execution = {}) {
+  const parallel = typeof execution.independentFit === 'function';
+  const steps = search(project, onProgress, finalize, parallel);
+  const jobs = new Map();
+  let closed = false, state = steps.next();
+  const deferred = () => { let resolve; const promise = new Promise(r => { resolve = r; }); return { promise, resolve }; };
+  const startLane = base => {
+    for (let start = 3; start < base.search_starts; start += 3) jobs.set(start, { prepared: deferred(), result: deferred(), latest: null, notify: null });
+    // One helper lane bounds CPU/memory use. It never consumes an incumbent or
+    // publishes a winner: the ordered generator alone makes those decisions.
+    void (async () => {
+      for (const [start, job] of jobs) {
+        if (closed) return;
+        execution.check?.();
+        const preparation = prepareCandidate(base, start, base.search_starts);
+        let next = preparation.next();
+        while (!next.done) {
+          if (closed) return;
+          execution.check?.();
+          try { const value = await evaluate(next.value.project); execution.check?.(); next = preparation.next(value); }
+          catch (error) { execution.check?.(); next = preparation.throw(error); }
+        }
+        job.prepared.resolve({ value: next.value });
+        if (!next.value.project) { job.result.resolve({}); continue; }
+        const candidate = copy(next.value.project);
+        if (finalize) candidate.search_defer_uncertainties = true;
+        try {
+          const value = await execution.independentFit(candidate, progress => {
+            if (!closed) { job.latest = progress; job.notify?.(progress); }
+          });
+          job.result.resolve({ value });
+        } catch (error) { job.result.resolve({ error }); }
+        job.notify = null;
+      }
+    })().catch(error => {
+      // Settled packets avoid unhandled rejections when cancellation or an
+      // earlier fatal fit means these future starts are never consumed.
+      for (const job of jobs.values()) { job.prepared.resolve({ error }); job.result.resolve({ error }); }
+    });
+  };
+  try {
+    while (!state.done) {
+      execution.check?.();
+      let value;
+      try {
+        const step = state.value;
+        if (step.method === 'evaluate') {
+          value = await evaluate(step.project);
+          if (step.initial && parallel) startLane(step.project);
+        } else if (step.method === 'restart') {
+          const packet = await jobs.get(step.start).prepared.promise;
+          if ('error' in packet) throw packet.error;
+          value = packet.value;
+        } else if (step.method === 'finalize') value = await finalize(step.finalization);
+        else if (parallel && step.start > 0 && step.start % 3 === 0) {
+          const job = jobs.get(step.start);
+          job.notify = step.progress;
+          if (job.latest) job.notify?.(job.latest);
+          const packet = await job.result.promise;
+          job.notify = null;
+          execution.check?.();
+          // Worker/transport failure must not turn a successful serial start
+          // into a failed search. Retry that exact candidate on the main lane.
+          value = 'error' in packet ? await fitLocal(step.project, step.progress) : packet.value;
+        } else value = await fitLocal(step.project, step.progress);
+      } catch (error) { state = steps.throw(error); continue; }
+      execution.check?.();
+      state = steps.next(value);
+    }
+    return state.value;
+  } finally {
+    closed = true;
+    for (const job of jobs.values()) job.notify = null;
+    if (!state.done) execution.cancelIndependent?.();
   }
-  return state.value;
 }

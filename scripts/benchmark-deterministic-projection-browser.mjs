@@ -1,0 +1,69 @@
+// Production Engine/Worker comparison using archived WASM for each stage.
+import {build} from 'vite';
+import {createServer} from 'node:http';
+import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
+import {resolve,extname,sep} from 'node:path';
+import {pathToFileURL} from 'node:url';
+import {createHash} from 'node:crypto';
+import assert from 'node:assert/strict';
+import {compareAnalytical} from './analytical-validation.mjs';
+import {normPrecomputeCases} from './norm-precompute-cases.mjs';
+const args=process.argv.slice(2),option=(k,d)=>args.includes(k)?args[args.indexOf(k)+1]:d;
+const {chromium,webkit}=await import(pathToFileURL(option('--playwright-module','/Users/clemens/.codex/worktrees/dioptas-react-desktop/Dioptas/desktop/node_modules/playwright-core/index.mjs')));
+const repeats=Number(option('--repeats','3')),stages=option('--stages','baseline,parallel,products').split(',');
+assert.ok(stages.length>=2);
+const runtime='validation-data/performance/runtime/deterministic-projection',root=resolve('.');
+const hash=data=>createHash('sha256').update(data).digest('hex');
+async function client(name){
+ const dir=`${runtime}/browser-${name}`;await mkdir(dir,{recursive:true});
+ const entry=resolve(runtime,`entry-${name}.ts`);await writeFile(entry,`export { Engine } from ${JSON.stringify(resolve(runtime,name,'src/engine.ts'))};\n`);
+ await build({configFile:false,base:'./',logLevel:'error',publicDir:false,worker:{format:'es'},build:{outDir:dir,emptyOutDir:true,rollupOptions:{input:entry,preserveEntrySignatures:'strict',output:{entryFileNames:'engine.js'}}}});
+ const wasmFiles=(await readdir(resolve(dir,'assets'))).filter(p=>p.endsWith('.wasm'));
+ const expected=hash(await readFile(resolve(runtime,name,'src/wasm/mossa_core_bg.wasm')));
+ assert.equal(wasmFiles.length,1);assert.equal(hash(await readFile(resolve(dir,'assets',wasmFiles[0]))),expected);
+ return {entry:`/${dir}/engine.js`,wasm_sha256:expected};
+}
+const clients={};for(const name of stages)clients[name]=await client(name);
+const core=await import(`../${runtime}/baseline/src/wasm/mossa_core.js`);await core.default({module_or_path:await readFile(`${runtime}/baseline/src/wasm/mossa_core_bg.wasm`)});
+const evaluate=p=>JSON.parse(core.evaluate_json(JSON.stringify(p))),source=p=>JSON.parse(core.evaluate_source_json(JSON.stringify(p)));
+const cases=normPrecomputeCases(evaluate,source).filter(c=>['Sextet-PseudoVoigt','linked-mixed-sites','MS_MexicanMagnetite_coarse','MS-Fe2O3-Fe3O4_70-30_coarse','source-calibration-gaussian-3','ordinary-MS_MexicanMagnetite_transmission','xvbf-thin-mixture','xvbf-transmission-mixture','bounded-intensity','velocity-calibration-roundoff'].includes(c.id)).flatMap(c=>(['MS_MexicanMagnetite_coarse','MS-Fe2O3-Fe3O4_70-30_coarse'].includes(c.id)?[1,4,12]:[1]).map(search_starts=>({...c,id:`${c.id}-${search_starts}`,project:{...c.project,search_starts}})));
+let shared=false;
+const server=createServer(async(req,res)=>{
+ if(shared)for(const [k,v] of Object.entries({'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp','Cross-Origin-Resource-Policy':'same-origin'}))res.setHeader(k,v);
+ res.setHeader('Cache-Control','no-store');
+ if(req.url==='/bench'){res.setHeader('Content-Type','text/html');res.end('<!doctype html><title>Solver linear algebra benchmark</title>');return;}
+ try{const p=resolve(root,'.'+new URL(req.url,'http://localhost').pathname);if(!p.startsWith(root+sep))throw Error();res.setHeader('Content-Type',extname(p)==='.wasm'?'application/wasm':'text/javascript');res.end(await readFile(p));}catch{res.statusCode=404;res.end();}
+});await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const report={date:new Date().toISOString(),stages,repeats,clients,method:'Production Engine/Worker bundles with verified archived baseline, deterministic-search and fused-projection-product WASM. Both incremental stages and total change measured, portable hosting, unchanged scientific gates. One excluded warmup, alternating paired full-fit Engine.request wall times. Identical starting projects and production search/finalization. No numerical helper workers or infrastructure fallback.',runs:[]};
+const out=option('--output','validation-data/performance/deterministic-projection-browser.json'),save=()=>writeFile(out,JSON.stringify(report,null,2)+'\n');
+try{
+ for(const [browserName,launcher] of Object.entries({webkit,chromium})){
+  const browser=await launcher.launch({headless:true});
+  try{for(const isolated of [false]){
+   shared=isolated;const page=await browser.newPage();await page.goto(`http://127.0.0.1:${server.address().port}/bench`);
+   const data=await page.evaluate(async({cases,repeats,clients,stages})=>{
+    const engines={};for(const k of stages){const {Engine}=await import(clients[k].entry);await new Promise((r,j)=>{engines[k]=new Engine(r,j);});}
+    const median=a=>[...a].sort((a,b)=>a-b)[Math.floor(a.length/2)],rows=[];
+    try{for(const c of cases){
+     const run=mode=>engines[mode].request(c.calibration?'fit-source':'fit',c.project,undefined,{searchWorkers:mode==='baseline'?1:2});
+     const warm={},samples={},execution={},cold_ms={};for(const mode of stages){const t=performance.now();warm[mode]=await run(mode);cold_ms[mode]=performance.now()-t;samples[mode]=[];}
+     for(let i=0;i<repeats;i++)for(const mode of i%2?[...stages].reverse():stages){const t=performance.now(),r=await run(mode);samples[mode].push(performance.now()-t);execution[mode]=r.execution;if(JSON.stringify(r.result)!==JSON.stringify(warm[mode].result))throw Error('nondeterministic result');}
+     const pairs=stages.slice(1).map((name,i)=>[stages[i],name]);
+     if(stages.length>2)pairs.push([stages[0],stages.at(-1)]);
+     for(const [from,to] of pairs)rows.push({id:c.id,from_stage:from,to_stage:to,reference_ms:median(samples[from]),optimized_ms:median(samples[to]),speedup:median(samples[from])/median(samples[to]),samples_ms:{reference:samples[from],optimized:samples[to]},reference:warm[from].result,analytical:warm[to].result,cold_ms:{reference:cold_ms[from],optimized:cold_ms[to]},execution:{reference:execution[from],optimized:execution[to]}});
+    }}finally{for(const e of Object.values(engines))e.stop();}return {rows,isolated:self.crossOriginIsolated};
+   },{cases,repeats,clients,stages});
+   assert.equal(data.isolated,isolated);
+   for(const row of data.rows){
+
+    for(const e of Object.values(row.execution)){assert.equal(e.derivative_workers,1);assert.equal(e.fallback,undefined);}
+    Object.assign(row,compareAnalytical(row.reference,row.analytical));
+    if(!row.same_minimum){row.passed=false;row.failures.push('different-minimum');}
+    if(row.reference.converged&&!row.analytical.converged&&!(['NumericalNoProgress','SolverFailed'].includes(row.analytical.termination)&&row.analytical.stationarity!==null&&row.analytical.stationarity<=1e-6)){row.passed=false;row.failures.push('lost-convergence');}
+    report.runs.push({browser:browserName,version:browser.version(),isolated,...row});console.log(browserName,isolated?'shared':'portable',row.id,`${row.from_stage}->${row.to_stage} ${row.reference_ms.toFixed(1)} -> ${row.optimized_ms.toFixed(1)} ms; ${row.passed?'PASS':row.failures.join(',')}`);
+   }
+   await save();await page.close();
+  }}finally{await browser.close();}
+ }
+ report.passed=report.runs.every(r=>r.passed);await save();if(!report.passed)process.exitCode=1;
+}finally{await new Promise(r=>server.close(r));}

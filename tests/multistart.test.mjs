@@ -7,8 +7,8 @@ await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm'
 const local=p=>JSON.parse(fit_json(JSON.stringify(p)));
 const evaluate=p=>JSON.parse(evaluate_json(JSON.stringify(p)));
 const fixture=JSON.parse(readFileSync(new URL('fixtures/public-mixture-coarse.json',import.meta.url))).project;
-test('measured coarse-start mixture escapes its worse local minimum without changing the model',()=>{
- const p=structuredClone(fixture),original=structuredClone(p);p.search_starts=4;
+test('explicit numerical coarse-start mixture retains its qualified multistart escape',()=>{
+ const p={...structuredClone(fixture),derivative_method:'numerical'},original=structuredClone(p);p.search_starts=4;
  const single=local(p);const progress=[];
  const result=fitMultiStart(p,local,evaluate,s=>progress.push(s));
  assert.ok(result.evaluation.objective < single.evaluation.objective*.27);

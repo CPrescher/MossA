@@ -90,6 +90,7 @@ export function validateProjectFile(doc) {
   if (doc?.format !== 'mossa-project' || ![1,2,3].includes(doc.version) || !doc.project || (doc.required_features !== undefined && (!Array.isArray(doc.required_features) || !doc.required_features.length || doc.required_features.some(feature => feature !== 'xvbf-v1' && !(doc.version === 3 && feature === 'velocity-reversal-v1'))))) throw new Error('This is not a supported MossA browser project version or it requires a newer app. MATLAB .map files need conversion.');
   const p = doc.project;
   if (!Array.isArray(p.spectrum?.x) || !Array.isArray(p.spectrum?.y) || !Array.isArray(p.sites) || !Array.isArray(p.background) || p.sites.length > 16 || p.spectrum.x.length > 20000) throw new Error('Invalid project structure or size.');
+  if (p.derivative_method !== undefined && !['numerical', 'analytical'].includes(p.derivative_method)) throw new Error('Invalid derivative method.');
   return p;
 }
 export function csvSpectrum(project, evaluation) {

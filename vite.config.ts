@@ -48,7 +48,12 @@ export default defineConfig({
   base: './',
   build: { outDir: process.env.MOSSA_DESKTOP === '1' ? 'dist-desktop' : 'dist' },
   server: {
+    // WebKit blocks some Vite-transformed worker imports under COEP. The
+    // bundled preview/desktop/local server enables the shared fast path;
+    // development defaults to the portable message path.
+    headers: process.env.MOSSA_SHARED_DERIVATIVES === '1' ? { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Resource-Policy': 'same-origin' } : undefined,
     watch: { ignored: ['**/src-tauri/**', '**/dist-desktop/**'] },
   },
+  preview: { headers: { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Resource-Policy': 'same-origin' } },
   worker: { format: 'es' },
 });

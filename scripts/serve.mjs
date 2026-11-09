@@ -13,7 +13,8 @@ const server=createServer(async(req,res)=>{
     const path=decodeURIComponent(new URL(req.url,'http://localhost').pathname),file=resolve(root,'.'+(path==='/'?'/index.html':path));
     if(!file.startsWith(root.endsWith(sep)?root:root+sep)){res.writeHead(403);res.end();return;}
     const info=await stat(file);if(!info.isFile())throw new Error('Not a file');
-    res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});
+    res.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream','Cache-Control':'no-cache',
+      'Cross-Origin-Opener-Policy':'same-origin','Cross-Origin-Embedder-Policy':'require-corp','Cross-Origin-Resource-Policy':'same-origin'});
     res.end(req.method==='HEAD'?undefined:await readFile(file));
   }catch{res.writeHead(404);res.end('Not found');}
 });
