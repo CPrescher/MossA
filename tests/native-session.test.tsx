@@ -22,3 +22,24 @@ test('stopping rejects a running invoke immediately and ignores its late result 
   session.stop();await assert.rejects(running,/canceled/);publish!({});finish!({result:{},elapsed:1});await new Promise(resolve=>setTimeout(resolve,0));
   assert.equal(progress,0);assert.equal(calls.filter(c=>c==='native_compute_cancel').length,1);session.stop();
 });
+
+test('completed native calls ignore queued progress while later calls in the same session still publish', async () => {
+  const publishers: Array<(value:any)=>void> = [];
+  const bridge: NativeTransport = {
+    invoke: async <T,>(command:string) => {
+      if(command === 'native_compute') { publishers.at(-1)!({}); return {result:{},elapsed:1} as T; }
+      return undefined as T;
+    },
+    channel: callback => { publishers.push(callback); return 'test-channel'; },
+  };
+  const session = new NativeSession(bridge); let count = 0;
+  try {
+    await session.compute('fit',demo(),()=>count++);
+    assert.equal(count,1);
+    publishers[0]({}); assert.equal(count,1,'queued progress must not escape a completed request');
+    await session.compute('fit',demo(),()=>count++);
+    assert.equal(count,2);
+    publishers[0]({}); publishers[1]({});
+    assert.equal(count,2,'each completed channel is independently closed to progress');
+  } finally { session.stop(); }
+});
