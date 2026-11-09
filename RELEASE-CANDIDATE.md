@@ -4,6 +4,16 @@ This prerelease is intended for evaluation before stable MossA 2.0.0. Its scope
 and limitations are also included in the [release notes](release-notes/2.0.0-rc.1.md)
 and the bundled manual's [validation reference](manual/src/content/docs/reference/conventions-and-validation.md).
 
+## Candidate revision history
+
+The initial unpublished `v2.0.0-rc.1` tag identified
+`232f2211d0dda1357d474d619da050826e777793`.
+[Its Linux CI run](https://github.com/CPrescher/MossA/actions/runs/42693573739)
+passed `npm test` but failed a native/WASM convergence-flag assertion; no
+installers or release were published. The unpublished tag was subsequently
+recreated after reviewing the [specific stopping-status difference](validation-data/performance/RC1-NATIVE-PARITY.md).
+Final artifact provenance identifies the corrected revision.
+
 ## Candidate scope and review
 
 The candidate starts from `c56ddaf`, including the fixed-policy F-test changes
@@ -75,6 +85,10 @@ with every supported OS version.
   bootstrap classification gates. The [native pipeline report](validation-data/performance/FTEST-NATIVE-PIPELINE.md)
   records 36 paired stage comparisons with bit-exact public results and worker-count
   determinism. These are finite synthetic cases, not a global convergence proof.
+- A qualified Linux four-start thin-control case reaches equivalent minima/std
+  with native `NumericalNoProgress` versus WASM convergence. Its original raw
+  status and warning are preserved; the specific test requires the existing
+  scientific gates and stationarity <= 1e-6. See the linked parity report.
 - Broad comparisons with independently executed MATLAB results remain incomplete.
   Formula transcriptions are not MATLAB-generated fixtures; optimizer trajectories
   and uncertainty conventions differ.

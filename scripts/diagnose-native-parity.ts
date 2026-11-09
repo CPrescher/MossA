@@ -19,6 +19,7 @@ try {
   const summary=(r:FitResult)=>({objective:r.evaluation.objective,sse:r.evaluation.sse,converged:r.converged,termination:r.termination,stationarity:r.stationarity,rank:r.rank,free_parameters:r.free_parameters,iterations:r.iterations,parameters:r.evaluation.parameters,errors:r.errors});
   const row={derivative,solver,starts,native:summary(actual),wasm:summary(expected),scientific:compareAnalytical(expected,actual),actual,expected};rows.push(row);
   console.log(JSON.stringify({...row,actual:undefined,expected:undefined}));
+  if(!row.scientific.passed) throw new Error('Native/WASM scientific parity failed');
  }
 } finally {engine!?.stop();await fixture.close();}
 writeFileSync('native-parity-diagnostic.json',JSON.stringify({platform:process.platform,arch:process.arch,node:process.version,rows},null,2)+'\n');

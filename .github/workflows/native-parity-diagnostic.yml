@@ -29,6 +29,8 @@ jobs:
           cargo build --locked --release --manifest-path rust-core/Cargo.toml --example native_fixture
       - name: Capture complete thin-control parity evidence
         run: node --import tsx scripts/diagnose-native-parity.ts
+      - name: Check the complete native integration suite
+        run: npm run test:native
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: native-parity-diagnostic

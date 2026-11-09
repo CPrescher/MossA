@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use MossA in published work, please cite the paper below and report the software version used."
+title: MossA 2
+version: 2.0.0-rc.1
+date-released: 2026-11-09
+license: MIT
+repository-code: https://github.com/CPrescher/MossA
+authors:
+  - family-names: Prescher
+    given-names: Clemens
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Prescher
+      given-names: Clemens
+    - family-names: McCammon
+      given-names: Catherine
+    - family-names: Dubrovinsky
+      given-names: Leonid
+  title: "MossA: a program for analyzing energy-domain Mössbauer spectra from conventional and synchrotron sources"
+  journal: Journal of Applied Crystallography
+  volume: "45"
+  issue: "2"
+  start: "329"
+  end: "331"
+  year: 2012
+  doi: 10.1107/S0021889812004979

@@ -79,7 +79,7 @@ def wait_run(repo, run_id):
 
 
 def signing_branch(version, sha):
-    branch = "codex/mossa-release-" + version
+    branch = "codex/mossa-release-" + version + "-" + sha[:12]
     workflow = (ROOT / ".github/release-templates/macos-signing.yml").read_text()
     for key, value in {"@VERSION@": version, "@SOURCE_SHA@": sha, "@SIGNING_BRANCH@": branch}.items():
         workflow = workflow.replace(key, value)

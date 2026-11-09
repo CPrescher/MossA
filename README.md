@@ -21,6 +21,14 @@ Mössbauer spectrum analysis in your browser or as an offline desktop app. A Rea
 
 The current source is **2.0.0-rc.1**, a prerelease. See [validation limits and platform qualification](RELEASE-CANDIDATE.md), including experimental models and outstanding Windows/Linux GUI checks. Available downloads may precede this source revision.
 
+## Please cite
+
+If you use MossA in published work, please cite:
+
+Prescher, C., McCammon, C. & Dubrovinsky, L. (2012). **MossA: a program for analyzing energy-domain Mössbauer spectra from conventional and synchrotron sources.** *Journal of Applied Crystallography*, **45**, 329–331. [doi:10.1107/S0021889812004979](https://doi.org/10.1107/S0021889812004979).
+
+Please also report the MossA version used.
+
 [Development](DEVELOPING.md) · [Desktop builds](DESKTOP.md) · [Releases](RELEASING.md) · [Numerical conventions](PORTING.md) · [Original MATLAB application](https://github.com/CPrescher/MossA/tree/matlab-legacy)
 
 MIT licensed. Third-party licenses are listed in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
