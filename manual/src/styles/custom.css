@@ -15,6 +15,15 @@
   vertical-align: top;
 }
 
+.sl-markdown-content .tutorial-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 0.35rem;
+}
+
 .sl-markdown-content .katex-display {
   overflow-x: auto;
   overflow-y: hidden;
@@ -61,7 +70,7 @@
   }
   .main-pane { width: 100%; margin: 0; }
   .main-frame { padding: 0; }
-  .screenshot-dialog { display: none !important; }
+  .screenshot-dialog, .tutorial-video { display: none !important; }
   :root[data-theme] .theme-screenshot .screenshot-dark { display: none; }
   :root[data-theme] .theme-screenshot .screenshot-light { display: block; }
 }

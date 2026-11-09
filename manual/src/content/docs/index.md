@@ -24,6 +24,7 @@ The **Fitting options** panel contains preparation and model controls. Its **Fit
 | You want to… | Read… |
 | --- | --- |
 | Find sections, modes, and controls in my layout | [The workspace](/MossA/manual/getting-started/workspace/) |
+| Watch the complete beginner workflow with narration and highlighted controls | [Beginner video tutorial](/MossA/manual/tutorials/almandine/#watch-the-beginner-tutorial) |
 | Prepare raw channels or calibrate velocity with an iron standard | [Folding and velocity calibration](/MossA/manual/guides/folding-and-calibration/) |
 | Try the app with a complete example | [Your first fit](/MossA/manual/getting-started/first-fit/) |
 | Understand what the spectrum measures | [The physics behind the spectrum](/MossA/manual/foundations/physics/) |

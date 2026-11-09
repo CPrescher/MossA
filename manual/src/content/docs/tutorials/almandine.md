@@ -7,6 +7,25 @@ This tutorial adapts the conventional-source MossA tutorial used in the Freiburg
 
 The required part corresponds to **steps 1–7 of the original tutorial**, as specified by the practical. Freeing a line-area ratio is an optional extension, followed by saving and exporting.
 
+## Watch the beginner tutorial
+
+Follow the complete workflow from importing raw counts through folding, velocity calibration, fitting, and saving a project. The video uses the almandine sample and matching iron foil available below, with narration and highlighted controls.
+
+<iframe class="tutorial-video" width="960" height="540" src="https://www.youtube-nocookie.com/embed/O1YcE0maGtE" title="MossA beginner tutorial: import, fold, calibrate, fit, and save" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+
+[Watch on YouTube](https://www.youtube.com/watch?v=O1YcE0maGtE) · 11 min 19 s · English narration and optional English subtitles. An internet connection is required; in the desktop manual, use the YouTube link if the player is unavailable.
+
+| Jump to | Topic |
+| --- | --- |
+| [00:00](https://www.youtube.com/watch?v=O1YcE0maGtE) | Start here |
+| [00:28](https://www.youtube.com/watch?v=O1YcE0maGtE&t=28s) | Import and folding |
+| [02:30](https://www.youtube.com/watch?v=O1YcE0maGtE&t=150s) | Velocity calibration |
+| [05:27](https://www.youtube.com/watch?v=O1YcE0maGtE&t=327s) | Build and fit |
+| [07:07](https://www.youtube.com/watch?v=O1YcE0maGtE&t=427s) | Improve and inspect |
+| [10:10](https://www.youtube.com/watch?v=O1YcE0maGtE&t=610s) | Save and reopen |
+
+Recorded November 9, 2026 with the MossA 2 develop preview. The video imports the sample before calibrating; the written steps below calibrate the foil first. Both use the same measured data. Consult the written guide for current controls and the optional line-area-ratio extension.
+
 ## Download the measured data
 
 | Download | Original course filename | Contents |
