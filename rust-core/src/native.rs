@@ -2,6 +2,7 @@
 use super::*;
 pub use basin::CancellationToken;
 use std::cell::RefCell;
+pub mod comparison;
 pub(crate) mod derivatives;
 pub mod jobs;
 pub use derivatives::Execution;

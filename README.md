@@ -238,3 +238,5 @@ scripts/serve.mjs        Dependency-free local static server
 The Tauri app links the core as an `rlib` and uses native Rust jobs for fitting, evaluation, source calibration, and parallel comparisons. The browser keeps WASM workers. Both targets share multistart candidates, comparison RNG/recovery rules, and portable projects. `npm run test:native` checks backend parity and cancellation; see [DESKTOP.md](DESKTOP.md).
 
 In full-transmission mode, site overlays show absorber profiles scaled together for display using the original MossA convention. They are not additive transmission components; the fitted transmission model and residuals are unchanged.
+
+Native F-test simulations also use compact session-scoped model/spectrum transport and reusable invariant preparation. Search, recovery and statistical rules are retained. See the [native F-test pipeline benchmark](validation-data/performance/FTEST-NATIVE-PIPELINE.md) for separate stage timings and exact-result checks.

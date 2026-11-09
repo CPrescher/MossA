@@ -204,9 +204,10 @@ test('native selective continuation prunes a stalled measured start and retains 
 
 test('native parallel comparisons retain seeded results and diagnostics across worker counts and WASM', async () => {
   const fixture=new NativeFixture();
-  const derivativeRequests:number[]=[];const invoke=fixture.transport.invoke;
+  const derivativeRequests:number[]=[];let batchFits=0;const invoke=fixture.transport.invoke;
   fixture.transport.invoke=async<T,>(command:string,args:Record<string,unknown>):Promise<T>=>{
     if(command==='native_compute'&&(String(args.operation).startsWith('fit')||args.operation==='finalize-fit'))derivativeRequests.push(args.derivativeWorkers as number);
+    if(command==='native_comparison_batch')batchFits+=(args.request as any).operations.filter((op:any)=>op.operation!=='evaluate').length;
     return invoke<T>(command,args);
   };
   try {
@@ -225,7 +226,7 @@ test('native parallel comparisons retain seeded results and diagnostics across w
       assert.deepEqual([a,b],original);
     }
     await fixture.idle();
-    assert.ok(derivativeRequests.length>100);assert.ok(derivativeRequests.every(n=>n===1));
+    assert.ok(derivativeRequests.length+batchFits>100);assert.ok(derivativeRequests.every(n=>n===1));
   } finally {await fixture.close();}
 });
 
@@ -255,6 +256,7 @@ test('canceling a parallel comparison and a failed native fit never produce a pa
     let fits=0;
     const failing = { ...fixture.transport, invoke: async <T,>(command: string, args: Record<string, any>): Promise<T> => {
       if (command === 'native_compute' && args.operation === 'fit' && ++fits === 5) throw new Error('Injected native fit failure');
+      if (command === 'native_comparison_batch' && args.request.operations.some((op: any)=>op.operation==='fit'&&++fits===5)) throw new Error('Injected native fit failure');
       return fixture.transport.invoke<T>(command,args);
     } };
     await assert.rejects(startComparison(a,b,{...options,simulations:99},()=>{},()=>new NativeSession(failing)).promise,/Injected native fit failure/);
@@ -262,6 +264,34 @@ test('canceling a parallel comparison and a failed native fit never produce a pa
     const invalid=structuredClone(a);invalid.spectrum.y[0]=NaN;
     const session=new NativeSession(fixture.transport);await assert.rejects(session.fit(invalid));session.stop();await fixture.idle();
   } finally {await fixture.close();}
+});
+
+test('compact nonlinear comparisons preserve every legacy result and release independent spectra',async()=>{
+  const fixture=new NativeFixture();let packets=0;
+  const invoke=fixture.transport.invoke;
+  fixture.transport.invoke=async<T,>(command:string,args:Record<string,any>):Promise<T>=>{if(command==='native_comparison_batch')packets++;return invoke<T>(command,args);};
+  try {
+    const c=JSON.parse(readFileSync('tests/fixtures/ftest-boundary-replays.json','utf8')).cases[0];
+    const options={...c.options,simulations:99,workers:4};
+    const legacy=await startComparison(c.simpler,c.larger,options,()=>{},()=>new NativeSession(fixture.transport),{compact:false}).promise;
+    const compact=await startComparison(c.simpler,c.larger,options,()=>{},()=>new NativeSession(fixture.transport)).promise;
+    assert.deepEqual(compact,legacy);assert.ok(packets>100);assert.ok(fixture.highWater<=4);
+    await fixture.idle();
+  }finally{await fixture.close();}
+});
+test('canceling an in-flight compact batch stops its native work without publishing a p-value',async()=>{
+  const fixture=new NativeFixture();let task:ReturnType<typeof startComparison>,canceled=false;
+  const invoke=fixture.transport.invoke;
+  fixture.transport.invoke=async<T,>(command:string,args:Record<string,any>):Promise<T>=>{
+    if(command==='native_comparison_batch'&&args.request.operations.some((op:any)=>op.operation==='fit'||op.prefit==='fit')&&!canceled){canceled=true;queueMicrotask(()=>task.cancel());}
+    return invoke<T>(command,args);
+  };
+  try {
+    const c=JSON.parse(readFileSync('tests/fixtures/ftest-boundary-replays.json','utf8')).cases[0];
+    task=startComparison(c.simpler,c.larger,{...c.options,simulations:9999,workers:4},()=>{},()=>new NativeSession(fixture.transport));
+    await assert.rejects(task.promise,/canceled/i);assert.ok(canceled);await fixture.idle();
+    const fresh=new NativeSession(fixture.transport);await fresh.evaluate(c.simpler);fresh.stop();await fixture.idle();
+  }finally{await fixture.close();}
 });
 
 

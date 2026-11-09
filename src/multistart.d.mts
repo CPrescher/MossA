@@ -8,4 +8,4 @@ export type MultiStartExecution = {
   check?: () => void;
   cancelIndependent?: () => void;
 };
-export function fitMultiStartAsync(project: Project, fitLocal: (project: Project, onProgress?: (state: FitProgress) => void) => Promise<LocalFitResult>, evaluate: (project: Project) => Evaluation | Promise<Evaluation>, onProgress?: (state: FitProgress) => void, finalize?: (state: FitFinalization) => FitResult | Promise<FitResult>, execution?: MultiStartExecution): Promise<FitResult>;
+export function fitMultiStartAsync(project: Project, fitLocal: (project: Project, onProgress?: (state: FitProgress) => void) => Promise<LocalFitResult>, evaluate: (project: Project) => Evaluation | void | Promise<Evaluation | void>, onProgress?: (state: FitProgress) => void, finalize?: (state: FitFinalization) => FitResult | Promise<FitResult>, execution?: MultiStartExecution): Promise<FitResult>;

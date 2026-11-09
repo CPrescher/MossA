@@ -32,6 +32,31 @@ fn main() {
                 Err(error) => json!({"id":id,"error":error}),
             }),
             "status" => emit(json!({"id":id,"result":{"active":engine.active()}})),
+            "native_comparison_batch" => {
+                let job = match engine.job(session) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        emit(json!({"id":id,"error":e}));
+                        continue;
+                    }
+                };
+                let request = match serde_json::from_value(args["request"].clone()) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        emit(json!({"id":id,"error":e.to_string()}));
+                        continue;
+                    }
+                };
+                handles.push(std::thread::spawn(move || {
+                    let result =
+                        native::comparison::run(&job.comparison, request, job.token.clone());
+                    drop(job);
+                    emit(match result {
+                        Ok(result) => json!({"id":id,"result":result}),
+                        Err(error) => json!({"id":id,"error":error}),
+                    });
+                }));
+            }
             "native_compute" => {
                 let job = match engine.job(session) {
                     Ok(job) => job,

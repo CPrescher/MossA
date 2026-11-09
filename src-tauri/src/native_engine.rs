@@ -83,6 +83,22 @@ pub async fn native_compute(
     .map_err(|e| format!("Native calculation failed: {e}"))?
 }
 
+#[tauri::command]
+pub async fn native_comparison_batch(
+    window: tauri::WebviewWindow,
+    engine: tauri::State<'_, NativeEngine>,
+    session: String,
+    request: native::comparison::Request,
+) -> Result<native::comparison::Response, String> {
+    main_window(&window)?;
+    let job = engine.job(&session)?;
+    tauri::async_runtime::spawn_blocking(move || {
+        native::comparison::run(&job.comparison, request, job.token.clone())
+    })
+    .await
+    .map_err(|e| format!("Native comparison failed: {e}"))?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

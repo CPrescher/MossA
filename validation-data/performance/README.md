@@ -31,3 +31,5 @@ python3 scripts/archive-fitting-evidence.py
 The [fixed-seed F-test benchmark](FTEST.md) records cumulative native speedups and the weak-component bootstrap equivalence failures. Its compact `ftest-verification.json` keeps evidence integrity separate from scientific equivalence. Additional raw records and replay artifacts are described by `ftest-provenance.json`.
 
 The [F-test fixes and rebenchmark](FTEST-FIXED.md) resolve those bootstrap differences. All 12 native and five WASM comparisons pass; `ftest-fixed-verification.json` records the numerical checks and `ftest-fixed-provenance.json` identifies the separate local evidence archive.
+
+The [compact native F-test pipeline benchmark](FTEST-NATIVE-PIPELINE.md) isolates compact/batched transport and reusable preparation. All 36 paired stage comparisons retain exact complete results; `ftest-native-pipeline-verification.json` and `ftest-native-pipeline-provenance.json` preserve the checks and local evidence archive.

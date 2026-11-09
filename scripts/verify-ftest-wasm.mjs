@@ -16,7 +16,7 @@ for(const [k,path]of Object.entries(paths)) {
 const cases=ftestBenchmarkCases(p=>JSON.parse(cores.reference.evaluate_json(JSON.stringify(p))),199).filter(c=>c.simpler.mode==='thin');
 const files=['scripts/verify-ftest-wasm.mjs','scripts/ftest-benchmark-cases.mjs','scripts/analytical-validation.mjs','src/comparison.ts','src/multistart.mjs','src/types.ts','src/nuclear-constants.mjs',...Object.values(paths).flatMap(p=>[`${p}/mossa_core.js`,`${p}/mossa_core_bg.wasm`])];
 const report={date:new Date().toISOString(),method:'Untimed fixed-seed end-to-end WASM scientific replay, using production comparison state machine and synchronous browser-worker fitting/finalization path. Node WASM execution; not a browser performance measurement.',hashes:Object.fromEntries(files.map(p=>[p,sha(p)])),runs:[]};
-const output='validation-data/performance/ftest-fixed-wasm.json';
+const output=process.argv.includes('--output')?process.argv[process.argv.indexOf('--output')+1]:'validation-data/performance/ftest-fixed-wasm.json';
 for(const c of cases) {
   const results={};
   for(const [k,core]of Object.entries(cores)) {

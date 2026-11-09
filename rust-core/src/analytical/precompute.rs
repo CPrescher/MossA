@@ -2,8 +2,8 @@
 use super::*;
 
 pub(crate) struct EvaluationPlan {
-    pub weights: Vec<f64>,
-    pub powers: Vec<Vec<f64>>,
+    pub weights: Arc<Vec<f64>>,
+    pub powers: Arc<Vec<Vec<f64>>>,
     pub maps: Vec<distribution::Mapping>,
     pub site_entries: Vec<(usize, usize, usize)>,
     pub background_entries: Vec<(i32, usize)>,
@@ -39,25 +39,58 @@ impl EvaluationPlan {
             }
         }
         Self {
-            weights: p
-                .spectrum
-                .y
-                .iter()
-                .map(|&y| {
-                    if p.weighting == "counts" {
-                        y.sqrt()
-                    } else {
-                        1.
-                    }
-                })
-                .collect(),
+            weights: Arc::new(
+                p.spectrum
+                    .y
+                    .iter()
+                    .map(|&y| {
+                        if p.weighting == "counts" {
+                            y.sqrt()
+                        } else {
+                            1.
+                        }
+                    })
+                    .collect(),
+            ),
             // Store exactly powi(degree), not a recurrence with new rounding.
-            powers: (0..p.background.len())
-                .map(|d| p.spectrum.x.iter().map(|v| v.powi(d as i32)).collect())
-                .collect(),
+            powers: Arc::new(
+                (0..p.background.len())
+                    .map(|d| p.spectrum.x.iter().map(|v| v.powi(d as i32)).collect())
+                    .collect(),
+            ),
             maps,
             site_entries,
             background_entries,
+        }
+    }
+    pub fn reusing(
+        entries: &[Entry],
+        roots: &[(usize, f64)],
+        free: &[usize],
+        scale: &[f64],
+        original: &Self,
+        weights: Arc<Vec<f64>>,
+    ) -> Self {
+        // Recalculate scale-dependent products in the original order; share
+        // only immutable grid powers/layout and this dataset's exact weights.
+        let maps = roots
+            .iter()
+            .map(|&(root, factor)| {
+                free.iter()
+                    .position(|&r| r == root)
+                    .map(|k| (k, factor * scale[k]))
+                    .filter(|&(_, f)| f != 0.)
+                    .into_iter()
+                    .collect()
+            })
+            .collect();
+        debug_assert_eq!(entries.len(), original.maps.len());
+        Self {
+            weights,
+            powers: original.powers.clone(),
+            maps,
+            site_entries: original.site_entries.clone(),
+            background_entries: original.background_entries.clone(),
         }
     }
 }

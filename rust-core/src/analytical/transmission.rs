@@ -195,7 +195,7 @@ impl Prepared {
             self.model_curves(x, false);
             snapshot()
         })?;
-        let source = self.source_fft.as_ref().or(cached.source.as_ref())?;
+        let source = self.source_fft.as_deref().or(cached.source.as_ref())?;
         let grid = &cached.grid;
         let kernel_jac = self.source_derivatives(p, maps, n);
         let optical = if let Some(joint) = &cached.optical_jac {

@@ -1,11 +1,12 @@
 import { prepareComparisonAsync, fitComparisonSimulationAsync, comparisonGenerator, completeComparison, type ComparisonOptions, type ComparisonProgress, type SimulationOutcome } from './comparison';
-import type { Project } from './types';
+import {keys, type Project} from './types';
 import { fitMultiStartAsync } from './multistart.mjs';
 import { NativeSession } from './native-session';
+import { NativeComparisonBatch } from './native-comparison-batch';
 import { comparisonWorkerCount } from './comparison-workers';
 export { comparisonWorkerCount } from './comparison-workers';
 
-export function startComparison(simpler: Project, larger: Project, options: ComparisonOptions, onProgress: (p: ComparisonProgress) => void, createSession = () => new NativeSession()) {
+export function startComparison(simpler: Project, larger: Project, options: ComparisonOptions, onProgress: (p: ComparisonProgress) => void, createSession = () => new NativeSession(), execution: {compact?:boolean;reusePreparation?:boolean} = {}) {
   simpler = structuredClone(simpler); larger = structuredClone(larger); options = { ...options };
   const count = comparisonWorkerCount(options.workers), session = createSession();
   let settled = false, completed = 0;
@@ -23,10 +24,16 @@ export function startComparison(simpler: Project, larger: Project, options: Comp
     // Only this ordered generator consumes RNG values. Native threads fit
     // independent pairs; completion order cannot change simulated observations.
     const next = comparisonGenerator(prepared), outcomes: SimulationOutcome[] = new Array(options.simulations);
+    const cheapLinear=[simpler,larger].every(p=>p.mode==='thin'&&(p.search_starts??1)===1&&p.sites.every(s=>!s.xvbf&&keys(s).filter(k=>k!=='intensity').every(k=>!s.params[k].fit&&!s.params[k].link)));
+    const batch=execution.compact===false||cheapLinear?null:new NativeComparisonBatch(session,execution.reusePreparation??true);
     const lane = async () => {
       for (;;) {
         session.check(); const job = next(); if (!job) return;
-        const outcome = await fitComparisonSimulationAsync(prepared, job.index, job.y, fit, notify);
+        const resident=batch?.lane(job.y);
+        const localFit=resident?async(project:Project,algorithm:'trf'|'bounded-lm'='trf')=>fitMultiStartAsync(project,p=>resident.fit(p,algorithm),p=>resident.validate(p,algorithm),undefined,p=>resident.finalize(p)):fit;
+        let outcome:SimulationOutcome;
+        try {outcome=await fitComparisonSimulationAsync(prepared, job.index, job.y, localFit, notify);}
+        finally {resident?.close();}
         session.check();
         if (outcome.index !== job.index || outcomes[job.index]) throw new Error('Invalid or duplicate native simulation result.');
         outcomes[job.index] = outcome; completed++;

@@ -645,6 +645,7 @@ struct Prepared {
     project: Project,
     entries: Vec<Entry>,
     roots: Vec<(usize, f64)>,
+    root_bounds: Vec<(f64, f64)>,
     free: Vec<usize>,
     scale: Vec<f64>,
     lower: Vec<f64>,
@@ -652,7 +653,7 @@ struct Prepared {
     initial: Vec<f64>,
     evaluation_plan: Arc<analytical::EvaluationPlan>,
     // Precomputed source Fourier transform, shared by all model evaluations.
-    source_fft: Option<Vec<Complex<f64>>>,
+    source_fft: Option<Arc<Vec<Complex<f64>>>>,
     // Shared by solver clones; exact-coordinate keys prevent reuse across
     // perturbed residuals. Never held while evaluating a model or invoking FFTs.
     transmission_snapshot: Arc<Mutex<Option<Arc<TransmissionSnapshot>>>>,
@@ -741,6 +742,13 @@ impl Prepared {
         Self::with_source_calibration(p, false)
     }
     fn with_source_calibration(p: &Project, source_calibration: bool) -> Result<Self, String> {
+        Self::build(p, source_calibration, None)
+    }
+    fn build(
+        p: &Project,
+        source_calibration: bool,
+        reuse: Option<(&Self, Arc<Vec<f64>>)>,
+    ) -> Result<Self, String> {
         valid(p)?;
         let magnetic_coefficients = magnetic_coefficients(p)?;
         if source_calibration
@@ -941,19 +949,31 @@ impl Prepared {
         if free.len() >= p.spectrum.x.len() {
             return Err("More observations than free parameters are required.".into());
         }
-        let source_fft = if p.mode == "transmission" && !source_calibration {
-            Some(source_transform(p))
+        let source_fft = if let Some((m, _)) = &reuse {
+            m.source_fft.clone()
+        } else if p.mode == "transmission" && !source_calibration {
+            Some(Arc::new(source_transform(p)))
         } else {
             None
         };
-        let evaluation_plan = Arc::new(analytical::EvaluationPlan::new(
-            p, &entries, &roots, &free, &scale,
-        ));
+        let evaluation_plan = Arc::new(if let Some((m, weights)) = reuse {
+            analytical::EvaluationPlan::reusing(
+                &entries,
+                &roots,
+                &free,
+                &scale,
+                &m.evaluation_plan,
+                weights,
+            )
+        } else {
+            analytical::EvaluationPlan::new(p, &entries, &roots, &free, &scale)
+        });
         Ok(Self {
             evaluation_plan,
             project: p.clone(),
             entries,
             roots,
+            root_bounds: bounds,
             free,
             scale,
             lower,
@@ -968,6 +988,86 @@ impl Prepared {
             #[cfg(target_arch = "wasm32")]
             external_derivatives: None,
         })
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    fn rebind_comparison(&self, p: &Project, weights: Arc<Vec<f64>>) -> Result<Self, String> {
+        // Simplex latent coordinates depend on the current weights. Rebuild
+        // their transforms while still reusing invariant source/grid work.
+        if !self.simplexes.is_empty() || self.source_calibration {
+            return Self::build(p, self.source_calibration, Some((self, weights)));
+        }
+        valid(p)?;
+        let mut m = Self {
+            project: p.clone(),
+            entries: self.entries.clone(),
+            roots: self.roots.clone(),
+            root_bounds: self.root_bounds.clone(),
+            free: self.free.clone(),
+            scale: Vec::with_capacity(self.scale.len()),
+            lower: Vec::with_capacity(self.lower.len()),
+            upper: Vec::with_capacity(self.upper.len()),
+            initial: Vec::with_capacity(self.initial.len()),
+            evaluation_plan: self.evaluation_plan.clone(),
+            source_fft: self.source_fft.clone(),
+            transmission_snapshot: Arc::new(Mutex::new(None)),
+            absorber_snapshot: Arc::new(Mutex::new(None)),
+            source_calibration: self.source_calibration,
+            magnetic_coefficients: self.magnetic_coefficients,
+            simplexes: vec![],
+        };
+        for e in &mut m.entries {
+            e.param.value = e.value(p);
+            if !e.param.value.is_finite() {
+                return Err(format!(
+                    "{}: values/bounds must be finite; use null for an open bound.",
+                    e.id
+                ));
+            }
+            if e.param.link.is_none() && (e.param.value < e.lower || e.param.value > e.upper) {
+                return Err(format!("{}: incompatible bounds.", e.id));
+            }
+        }
+        m.scale.clear();
+        m.lower.clear();
+        m.upper.clear();
+        m.initial.clear();
+        for (i, e) in m.entries.iter().enumerate() {
+            if m.roots[i].0 != i {
+                continue;
+            }
+            let (lo, hi) = m.root_bounds[i];
+            if e.param.value < lo || e.param.value > hi {
+                return Err(format!(
+                    "{}: initial value is outside its bounds (including linked bounds).",
+                    e.id
+                ));
+            }
+            if e.param.fit && lo < hi {
+                let floor = match e.key.as_str() {
+                    "fwhm" | "source_fwhm" => 0.2,
+                    "cs" | "qs" => 1.,
+                    _ => 1.,
+                };
+                let s = e.param.value.abs().max(floor);
+                m.scale.push(s);
+                m.lower.push(lo / s);
+                m.upper.push(hi / s);
+                m.initial.push(e.param.value / s);
+            }
+        }
+        m.evaluation_plan = Arc::new(analytical::EvaluationPlan::reusing(
+            &m.entries,
+            &m.roots,
+            &m.free,
+            &m.scale,
+            &self.evaluation_plan,
+            weights,
+        ));
+        // Coordinate/observation-dependent forward and Jacobian caches belong
+        // to this fit only. Never import a previous simulation's solver state.
+        m.transmission_snapshot = Arc::new(Mutex::new(None));
+        m.absorber_snapshot = Arc::new(Mutex::new(None));
+        Ok(m)
     }
     fn expand(&self, x: &[f64]) -> Project {
         let mut values: Vec<_> = self.entries.iter().map(|e| e.param.value).collect();
@@ -1033,7 +1133,7 @@ impl Prepared {
             vec![]
         };
         let changing_source = self.source_calibration.then(|| source_transform(&p));
-        let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_ref()) {
+        let y = if let Some(source) = changing_source.as_ref().or(self.source_fft.as_deref()) {
             TRANSMISSION_WORKSPACE.with(|workspace| {
                 let mut workspace = workspace.borrow_mut();
                 let real = source.len() == TRANSMISSION_FFT_LEN / 2 + 1;
@@ -1834,8 +1934,12 @@ fn finish_local(m: &Prepared, state: FitState) -> Result<LocalFitResult, String>
 fn finalization_model(project: &Project, state: &FitState) -> Result<Prepared, String> {
     check_cancellation()?;
     let m = Prepared::with_source_calibration(project, state.source_calibration)?;
+    validate_finalization(&m, state)?;
+    Ok(m)
+}
+fn validate_finalization(m: &Prepared, state: &FitState) -> Result<(), String> {
     if state.x.len() != m.free.len()
-        || state.iterations > project.max_iterations as u64
+        || state.iterations > m.project.max_iterations as u64
         || state.termination.is_empty()
         || state.termination.len() > 200
         || state
@@ -1846,7 +1950,7 @@ fn finalization_model(project: &Project, state: &FitState) -> Result<Prepared, S
     {
         return Err("Invalid fit finalization state.".into());
     }
-    Ok(m)
+    Ok(())
 }
 pub fn finalize_fit(project: &Project, state: FitState) -> Result<FitResult, String> {
     // Rebuild from the ORIGINAL starting project, retaining its parameter

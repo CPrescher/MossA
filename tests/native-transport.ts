@@ -31,15 +31,15 @@ export class NativeFixture {
     channel: callback => callback,
     invoke: async <T,>(command: string, args: Record<string, any>): Promise<T> => {
       if (command === 'native_compute_start') this.scopes.add(args.session);
-      const computing = command === 'native_compute';
-      if (computing) { this.active++; this.highWater = Math.max(this.highWater, this.active); }
+      const computing = command === 'native_compute' ? 1 : command === 'native_comparison_batch' ? args.request.operations.length : 0;
+      if (computing) { this.active+=computing; this.highWater = Math.max(this.highWater, this.active); }
       try {
         return await new Promise<T>((resolve, reject) => {
           const id = ++this.next;
           this.pending.set(id, { resolve, reject, progress: args.progress });
           this.child.stdin.write(JSON.stringify({ id, command, args: { ...args, progress: !!args.progress } }) + '\n');
         });
-      } finally { if (computing) this.active--; }
+      } finally { if (computing) this.active-=computing; }
     },
   };
   async idle() {

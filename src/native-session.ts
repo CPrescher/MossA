@@ -1,5 +1,6 @@
 import { Channel, invoke } from '@tauri-apps/api/core';
 import type { Evaluation, FitProgress, FitResult, Project, FitFinalization, FitState, FitTrial } from './types';
+import type { ComparisonBatchRequest, ComparisonBatchResponse } from './native-comparison-batch';
 
 export type NativeOperation = 'evaluate' | 'fit' | 'evaluate-source' | 'fit-source' | 'fit-recovery' | 'finalize-fit';
 export type NativeResponse = { result: Evaluation | FitResult | FitTrial; elapsed: number; execution: { backend: 'native-rust'; derivative_workers: number; search_workers?: number; fallback?: string } };
@@ -36,6 +37,15 @@ export class NativeSession {
     });
   }
   async evaluate(project: Project) { return (await this.compute('evaluate', project)).result as Evaluation; }
+  comparisonBatch(request:ComparisonBatchRequest):Promise<ComparisonBatchResponse> {
+    return new Promise((resolve,reject)=>{
+      this.pending.add(reject);
+      void(async()=>{await this.ready;this.check();
+        const result=await this.bridge.invoke<ComparisonBatchResponse>('native_comparison_batch',{session:this.id,request});
+        this.check();return result;
+      })().then(resolve,reject).finally(()=>this.pending.delete(reject));
+    });
+  }
   async finalize(pending: FitFinalization, options?: NativeExecutionOptions) {
     return (await this.compute('finalize-fit', pending.project, undefined, options, pending.state)).result as FitResult;
   }
