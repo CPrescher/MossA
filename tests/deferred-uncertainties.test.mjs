@@ -50,10 +50,10 @@ test('checkpointed and shared derivative searches defer std and finalize the ori
     finally{prepared.free();}
   }finally{session.free();model.free();}
 });
-test('ordered full searches finalize once, retaining every search result/std field',async()=>{
+test('ordered full and selective searches finalize once, retaining every search result/std field',async()=>{
   const project=structuredClone(cases.find(c=>c.id==='three-sites-lorentzian-source').project);
   project.search_starts=4;
-  for(const strategy of ['full']){
+  for(const strategy of ['full','selective']){
     project.search_strategy=strategy;const original=structuredClone(project),expected=fitMultiStart(project,local,evaluate);
     let trialCount=0,finalCount=0;
     const actual=fitMultiStart(project,p=>{const r=local(p);assert.ok(r.finalization);trialCount++;return r;},evaluate,undefined,p=>{finalCount++;return finalize(p);});

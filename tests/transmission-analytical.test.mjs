@@ -32,9 +32,9 @@ test('default transmission checkpoint, callback, and progress paths use the same
   let progress=0;assert.deepEqual(JSON.parse(fit_json_with_progress(json,state=>{progress++;evaluate(JSON.parse(state).project);})),expected);assert.ok(progress>0);
  }
 });
-test('analytical transmission full searches retain eager and deferred std exactly',()=>{
+test('analytical transmission full/selective searches retain eager and deferred std exactly',()=>{
  const p={...cases.find(c=>c.id==='three-sites-squared-source').project,search_starts:4};
- for(const search_strategy of ['full']){
+ for(const search_strategy of ['full','selective']){
   const project={...p,search_strategy},expected=fitMultiStart(project,local,evaluate);
   assert.deepEqual(fitMultiStart(project,local,evaluate,undefined,finalize),expected);
  }

@@ -8,6 +8,8 @@ function halton(index, base) {
   return value;
 }
 const copy = value => structuredClone(value);
+// Fixed policy, qualified against full searches rather than tuned per spectrum.
+export const explorationPolicy = Object.freeze({ iterations: 24, iterations_per_parameter: 4, objective_margin: .1 });
 
 export function searchCandidate(project, index) {
   const p = copy(project);
@@ -54,17 +56,22 @@ function* search(project, onProgress, finalize, parallel = false) {
   delete project.search_probe;
   delete project.search_defer_uncertainties;
   const count = project.search_starts ?? 1;
+  const strategy = project.search_strategy ?? 'full';
   if (!Number.isInteger(count) || count < 1 || count > 32) throw new Error('Search starts must be an integer from 1 to 32.');
+  if (!['full', 'selective'].includes(strategy)) throw new Error('Unknown starting-model search strategy.');
   if (count === 1) {
     const result = yield { method: 'fit', project, progress: onProgress };
     if (result.finalization) throw new Error('Single-start fit returned deferred uncertainty data.');
+    if (project.search_strategy !== undefined) result.project.search_strategy = strategy;
     return result;
   }
   // Fail on invalid user input before starting any search. Keep the original
   // trial first, ensuring exploration cannot worsen its objective.
   yield { method: 'evaluate', project, initial: true };
   let best = null, bestStart = 1, completed = 0, rejected = 0, failures = 0, totalIterations = 0;
-  const objectives = [];
+  const objectives = [], trials = [];
+  let pruned = 0;
+  let explorationIterations = explorationPolicy.iterations;
   const started = performance.now();
   for (let start = 0; start < count; start++) {
     let trial = project;
@@ -81,16 +88,30 @@ function* search(project, onProgress, finalize, parallel = false) {
       const snapshot = { ...shown.project, max_iterations: project.max_iterations, search_starts: count };
       delete snapshot.search_probe;
       delete snapshot.search_defer_uncertainties;
+      if (project.search_strategy !== undefined) snapshot.search_strategy = strategy;
       onProgress?.({ ...state, ...shown, project: snapshot, iteration: totalIterations + state.iteration, elapsed_ms: performance.now() - started, search_start: start + 1, search_starts: count });
     };
     let result;
     const candidate = copy(trial);
     if (finalize) candidate.search_defer_uncertainties = true;
+    // Only alternatives are screened. The supplied model always gets its full
+    // budget, retaining the same single-start quality floor as a full search.
+    // Original-model restarts protect exploration of distant basins: a poor
+    // early objective there can precede a late escape. Screen only local
+    // perturbations of the incumbent, not every third original-model restart.
+    if (start % 3 !== 0 && strategy === 'selective' && project.max_iterations > explorationIterations) {
+      candidate.search_probe = { after_iterations: explorationIterations,
+        objective_ceiling: Math.min(Number.MAX_VALUE, best.evaluation.objective * (1 + explorationPolicy.objective_margin)) };
+    }
     try { result = yield { method: 'fit', project: candidate, progress: notify, start }; }
     catch (error) { if (!best) throw error; failures++; continue; }
     completed++; totalIterations += result.iterations;
+    if (!start) explorationIterations = Math.min(project.max_iterations, Math.max(explorationPolicy.iterations, explorationPolicy.iterations_per_parameter * result.free_parameters));
     objectives.push(result.evaluation.objective);
-    if (!best || result.evaluation.objective < best.evaluation.objective) { best = result; bestStart = start + 1; }
+    const discarded = result.termination === 'ExplorationPruned';
+    if (discarded) pruned++;
+    trials.push({ start: start + 1, iterations: result.iterations, objective: result.evaluation.objective, termination: result.termination, pruned: discarded, screened: candidate.search_probe !== undefined });
+    if (!discarded && (!best || result.evaluation.objective < best.evaluation.objective)) { best = result; bestStart = start + 1; }
     notify({ project: best.project, evaluation: best.evaluation, iteration: 0 });
   }
   if (best.finalization) {
@@ -104,10 +125,14 @@ function* search(project, onProgress, finalize, parallel = false) {
     }
   }
   best.project.search_starts = count;
+  if (project.search_strategy !== undefined) best.project.search_strategy = strategy;
   delete best.project.search_probe;
   delete best.project.search_defer_uncertainties;
   best.search = { requested: count, completed, best_start: bestStart, rejected_candidates: rejected, failed_starts: failures, objectives, total_iterations: totalIterations };
+  if (strategy === 'selective') Object.assign(best.search, { strategy, exploration_iterations: explorationIterations,
+    objective_margin: explorationPolicy.objective_margin, pruned_starts: pruned, trials });
   best.warnings.push(`Search explored ${completed} starts; best result from start ${bestStart}. A global optimum is not guaranteed.`);
+  if (strategy === 'selective') best.warnings.push(`Selective continuation screened alternatives after ${explorationIterations} iterations and pruned ${pruned} starts more than ${100 * explorationPolicy.objective_margin}% above the incumbent objective. Full exploration can find a better minimum.`);
   if (failures || completed < count) best.warnings.push('Some search starts could not be completed; inspect the search diagnostics.');
   return best;
 }

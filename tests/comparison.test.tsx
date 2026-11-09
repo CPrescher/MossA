@@ -43,6 +43,19 @@ test('nested constraints distinguish free starting values from changes in scient
   for (const [change, message] of changes) { const p = structuredClone(b); change(p); assert.match(nestingIssue(a, p)!, message); }
   assert.match(nestingIssue(a, a)!, /additional sites/);
 });
+
+test('model comparisons retain full searches even when interactive models use selective continuation', () => {
+  const [a,b]=models(35);a.search_starts=4;b.search_starts=4;
+  const reference=prepareComparison(a,b,options,fit,evaluate);
+  a.search_strategy='selective';b.search_strategy='selective';
+  let calls=0;
+  const actual=prepareComparison(a,b,options,(p,algorithm)=>{
+    calls++;assert.equal(p.search_strategy,undefined);return fit(p,algorithm);
+  },evaluate);
+  assert.ok(calls>=2);
+  assert.equal(actual.improvement,reference.improvement);
+  assert.deepEqual(actual.fitAttempts,reference.fitAttempts);
+});
 test('Poisson sampler has integer support, mean, and variance over low and high count regimes', () => {
   for (const mean of [.1, 5, 10, 100, 100000]) {
     const random = seededRandom(11), n = 60000; let sum = 0, squares = 0;

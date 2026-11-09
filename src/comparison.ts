@@ -232,6 +232,9 @@ function createRefitter(options: ComparisonOptions, notify: Progress, fitAttempt
       const iterationLimit = attempt === 0 ? project.max_iterations
         : Math.min(2000, Math.max(project.max_iterations, [0, 400, 1000, 2000, 2000, 1000][attempt]));
       candidate.max_iterations = iterationLimit;
+      // The interactive search shortcut is qualified for individual fits.
+      // Retain full searches for statistical comparisons and their simulations.
+      delete candidate.search_strategy;
       if (attempt) notify({ phase: `${stage}: recovery ${attempt}`, completed, total: options.simulations });
       const algorithm = attempt >= 2 && attempt !== 5 && !(attempt === 2 && nullFit) ? 'bounded-lm' : 'trf';
       const fitted = (yield { method: 'fit', project: candidate, algorithm }) as FitResult;
@@ -243,6 +246,7 @@ function createRefitter(options: ComparisonOptions, notify: Progress, fitAttempt
         // the per-attempt diagnostics preserve recovery budgets and outcomes.
         bestAcceptable.project.max_iterations = project.max_iterations;
         bestAcceptable.project.search_starts = project.search_starts;
+        if (project.search_strategy !== undefined) bestAcceptable.project.search_strategy = project.search_strategy;
         return bestAcceptable;
       }
     }

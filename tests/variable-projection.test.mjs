@@ -28,9 +28,9 @@ test('projected checkpoint, synchronous callbacks, and progress use complete coo
   assert.deepEqual(JSON.parse(fit_parallel_json(JSON.stringify(p),false,()=>{throw Error('unexpected numerical columns');},()=>{})),expected);
  }
 });
-test('projected full searches finalize once without changing eager results or total DOF',()=>{
+test('projected full/selective searches finalize once without changing eager results or total DOF',()=>{
  const base=cases.find(c=>c.id==='Doublet-PseudoVoigt').project;
- for(const search_strategy of ['full']){
+ for(const search_strategy of ['full','selective']){
   const p={...base,thin_solver:'variable_projection',search_strategy,search_starts:4};
   let count=0;const expected=fitMultiStart(p,fit,evaluate),actual=fitMultiStart(p,fit,evaluate,undefined,p=>{count++;return finalize(p);});
   assert.deepEqual(actual,expected);assert.equal(count,1);

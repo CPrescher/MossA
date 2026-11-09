@@ -13,8 +13,8 @@ function local(q,notify) {
  notify?.({project,evaluation:result.evaluation,iteration:result.iterations});
  return result;
 }
-test('one helper preserves full candidates, retries, ties, progress and complete results in original order',async()=>{
- for(const strategy of ['full']) {
+test('one helper preserves full/selective candidates, retries, ties, progress and complete results in original order',async()=>{
+ for(const strategy of ['full','selective']) {
   const p={...structuredClone(seed),search_starts:12,search_strategy:strategy};
   const initial=structuredClone(p),serialInputs=[],parallelInputs=[],progress=[];
   const evaluate=q=>{if(q.sites[0].params.fwhm.value<.27)throw new Error('linked bound');return {};};
