@@ -33,7 +33,8 @@ A packaged macOS smoke test exposed late native progress callbacks overwriting
 completed values in the editor/results display while the saved model remained
 correct. Request-scoped channel guards and completed-fit token invalidation fix
 that race; a failing-before/passing-after editor regression covers the callback
-order. Existing analysis conventions and portable projects are retained.
+order. Clean desktop builds also exclude the browser-only search worker from
+TypeScript checking, preserving desktop builds without generated fitting WASM. Existing analysis conventions and portable projects are retained.
 
 Local `output/` and `assessments/` directories, untracked exploratory datasets,
 expanded benchmark runtimes and raw evidence archives are not candidate source
@@ -55,7 +56,7 @@ Local checks below passed before tagging on Apple Silicon macOS with Node
 | Release/notarization helper tests | Passed: 5 tests; all workflows and the signing template lint cleanly |
 | Browser build | Passed; app/manual ZIP verified (289 files, matching embedded build identity) |
 | Manual build and local links | Passed: 21 pages and 1,381 local links |
-| Desktop payload/offline-asset verification | Passed: 284 files and 365 local asset references; native fitting backend; no remote iframe |
+| Desktop payload/offline-asset verification | Passed with `src/wasm` physically absent: 284 files and 365 local asset references; native fitting backend; no remote iframe |
 | macOS native command tests and package build | Passed: 8 command tests and release-mode app bundle |
 | Tagged cross-platform installer matrix | Required for draft assembly; see linked CI and build provenance |
 | Universal Mac signing/notarization/stapling | Required for draft assembly; verified by the release helper |
