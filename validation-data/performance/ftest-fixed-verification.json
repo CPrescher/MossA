@@ -1,0 +1,1210 @@
+{
+  "date": "2026-11-09T16:45:33.532Z",
+  "passed": true,
+  "native_comparisons": 12,
+  "wasm_comparisons": 5,
+  "worker_count_determinism_bit_exact": true,
+  "objective_gate": "Unchanged max(1e-7, 1e-8 * reference objective)",
+  "tie_rule": "64 * Number.EPSILON * max(abs(relevant objectives)); normalized zero improvements and inclusive tied tails; invariant to objective units",
+  "rows": [
+    {
+      "id": "gaussian-absent",
+      "workers": 1,
+      "simulations": 199,
+      "reference_ms": 129.31512499999997,
+      "optimized_ms": 94.33191699999998,
+      "speedup": 1.370852295941362,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -1.2505552149377763e-12,
+          "reference_objective": 655.2600744008352,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.355923495281068e-11,
+          "residual_rms": 2.0174088208183654,
+          "max_std_relative": 2.0881858696110403e-11,
+          "max_parameter_std": 8.475883444658473e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -2.2737367544323206e-13,
+          "reference_objective": 655.2600744008341,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 9.013144766521829e-12,
+          "residual_rms": 2.0174088208183636,
+          "max_std_relative": 5.349883502957449e-10,
+          "max_parameter_std": 5.570541276047847e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            8,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 9.890754881780595e-12,
+      "exact_tail_classification": true,
+      "p_values": [
+        1,
+        1
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-absent",
+      "workers": 4,
+      "simulations": 199,
+      "reference_ms": 48.41533400000003,
+      "optimized_ms": 41.75670800000012,
+      "speedup": 1.1594624269710125,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -1.2505552149377763e-12,
+          "reference_objective": 655.2600744008352,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.355923495281068e-11,
+          "residual_rms": 2.0174088208183654,
+          "max_std_relative": 2.0881858696110403e-11,
+          "max_parameter_std": 8.475883444658473e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -2.2737367544323206e-13,
+          "reference_objective": 655.2600744008341,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 9.013144766521829e-12,
+          "residual_rms": 2.0174088208183636,
+          "max_std_relative": 5.349883502957449e-10,
+          "max_parameter_std": 5.570541276047847e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            8,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 9.890754881780595e-12,
+      "exact_tail_classification": true,
+      "p_values": [
+        1,
+        1
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 1,
+      "simulations": 199,
+      "reference_ms": 168.60562499999992,
+      "optimized_ms": 97.76891699999987,
+      "speedup": 1.7245319900597869,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 660.1304129613096,
+          "analytical_objective": 660.1304129613105,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.8415162278747344e-11,
+          "residual_rms": 2.024892318218627,
+          "max_std_relative": 1.4709056936637062e-11,
+          "max_parameter_std": 1.1465786140333548e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 1.3642420526593924e-12,
+          "reference_objective": 653.8976583599398,
+          "analytical_objective": 653.8976583599411,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 3.336046214221674e-10,
+          "residual_rms": 2.015310432385446,
+          "max_std_relative": 9.41126361315578e-10,
+          "max_parameter_std": 2.0797733218515396e-9,
+          "max_fraction_std_relative": 9.067105864034083e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.586522557772696e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.08,
+        0.08
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 4,
+      "simulations": 199,
+      "reference_ms": 60.67691700000023,
+      "optimized_ms": 41.76712499999985,
+      "speedup": 1.4527434435575934,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 660.1304129613096,
+          "analytical_objective": 660.1304129613105,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.8415162278747344e-11,
+          "residual_rms": 2.024892318218627,
+          "max_std_relative": 1.4709056936637062e-11,
+          "max_parameter_std": 1.1465786140333548e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 1.3642420526593924e-12,
+          "reference_objective": 653.8976583599398,
+          "analytical_objective": 653.8976583599411,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 3.336046214221674e-10,
+          "residual_rms": 2.015310432385446,
+          "max_std_relative": 9.41126361315578e-10,
+          "max_parameter_std": 2.0797733218515396e-9,
+          "max_fraction_std_relative": 9.067105864034083e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.586522557772696e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.08,
+        0.08
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 1,
+      "simulations": 199,
+      "reference_ms": 194.93312500000002,
+      "optimized_ms": 100.25345800000014,
+      "speedup": 1.9444030050315049,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 5.4569682106375694e-12,
+          "reference_objective": 1445.9243523738844,
+          "analytical_objective": 1445.9243523738899,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.7214629568961115e-12,
+          "residual_rms": 2.9968144084336545,
+          "max_std_relative": 1.483835322715952e-11,
+          "max_parameter_std": 1.9830160688294725e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 0,
+          "reference_objective": 653.8976583599448,
+          "analytical_objective": 653.8976583599448,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 2.9709468884013583e-10,
+          "residual_rms": 2.0153104323854536,
+          "max_std_relative": 1.866813294659386e-10,
+          "max_parameter_std": 1.8529630391677069e-9,
+          "max_fraction_std_relative": 1.567809520821558e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.825287654355634e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.005,
+        0.005
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 4,
+      "simulations": 199,
+      "reference_ms": 63.56041699999969,
+      "optimized_ms": 41.152250000000095,
+      "speedup": 1.5445186350685454,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 5.4569682106375694e-12,
+          "reference_objective": 1445.9243523738844,
+          "analytical_objective": 1445.9243523738899,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.7214629568961115e-12,
+          "residual_rms": 2.9968144084336545,
+          "max_std_relative": 1.483835322715952e-11,
+          "max_parameter_std": 1.9830160688294725e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 0,
+          "reference_objective": 653.8976583599448,
+          "analytical_objective": 653.8976583599448,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 2.9709468884013583e-10,
+          "residual_rms": 2.0153104323854536,
+          "max_std_relative": 1.866813294659386e-10,
+          "max_parameter_std": 1.8529630391677069e-9,
+          "max_fraction_std_relative": 1.567809520821558e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.825287654355634e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.005,
+        0.005
+      ],
+      "precision_restarts": {
+        "reference": 0,
+        "optimized": 0
+      }
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 199,
+      "reference_ms": 4732.9127499999995,
+      "optimized_ms": 1724.5344170000026,
+      "speedup": 2.744458274270552,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 639.5326809799236,
+          "analytical_objective": 639.5326809799245,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 9.489530503649561e-11,
+          "residual_rms": 1.9930510974116884,
+          "max_std_relative": 3.395762266400218e-10,
+          "max_parameter_std": 5.125423930759711e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            9,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.547473508864641e-13,
+          "reference_objective": 631.3202796054139,
+          "analytical_objective": 631.3202796054135,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 7.829894097798549e-10,
+          "residual_rms": 1.9802131129513394,
+          "max_std_relative": 0.0000018102360998440489,
+          "max_parameter_std": 2.8197913154700785e-9,
+          "max_fraction_std_relative": 0.0000018121924341320506,
+          "iterations": [
+            12,
+            12
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 0.000001144541613484762,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.295,
+        0.295
+      ],
+      "precision_restarts": {
+        "reference": 10,
+        "optimized": 17
+      }
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "reference_ms": 1456.517749999999,
+      "optimized_ms": 655.6552919999958,
+      "speedup": 2.221468762277615,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 639.5326809799236,
+          "analytical_objective": 639.5326809799245,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 9.489530503649561e-11,
+          "residual_rms": 1.9930510974116884,
+          "max_std_relative": 3.395762266400218e-10,
+          "max_parameter_std": 5.125423930759711e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            9,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.547473508864641e-13,
+          "reference_objective": 631.3202796054139,
+          "analytical_objective": 631.3202796054135,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 7.829894097798549e-10,
+          "residual_rms": 1.9802131129513394,
+          "max_std_relative": 0.0000018102360998440489,
+          "max_parameter_std": 2.8197913154700785e-9,
+          "max_fraction_std_relative": 0.0000018121924341320506,
+          "iterations": [
+            12,
+            12
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 0.000001144541613484762,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.295,
+        0.295
+      ],
+      "precision_restarts": {
+        "reference": 10,
+        "optimized": 17
+      }
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 199,
+      "reference_ms": 6059.671083000001,
+      "optimized_ms": 2144.417582999995,
+      "speedup": 2.8257887507724355,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -1.4210854715202004e-13,
+          "reference_objective": 146.44208529510894,
+          "analytical_objective": 146.4420852951088,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 0.00000456392569466858,
+          "residual_rms": 134.36914405747117,
+          "max_std_relative": 1.6932568202070226e-8,
+          "max_parameter_std": 4.382810684201024e-7,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            9,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.263256414560601e-13,
+          "reference_objective": 142.5708465182872,
+          "analytical_objective": 142.57084651828677,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 8.584506504790895e-9,
+          "residual_rms": 132.56671181186962,
+          "max_std_relative": 0.0000028902839154331924,
+          "max_parameter_std": 4.843735602118315e-10,
+          "max_fraction_std_relative": 0.0000028982875040105445,
+          "iterations": [
+            17,
+            17
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.981391193339732e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.125,
+        0.125
+      ],
+      "precision_restarts": {
+        "reference": 10,
+        "optimized": 19
+      }
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "reference_ms": 1871.204958000002,
+      "optimized_ms": 951.304667000004,
+      "speedup": 1.9669880984616197,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -1.4210854715202004e-13,
+          "reference_objective": 146.44208529510894,
+          "analytical_objective": 146.4420852951088,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 0.00000456392569466858,
+          "residual_rms": 134.36914405747117,
+          "max_std_relative": 1.6932568202070226e-8,
+          "max_parameter_std": 4.382810684201024e-7,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            9,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.263256414560601e-13,
+          "reference_objective": 142.5708465182872,
+          "analytical_objective": 142.57084651828677,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 8.584506504790895e-9,
+          "residual_rms": 132.56671181186962,
+          "max_std_relative": 0.0000028902839154331924,
+          "max_parameter_std": 4.843735602118315e-10,
+          "max_fraction_std_relative": 0.0000028982875040105445,
+          "iterations": [
+            17,
+            17
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.981391193339732e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.125,
+        0.125
+      ],
+      "precision_restarts": {
+        "reference": 10,
+        "optimized": 19
+      }
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 99,
+      "reference_ms": 33185.782708,
+      "optimized_ms": 7224.833291999996,
+      "speedup": 4.593293902676809,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -3.410605131648481e-13,
+          "reference_objective": 163.8959122524669,
+          "analytical_objective": 163.89591225246656,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 6.302635541686327e-9,
+          "residual_rms": 140.70071405245346,
+          "max_std_relative": 2.238200123291369e-10,
+          "max_parameter_std": 5.538362507393475e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            3
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.263256414560601e-13,
+          "reference_objective": 142.55892819079705,
+          "analytical_objective": 142.55892819079662,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 3.2685568541126714e-8,
+          "residual_rms": 131.15476419956246,
+          "max_std_relative": 0.0000013980812290712145,
+          "max_parameter_std": 3.0041280252299556e-9,
+          "max_fraction_std_relative": 0.000001403318956489014,
+          "iterations": [
+            15,
+            15
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.9380991034267936e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.01,
+        0.01
+      ],
+      "precision_restarts": {
+        "reference": 8,
+        "optimized": 11
+      }
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 99,
+      "reference_ms": 9066.009416000015,
+      "optimized_ms": 2061.426790999976,
+      "speedup": 4.397929364060603,
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -3.410605131648481e-13,
+          "reference_objective": 163.8959122524669,
+          "analytical_objective": 163.89591225246656,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 6.302635541686327e-9,
+          "residual_rms": 140.70071405245346,
+          "max_std_relative": 2.238200123291369e-10,
+          "max_parameter_std": 5.538362507393475e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            3
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.263256414560601e-13,
+          "reference_objective": 142.55892819079705,
+          "analytical_objective": 142.55892819079662,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 3.2685568541126714e-8,
+          "residual_rms": 131.15476419956246,
+          "max_std_relative": 0.0000013980812290712145,
+          "max_parameter_std": 3.0041280252299556e-9,
+          "max_fraction_std_relative": 0.000001403318956489014,
+          "iterations": [
+            15,
+            15
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.9380991034267936e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.01,
+        0.01
+      ],
+      "precision_restarts": {
+        "reference": 8,
+        "optimized": 11
+      }
+    }
+  ],
+  "wasm": [
+    {
+      "id": "gaussian-absent",
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -1.2505552149377763e-12,
+          "reference_objective": 655.2600744008352,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.355923495281068e-11,
+          "residual_rms": 2.0174088208183654,
+          "max_std_relative": 2.0881858696110403e-11,
+          "max_parameter_std": 8.475883444658473e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 4.547473508864641e-13,
+          "reference_objective": 655.2600744008334,
+          "analytical_objective": 655.2600744008339,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 9.081927263909585e-12,
+          "residual_rms": 2.0174088208183627,
+          "max_std_relative": 4.2426594160467314e-10,
+          "max_parameter_std": 5.6158690233508275e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            8,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 8.981260180007666e-12,
+      "exact_tail_classification": true,
+      "p_values": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": "gaussian-weak",
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 660.1304129613096,
+          "analytical_objective": 660.1304129613105,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.8415162278747344e-11,
+          "residual_rms": 2.024892318218627,
+          "max_std_relative": 1.4709056936637062e-11,
+          "max_parameter_std": 1.1465786140333548e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -2.7284841053187847e-12,
+          "reference_objective": 653.8976583599439,
+          "analytical_objective": 653.8976583599411,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 3.4395712237802966e-10,
+          "residual_rms": 2.0153104323854523,
+          "max_std_relative": 7.458495553276751e-10,
+          "max_parameter_std": 2.143600265467817e-9,
+          "max_fraction_std_relative": 7.042367652951454e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 1.4845340956526343e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.08,
+        0.08
+      ]
+    },
+    {
+      "id": "gaussian-clear",
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 5.4569682106375694e-12,
+          "reference_objective": 1445.9243523738844,
+          "analytical_objective": 1445.9243523738899,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.7214629568961115e-12,
+          "residual_rms": 2.9968144084336545,
+          "max_std_relative": 1.4838139550428568e-11,
+          "max_parameter_std": 1.9830160688294725e-11,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            3,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 0,
+          "reference_objective": 653.8976583599448,
+          "analytical_objective": 653.8976583599448,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 2.9709468884013583e-10,
+          "residual_rms": 2.0153104323854536,
+          "max_std_relative": 1.866813294659386e-10,
+          "max_parameter_std": 1.8529630391677069e-9,
+          "max_fraction_std_relative": 1.567809520821558e-10,
+          "iterations": [
+            4,
+            0
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "LinearLeastSquares"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 5.387846613302827e-9,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.005,
+        0.005
+      ]
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -2.5011104298755527e-12,
+          "reference_objective": 639.5326809799265,
+          "analytical_objective": 639.532680979924,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.592600437995425e-7,
+          "residual_rms": 1.9930510974116928,
+          "max_std_relative": 4.911125386101775e-9,
+          "max_parameter_std": 9.452038413238476e-7,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            4,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 9.094947017729282e-13,
+          "reference_objective": 631.3202796054138,
+          "analytical_objective": 631.3202796054147,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.1360885259446747e-7,
+          "residual_rms": 1.9802131129513392,
+          "max_std_relative": 0.0000018094209790639245,
+          "max_parameter_std": 6.959160806536918e-7,
+          "max_fraction_std_relative": 0.000001812812749774145,
+          "iterations": [
+            9,
+            12
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 0.0000011901588550244924,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.295,
+        0.295
+      ]
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "observed": {
+        "simpler": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": 2.842170943040401e-14,
+          "reference_objective": 146.4420852951087,
+          "analytical_objective": 146.44208529510874,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 4.851405745744001e-9,
+          "residual_rms": 134.36914404595308,
+          "max_std_relative": 3.6239854423225913e-10,
+          "max_parameter_std": 4.6097058826933447e-10,
+          "max_fraction_std_relative": 0,
+          "iterations": [
+            9,
+            9
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        },
+        "larger": {
+          "passed": true,
+          "failures": [],
+          "delta_objective": -4.831690603168681e-13,
+          "reference_objective": 142.57084651828734,
+          "analytical_objective": 142.57084651828686,
+          "same_minimum": true,
+          "better": false,
+          "curve_rms": 1.400472825334929e-8,
+          "residual_rms": 132.56671181188483,
+          "max_std_relative": 0.000002890913859432447,
+          "max_parameter_std": 7.531716569134546e-10,
+          "max_fraction_std_relative": 0.0000028989329428221405,
+          "iterations": [
+            17,
+            17
+          ],
+          "termination": [
+            "RelativeCostTolerance",
+            "RelativeCostTolerance"
+          ]
+        }
+      },
+      "max_simulation_objective_delta": 2.3866249421189423e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.125,
+        0.125
+      ]
+    }
+  ],
+  "historical_reference": [
+    {
+      "id": "gaussian-absent",
+      "workers": 1,
+      "original_p": 0.575,
+      "original_p_with_roundoff_ties": 1,
+      "fixed_p": 1,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-absent",
+      "workers": 4,
+      "original_p": 0.575,
+      "original_p_with_roundoff_ties": 1,
+      "fixed_p": 1,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 1,
+      "original_p": 0.08,
+      "original_p_with_roundoff_ties": 0.08,
+      "fixed_p": 0.08,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 4,
+      "original_p": 0.08,
+      "original_p_with_roundoff_ties": 0.08,
+      "fixed_p": 0.08,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 1,
+      "original_p": 0.005,
+      "original_p_with_roundoff_ties": 0.005,
+      "fixed_p": 0.005,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 4,
+      "original_p": 0.005,
+      "original_p_with_roundoff_ties": 0.005,
+      "fixed_p": 0.005,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 1,
+      "original_p": 0.295,
+      "original_p_with_roundoff_ties": 0.295,
+      "fixed_p": 0.295,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 4,
+      "original_p": 0.295,
+      "original_p_with_roundoff_ties": 0.295,
+      "fixed_p": 0.295,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 1,
+      "original_p": 0.125,
+      "original_p_with_roundoff_ties": 0.125,
+      "fixed_p": 0.125,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 4,
+      "original_p": 0.125,
+      "original_p_with_roundoff_ties": 0.125,
+      "fixed_p": 0.125,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 1,
+      "original_p": 0.01,
+      "original_p_with_roundoff_ties": 0.01,
+      "fixed_p": 0.01,
+      "better_minima": 0,
+      "worse_minima": 0
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 4,
+      "original_p": 0.01,
+      "original_p_with_roundoff_ties": 0.01,
+      "fixed_p": 0.01,
+      "better_minima": 0,
+      "worse_minima": 0
+    }
+  ],
+  "checks": {
+    "regression": {
+      "passed": 459,
+      "failed": 0,
+      "log_sha256": "ca34cd1f9ed6fc64be70db6b7ff93c13ad9188efb37819c1bfd93d99f80a2acc"
+    },
+    "native": {
+      "passed": 20,
+      "failed": 0,
+      "log_sha256": "a52607f9602f8b7537709d92eb3f53903cf8fff711f7c9e8aa282197e4d89a5f"
+    },
+    "web_build": {
+      "passed": true,
+      "log_sha256": "2c2f33301abf6ad27bd2b0acd13e6e0746618443553e55da23b2153597fe6e57"
+    }
+  },
+  "hashes": {
+    "rust-core/target/release/examples/native_fixture": "693d3d23d538d6eb6dc6915e5fcaa07f213b19cd79b14a7a63195d7143f995d6",
+    "scripts/analytical-validation.mjs": "7dd484262e49b48a67f9b6d0c8019b36613c96432a2f21e2993b7243b4fe235f",
+    "scripts/benchmark-ftest.mjs": "888fb9a6f585fac843cdf85d702384b8e51aef3393775e3dbaca56a8ce2e2c62",
+    "scripts/ftest-benchmark-cases.mjs": "dd6468826ffa26a2d4d020ed0c4633809f19f599f2fd2ccee87fd3c457d6b1c0",
+    "scripts/verify-ftest-fixed.mjs": "b28fa7612f7e2c0048b0843ccf672a3d60424044d6734d60d286a7bcff6d17ee",
+    "scripts/verify-ftest-wasm.mjs": "d507e3f7aae627fe7611f8a62817c36b42fc9c71ca4609f6e2d7d831d3bb0dee",
+    "src/comparison-workers.ts": "7cf8a167575d36420e44d58679605932751ecf5703f45fa6dcccd91578c49372",
+    "src/comparison.ts": "f792e382ca7bc21a4932c1adca9013c6752c720b1e18abcde6d78b3e82ff6cce",
+    "src/multistart.mjs": "fa74601d3a3aff64c1d175c47e2f26df510a83105d43ade979a0b1cf4c512d04",
+    "src/native-comparison.ts": "97c3261a590a151fcddcced52114d1752a328e72425de18565e68964621f00ac",
+    "src/native-session.ts": "7c48dbea153dc9183fbe69dd048601a6a9147be4d16ce7d32432a0ea6e55e469",
+    "src/nuclear-constants.mjs": "1b518eaf9985402133cd93462810c29a16e17ebc1eba4f6b23e345bb87d06b45",
+    "src/types.ts": "775716febeb30f03e79527ba04db89382470d958946c74b2838e83eb889d0686",
+    "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "src/wasm/mossa_core_bg.wasm": "3d16eef5f782354cd76881412b224ce0ebc4716e8ee897ef6fe7441d9f030cad",
+    "tests/comparison.test.tsx": "4e32138967a3f8d12f4d96dbbd8a4276bc5cfe795503585913995ac3261b8ce9",
+    "tests/fixtures/ftest-boundary-replays.json": "ad1b8dd42e3e81597bfe5cfaf46bdecb517c6a2aadb8b0e80ab06e0da23ebfd1",
+    "tests/native-transport.ts": "2f180df79b7f755a067af3a01472baede3a884bd89ea52cae2c9902b19bb43b0",
+    "validation-data/performance/ftest-fixed-native.json": "1dd9c5f019d8b715c201e5c22b53f094038164f1653abb109b0fb64c7029379b",
+    "validation-data/performance/ftest-fixed-transmission-native.json": "87991255b0cd3746432b6d4378a96b96495f5539cd11012b0c3e1d10693a22d1",
+    "validation-data/performance/ftest-fixed-wasm.json": "f2327930aa15b01032cc0f5a12fa0304ac3d902f406e71608e7d43f747a1ad69",
+    "validation-data/performance/ftest-native.json": "5f1844ae9723d252ea8a46825c17528928721ea4687ed92ce822d2c91d8c60dd",
+    "validation-data/performance/ftest-transmission-native.json": "cfcace3da984b26d428c942fd7bad06350cb88d1a615857fe19432064e30c6ba",
+    "validation-data/performance/runtime/analytical/baseline/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+    "validation-data/performance/runtime/analytical/baseline/mossa_core_bg.wasm": "7b5bca61b06a9b26115027e89ca77a2ab74721a6b52c00f3ce55fd4714596449",
+    "validation-data/performance/runtime/analytical/baseline/native_fixture": "9e95b028ebd0c77960b7723420736881a260752bd235f2379d9b1bd4d9a0e588"
+  }
+}

@@ -11,7 +11,7 @@ export type ComparisonResult = {
   noiseStd: number | null; improvements: number[]; warnings: string[];
   execution?: { workers: number; backend?: 'native-rust' | 'wasm' };
   diagnostics: { simpler: FitDiagnostic; larger: FitDiagnostic }[];
-  fitAttempts?: { stage: string; attempts: (FitDiagnostic & { start: string; iterationLimit: number; algorithm?: 'trf' | 'bounded-lm'; search?: FitResult['search'] })[] }[];
+  fitAttempts?: { stage: string; attempts: (FitDiagnostic & { start: string; iterationLimit: number; algorithm?: 'trf' | 'bounded-lm'; thinSolver?: Project['thin_solver']; search?: FitResult['search'] })[] }[];
 };
 type FitDiagnostic = Pick<FitResult, 'converged' | 'termination' | 'stationarity' | 'rank' | 'free_parameters' | 'iterations'> & { objective: number };
 function diagnostic(f: FitResult): FitDiagnostic {
@@ -118,10 +118,33 @@ function checkFit(fit: FitResult, stage: string) {
   if (!acceptableFit(fit) || !Number.isFinite(fit.evaluation.objective) || fit.evaluation.objective < 0 || fit.dof <= 0) throw new Error(`${stage}: fit did not converge or pass the independent projected-gradient check to a finite objective with positive residual degrees of freedom. Increase iterations or starting models, then rerun. No failed simulations are discarded.`);
   if (fit.search && (fit.search.failed_starts || fit.search.completed !== fit.search.requested)) throw new Error(`${stage}: some search starts failed. Resolve the fitting problem before interpreting this test.`);
 }
+// Subtracted objectives and tail comparisons can differ by a few ULPs even
+// when two fits represent the same boundary optimum. This is an arithmetic
+// tolerance, far smaller than the scientific minimum-equivalence gate.
+export function objectiveRoundoffTolerance(...objectives: number[]) {
+  return 64 * Number.EPSILON * Math.max(0, ...objectives.map(Math.abs));
+}
+export function improvementExceeds(simulated: number, observed: number, ...objectives: number[]) {
+  return simulated >= observed - objectiveRoundoffTolerance(...objectives);
+}
+function canonicalImprovement(delta: number, ...objectives: number[]) {
+  return delta <= objectiveRoundoffTolerance(...objectives) ? 0 : delta;
+}
 function improvement(a: FitResult, b: FitResult, stage: string) {
   const delta = a.evaluation.objective - b.evaluation.objective;
   if (delta < -1e-7 * Math.max(1, a.evaluation.objective)) throw new Error(`${stage}: the larger model fitted worse despite containing the simpler model. Explore more starting models before rerunning the test.`);
-  return Math.max(0, delta);
+  return canonicalImprovement(delta, a.evaluation.objective, b.evaluation.objective);
+}
+
+// Eliminating an intensity at zero makes its free shape directions flat. Joint
+// fitting retains a positive-area route through those directions. Select this
+// before every search, not after accepting a stationary but inferior boundary.
+function comparisonNeedsJoint(project: Project) {
+  return project.mode === 'thin' && project.sites.some(site => {
+    const area = site.params.intensity;
+    return (area.fit || !!area.link) && (area.min ?? 0) <= 0
+      && siteParameters(site).some(p => p !== area && (p.fit || !!p.link));
+  });
 }
 
 // A simulated disappearing component can create a very slow, nearly degenerate
@@ -235,18 +258,41 @@ function createRefitter(options: ComparisonOptions, notify: Progress, fitAttempt
       // The interactive search shortcut is qualified for individual fits.
       // Retain full searches for statistical comparisons and their simulations.
       delete candidate.search_strategy;
+      if (comparisonNeedsJoint(candidate)) candidate.thin_solver = 'joint';
       if (attempt) notify({ phase: `${stage}: recovery ${attempt}`, completed, total: options.simulations });
       const algorithm = attempt >= 2 && attempt !== 5 && !(attempt === 2 && nullFit) ? 'bounded-lm' : 'trf';
       const fitted = (yield { method: 'fit', project: candidate, algorithm }) as FitResult;
-      attempts.push({ ...diagnostic(fitted), start: attempt === 0 ? 'supplied model start' : attempt === 1 && nullFit ? 'simpler-fit start, 5% added area' : attempt === 2 && nullFit ? 'simpler-fit start, residual peaks for added singlets/doublets' : attempt === 4 ? 'best attempt, near-bound free widths started at existing lower bounds' : attempt === 5 ? 'supplied model start with at least five deterministic starting models' : 'continue best attempt', iterationLimit, algorithm, ...(fitted.search ? { search: structuredClone(fitted.search) } : {}) });
+      attempts.push({ ...diagnostic(fitted), start: attempt === 0 ? 'supplied model start' : attempt === 1 && nullFit ? 'simpler-fit start, 5% added area' : attempt === 2 && nullFit ? 'simpler-fit start, residual peaks for added singlets/doublets' : attempt === 4 ? 'best attempt, near-bound free widths started at existing lower bounds' : attempt === 5 ? 'supplied model start with at least five deterministic starting models' : 'continue best attempt', iterationLimit, algorithm, ...(candidate.thin_solver ? { thinSolver: candidate.thin_solver } : {}), ...(fitted.search ? { search: structuredClone(fitted.search) } : {}) });
       if (!best || fitted.evaluation.objective < best.evaluation.objective) best = fitted;
       if (sufficient(fitted) && (!bestAcceptable || fitted.evaluation.objective < bestAcceptable.evaluation.objective)) bestAcceptable = fitted;
       if (bestAcceptable && bestAcceptable.evaluation.objective <= best.evaluation.objective + 1e-7 * Math.max(1, best.evaluation.objective)) {
+        // Relative-cost termination can occur before a near-bound shape has
+        // settled. One bounded TRF restart refreshes its parameter scales and
+        // trust region. It must pass the normal acceptance check and improve
+        // the incumbent; it never replaces a failed search or resamples data.
+        if (bestAcceptable.termination === 'RelativeCostTolerance'
+          && bestAcceptable.stationarity != null && bestAcceptable.stationarity > 1e-4) {
+          const precision = structuredClone(bestAcceptable.project);
+          precision.max_iterations = Math.min(2000, Math.max(400, project.max_iterations));
+          precision.search_starts = 1;
+          delete precision.search_strategy;
+          const polished = (yield { method: 'fit', project: precision, algorithm: 'trf' }) as FitResult;
+          attempts.push({ ...diagnostic(polished), start: 'precision restart from accepted fit', iterationLimit: precision.max_iterations, algorithm: 'trf', ...(precision.thin_solver ? { thinSolver: precision.thin_solver } : {}) });
+          if (sufficient(polished) && polished.evaluation.objective < bestAcceptable.evaluation.objective) {
+            // The additional single-start precision check does not erase the
+            // completed full-search provenance.
+            polished.search = bestAcceptable.search;
+            polished.warnings.push('A bounded precision restart refined the accepted fit; the comparison report retains the original search and both fitting attempts.');
+            bestAcceptable = polished;
+          }
+        }
         // Keep the model's configured iteration budget for subsequent datasets;
         // the per-attempt diagnostics preserve recovery budgets and outcomes.
         bestAcceptable.project.max_iterations = project.max_iterations;
         bestAcceptable.project.search_starts = project.search_starts;
         if (project.search_strategy !== undefined) bestAcceptable.project.search_strategy = project.search_strategy;
+        if (project.thin_solver === undefined) delete bestAcceptable.project.thin_solver;
+        else bestAcceptable.project.thin_solver = project.thin_solver;
         return bestAcceptable;
       }
     }
@@ -321,21 +367,24 @@ export function fitComparisonSimulationAsync(prepared: PreparedComparison, index
   return driveAsync(simulationSteps(prepared, index, y, notify), fit, async () => { throw new Error('Unexpected evaluation'); });
 }
 export function completeComparison(prepared: PreparedComparison, outcomes: SimulationOutcome[]): ComparisonResult {
-  const { simpler, larger, options, improvement: observed, noiseStd } = prepared;
+  const { simpler, larger, options, improvement: rawObserved, noiseStd } = prepared;
+  const observed = canonicalImprovement(rawObserved, simpler.evaluation.objective, larger.evaluation.objective);
   if (outcomes.length !== options.simulations) throw new Error('The comparison is incomplete; no simulation p-value can be computed.');
   const ordered: SimulationOutcome[] = new Array(options.simulations);
   for (const outcome of outcomes) {
     if (!Number.isInteger(outcome.index) || outcome.index < 0 || outcome.index >= options.simulations || ordered[outcome.index] || !Number.isFinite(outcome.improvement) || outcome.improvement < 0) throw new Error('Missing, duplicate, or invalid simulation result.');
     ordered[outcome.index] = outcome;
   }
-  const improvements = ordered.map(o => o.improvement), diagnostics = ordered.map(o => o.diagnostic);
+  const improvements = ordered.map(o => canonicalImprovement(o.improvement, o.diagnostic.simpler.objective, o.diagnostic.larger.objective)), diagnostics = ordered.map(o => o.diagnostic);
   const fitAttempts = [...prepared.fitAttempts, ...ordered.flatMap(o => o.fitAttempts)], warnings: string[] = [];
-  const exceedances = improvements.filter(delta => delta >= observed).length;
+  const exceedances = improvements.filter((delta, i) => improvementExceeds(delta, observed,
+    simpler.evaluation.objective, larger.evaluation.objective,
+    diagnostics[i].simpler.objective, diagnostics[i].larger.objective)).length;
   const rankDeficient = ordered.filter(o => o.rankDeficient).length, bounded = ordered.filter(o => o.bounded).length;
   const verifiedStationary = Number(!simpler.converged) + Number(!larger.converged) + ordered.reduce((sum, o) => sum + o.verifiedStationary, 0);
   if (verifiedStationary) warnings.push(`${verifiedStationary} fits stopped with a numerical solver status but passed the independent bound-projected residual-gradient check (maximum normalized component ≤ 1e-6). Original termination codes are retained for observed fits.`);
   const recovered = fitAttempts.filter(a => a.attempts.length > 1).length;
-  if (recovered) warnings.push(`${recovered} fits needed automatic recovery on the same data, using simpler-model/residual-peak starts, existing width-bound starts, bounded Levenberg–Marquardt continuation, or a deterministic multi-start search with up to 2,000 iterations per start. All attempts, algorithms, searches, and termination codes are included in the report.`);
+  if (recovered) warnings.push(`${recovered} fits needed automatic recovery or a precision restart on the same data, using simpler-model/residual-peak starts, existing width-bound starts, bounded Levenberg–Marquardt continuation, deterministic multi-start searches, or a bounded precision restart, with up to 2,000 iterations per start. All attempts, algorithms, searches, and termination codes are included in the report.`);
   if (rankDeficient) warnings.push(`${rankDeficient} simulated pairs had rank-deficient parameters. This can occur when an added component vanishes; its symmetric parameter uncertainties are unavailable.`);
   if (bounded) warnings.push(`${bounded} simulated pairs reached parameter bounds.`);
   if (simpler.rank < simpler.free_parameters || larger.rank < larger.free_parameters) warnings.push('An observed fit is rank deficient; inspect parameter identifiability and residuals.');

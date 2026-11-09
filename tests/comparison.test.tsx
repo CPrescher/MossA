@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import init, { evaluate_json, fit_json, fit_recovery_json } from '../src/wasm/mossa_core.js';
 import { fitMultiStart } from '../src/multistart.mjs';
 import { parameter, newSite, type FitResult, type Project } from '../src/types';
-import { acceptableFit, monteCarloSummary, nestingIssue, noiseIssue, normalSample, poissonSample, runComparison, seededRandom, simulateSpectrum, prepareComparison, comparisonGenerator, fitComparisonSimulation, completeComparison, type ComparisonOptions } from '../src/comparison';
+import { acceptableFit, monteCarloSummary, nestingIssue, noiseIssue, normalSample, poissonSample, runComparison, seededRandom, simulateSpectrum, prepareComparison, comparisonGenerator, fitComparisonSimulation, completeComparison, objectiveRoundoffTolerance, improvementExceeds, type PreparedComparison, type ComparisonOptions } from '../src/comparison';
 
 await init({ module_or_path: readFileSync(new URL('../src/wasm/mossa_core_bg.wasm', import.meta.url)) });
 const evaluate = (p: Project) => JSON.parse(evaluate_json(JSON.stringify(p)));
@@ -82,6 +82,78 @@ test('Monte Carlo p-values never report zero and the uncertainty interval reflec
   assert.equal(low.pValue, .01); assert.equal(high.pValue, 1);
   assert.ok(low.monteCarloInterval[1] < .05); assert.ok(middle.monteCarloInterval[0] < .05 && middle.monteCarloInterval[1] > .05);
   assert.ok(monteCarloSummary(0, 999).monteCarloInterval[1] < low.monteCarloInterval[1]);
+});
+test('tail ties use objective-scale roundoff without swallowing resolvable improvements', () => {
+  for (const scale of [1e-24, 1e-12, 1, 655, 1e12]) {
+    const tolerance = objectiveRoundoffTolerance(scale);
+    assert.ok(improvementExceeds(0, tolerance / 2, scale));
+    assert.ok(improvementExceeds(4 * tolerance, 4.5 * tolerance, scale));
+    assert.equal(improvementExceeds(0, 2 * tolerance, scale), false);
+    assert.equal(improvementExceeds(2 * tolerance, 4 * tolerance, scale), false);
+    assert.ok(tolerance < 1e-8 * scale, 'roundoff must remain smaller than scientific equivalence tolerance');
+  }
+});
+test('bootstrap p-values are invariant to objective units, including very small residual energies', () => {
+  const [a,b] = models(35),reference = runComparison(a,b,options,fit,evaluate);
+  for(const factor of [1e-24,1e-12,1,1e12]) {
+    const prepared = structuredClone(reference) as PreparedComparison;
+    prepared.simpler.evaluation.objective *= factor;
+    prepared.larger.evaluation.objective *= factor;
+    prepared.improvement *= factor;
+    const outcomes = reference.diagnostics.map((d,index)=>({index,improvement:reference.improvements[index]*factor,
+      diagnostic:{simpler:{...d.simpler,objective:d.simpler.objective*factor},larger:{...d.larger,objective:d.larger.objective*factor}},
+      fitAttempts:[],verifiedStationary:0,rankDeficient:false,bounded:false}));
+    const actual = completeComparison(prepared,outcomes);
+    assert.equal(actual.pValue,reference.pValue);
+    assert.equal(actual.exceedances,reference.exceedances);
+    assert.deepEqual(actual.monteCarloInterval,reference.monteCarloInterval);
+  }
+});
+test('fixed-seed zero-area observed improvements give the same p-value across numerical and analytical fits', async () => {
+  const {ftestBenchmarkCases} = await import('../scripts/ftest-benchmark-cases.mjs');
+  const c = ftestBenchmarkCases(evaluate,99).find((c: any) => c.id === 'gaussian-absent')!;
+  const a = runComparison(c.simpler,c.larger,c.options,fit,evaluate);
+  const numericFit = (p: Project, algorithm: 'trf' | 'bounded-lm' = 'trf') => fit({...p,derivative_method:'numerical',thin_solver:'joint'},algorithm);
+  const b = runComparison(c.simpler,c.larger,c.options,numericFit,evaluate);
+  assert.equal(a.improvement,0);assert.equal(b.improvement,0);
+  assert.equal(a.pValue,1);assert.equal(b.pValue,1);
+  assert.equal(a.exceedances,99);assert.equal(b.exceedances,99);
+  assert.deepEqual(a.monteCarloInterval,b.monteCarloInterval);
+});
+test('frozen disappearing-component and near-bound precision replays retain the better bootstrap minima', () => {
+  const fixtures = JSON.parse(readFileSync(new URL('./fixtures/ftest-boundary-replays.json', import.meta.url),'utf8')).cases;
+  for (const c of fixtures) {
+    const before = JSON.stringify(c),calls: { project: Project; result: FitResult }[] = [];
+    // Only the stored model starts are needed by simulationSteps; every
+    // diagnostic under test is produced by a real production WASM fit.
+    const prepared = {options:c.options,simpler:{project:c.simpler},larger:{project:c.larger},fitAttempts:[]} as unknown as PreparedComparison;
+    const outcome = fitComparisonSimulation(prepared,c.index,c.y,(p,algorithm)=>{
+      const f = fit(p,algorithm);calls.push({project:structuredClone(p),result:f});return f;
+    });
+    for (const model of ['simpler','larger'] as const) {
+      const actual = outcome.diagnostic[model],expected = c.reference[model];
+      assert.ok(Math.abs(actual.objective-expected.objective) <= Math.max(1e-7,1e-8*expected.objective),`${c.id}: ${model} minimum`);
+      assert.equal(actual.rank,expected.rank);
+    }
+    assert.ok(calls.every(({project:p})=>p.thin_solver==='joint'));
+    assert.ok(calls.filter(({project:p})=>p.search_starts===4).length>=2, 'full searches must be retained');
+    if(c.id.startsWith('poisson'))assert.ok(outcome.fitAttempts.some(a=>a.attempts.some(p=>p.start.startsWith('precision restart'))));
+    assert.equal(JSON.stringify(c),before);
+  }
+});
+test('a rejected precision restart retains the accepted incumbent and records both attempts', () => {
+  const [a,b] = models(35),expected = fit(a);let calls = 0;
+  const prepared = prepareComparison(a,b,options,(p,algorithm)=>{
+    const f = fit(p,algorithm);calls++;
+    if(calls===1) {f.termination='RelativeCostTolerance';f.stationarity=.01;}
+    if(calls===2) {f.converged=false;f.termination='MaxIter';f.evaluation.objective+=100;}
+    return f;
+  },evaluate);
+  assert.equal(prepared.simpler.evaluation.objective,expected.evaluation.objective);
+  assert.equal(prepared.simpler.project.max_iterations,a.max_iterations);
+  assert.equal(prepared.simpler.project.search_starts,a.search_starts);
+  assert.equal(prepared.fitAttempts[0].attempts.length,2);
+  assert.equal(prepared.fitAttempts[0].attempts[1].termination,'MaxIter');
 });
 test('actual WASM bootstrap detects a real extra line and reproduces the complete result without mutating models', () => {
   const [a, b] = models(35), before = JSON.stringify([a, b]), progress: number[] = [];

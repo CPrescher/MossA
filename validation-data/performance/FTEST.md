@@ -1,5 +1,7 @@
 # Fixed-seed F-test / bootstrap benchmark
 
+> Follow-up: the [fixes and repeated benchmark](FTEST-FIXED.md) pass the original gates. This page preserves the original failing investigation.
+
 November 9, 2026. **The optimized defaults are faster, but full numerical and p-value equivalence fails for weak nonlinear thin components.** This is a benchmark and diagnosis; no production solver defaults or statistical rules were changed.
 
 The application uses a parametric-bootstrap model comparison: the reported F statistic is descriptive, and the p-value comes from the simulated objective-improvement tail. The failures below are retained rather than removed from the benchmark.

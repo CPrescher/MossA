@@ -1,0 +1,215 @@
+{
+  "archive_path": "/Users/clemens/Codex/MossA-checkpoints/2026-11-09/ftest-fixed-evidence.tar.xz",
+  "archive_bytes": 2927624,
+  "archive_sha256": "92dabf076c4e255ba1235ab095f4c78d4daf8e9f63eebbcc0a70b13c703aee7a",
+  "members_verified": true,
+  "scientific_equivalence_passed": true,
+  "files": [
+    {
+      "path": "package-lock.json",
+      "bytes": 106070,
+      "sha256": "f4f6a29a900242e42e0cad100b9b2374b62f56430b015efd8731a73ee6db95d3"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1920,
+      "sha256": "0eb48808e0005ba3ade2c962a64dba18b9629610344e116af43962259eb2d140"
+    },
+    {
+      "path": "rust-core/target/release/examples/native_fixture",
+      "bytes": 1895232,
+      "sha256": "693d3d23d538d6eb6dc6915e5fcaa07f213b19cd79b14a7a63195d7143f995d6"
+    },
+    {
+      "path": "scripts/analytical-validation.mjs",
+      "bytes": 5453,
+      "sha256": "7dd484262e49b48a67f9b6d0c8019b36613c96432a2f21e2993b7243b4fe235f"
+    },
+    {
+      "path": "scripts/benchmark-ftest.mjs",
+      "bytes": 7971,
+      "sha256": "888fb9a6f585fac843cdf85d702384b8e51aef3393775e3dbaca56a8ce2e2c62"
+    },
+    {
+      "path": "scripts/ftest-benchmark-cases.mjs",
+      "bytes": 2067,
+      "sha256": "dd6468826ffa26a2d4d020ed0c4633809f19f599f2fd2ccee87fd3c457d6b1c0"
+    },
+    {
+      "path": "scripts/verify-ftest-fixed.mjs",
+      "bytes": 7400,
+      "sha256": "b28fa7612f7e2c0048b0843ccf672a3d60424044d6734d60d286a7bcff6d17ee"
+    },
+    {
+      "path": "scripts/verify-ftest-wasm.mjs",
+      "bytes": 3720,
+      "sha256": "d507e3f7aae627fe7611f8a62817c36b42fc9c71ca4609f6e2d7d831d3bb0dee"
+    },
+    {
+      "path": "src/comparison-workers.ts",
+      "bytes": 439,
+      "sha256": "7cf8a167575d36420e44d58679605932751ecf5703f45fa6dcccd91578c49372"
+    },
+    {
+      "path": "src/comparison.ts",
+      "bytes": 32255,
+      "sha256": "f792e382ca7bc21a4932c1adca9013c6752c720b1e18abcde6d78b3e82ff6cce"
+    },
+    {
+      "path": "src/multistart.mjs",
+      "bytes": 13297,
+      "sha256": "fa74601d3a3aff64c1d175c47e2f26df510a83105d43ade979a0b1cf4c512d04"
+    },
+    {
+      "path": "src/native-comparison.ts",
+      "bytes": 2851,
+      "sha256": "97c3261a590a151fcddcced52114d1752a328e72425de18565e68964621f00ac"
+    },
+    {
+      "path": "src/native-session.ts",
+      "bytes": 3536,
+      "sha256": "7c48dbea153dc9183fbe69dd048601a6a9147be4d16ce7d32432a0ea6e55e469"
+    },
+    {
+      "path": "src/nuclear-constants.mjs",
+      "bytes": 1196,
+      "sha256": "1b518eaf9985402133cd93462810c29a16e17ebc1eba4f6b23e345bb87d06b45"
+    },
+    {
+      "path": "src/types.ts",
+      "bytes": 4237,
+      "sha256": "775716febeb30f03e79527ba04db89382470d958946c74b2838e83eb889d0686"
+    },
+    {
+      "path": "src/wasm/mossa_core.js",
+      "bytes": 26344,
+      "sha256": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8"
+    },
+    {
+      "path": "src/wasm/mossa_core_bg.wasm",
+      "bytes": 933475,
+      "sha256": "3d16eef5f782354cd76881412b224ce0ebc4716e8ee897ef6fe7441d9f030cad"
+    },
+    {
+      "path": "tests/comparison.test.tsx",
+      "bytes": 21640,
+      "sha256": "4e32138967a3f8d12f4d96dbbd8a4276bc5cfe795503585913995ac3261b8ce9"
+    },
+    {
+      "path": "tests/fixtures/ftest-boundary-replays.json",
+      "bytes": 52652,
+      "sha256": "ad1b8dd42e3e81597bfe5cfaf46bdecb517c6a2aadb8b0e80ab06e0da23ebfd1"
+    },
+    {
+      "path": "tests/native-transport.ts",
+      "bytes": 3140,
+      "sha256": "2f180df79b7f755a067af3a01472baede3a884bd89ea52cae2c9902b19bb43b0"
+    },
+    {
+      "path": "validation-data/performance/FTEST-FIXED.md",
+      "bytes": 7027,
+      "sha256": "e51990f57f24dfe8575959820b03092d1411d740f1a04e80993ce39e253bbc7b"
+    },
+    {
+      "path": "validation-data/performance/analytical-default-native.json",
+      "bytes": 3646883,
+      "sha256": "a645c647ba51bf9d76e5dda66a7acfc5833b3759b8b57e107d387be4ede00c50"
+    },
+    {
+      "path": "validation-data/performance/deterministic-projection-verification.json",
+      "bytes": 224781,
+      "sha256": "a799d7d30c38fe867bfc24841d60a0b004770ef33022e3de1ee4d96fd9ca524a"
+    },
+    {
+      "path": "validation-data/performance/ftest-fixed-native.json",
+      "bytes": 11524192,
+      "sha256": "1dd9c5f019d8b715c201e5c22b53f094038164f1653abb109b0fb64c7029379b"
+    },
+    {
+      "path": "validation-data/performance/ftest-fixed-transmission-native.json",
+      "bytes": 1561196,
+      "sha256": "87991255b0cd3746432b6d4378a96b96495f5539cd11012b0c3e1d10693a22d1"
+    },
+    {
+      "path": "validation-data/performance/ftest-fixed-verification.json",
+      "bytes": 38280,
+      "sha256": "49f2df8188e979e49f9c865d6a9439081f4430fa44bb841b539c8411b494f064"
+    },
+    {
+      "path": "validation-data/performance/ftest-fixed-wasm.json",
+      "bytes": 5283555,
+      "sha256": "f2327930aa15b01032cc0f5a12fa0304ac3d902f406e71608e7d43f747a1ad69"
+    },
+    {
+      "path": "validation-data/performance/ftest-native.json",
+      "bytes": 11364961,
+      "sha256": "5f1844ae9723d252ea8a46825c17528928721ea4687ed92ce822d2c91d8c60dd"
+    },
+    {
+      "path": "validation-data/performance/ftest-provenance.json",
+      "bytes": 6525,
+      "sha256": "0677f5ed8fc13e9471d303faadd794b7e4cf081a77c2f3f89a42341e2758d979"
+    },
+    {
+      "path": "validation-data/performance/ftest-transmission-native.json",
+      "bytes": 1542732,
+      "sha256": "cfcace3da984b26d428c942fd7bad06350cb88d1a615857fe19432064e30c6ba"
+    },
+    {
+      "path": "validation-data/performance/ftest-verification.json",
+      "bytes": 13305,
+      "sha256": "6bce888d8a7dd7046bad9c234fc69012fa87170138b6a8552be65e71e9054f85"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fix-all-tests.log",
+      "bytes": 49021,
+      "sha256": "ca34cd1f9ed6fc64be70db6b7ff93c13ad9188efb37819c1bfd93d99f80a2acc"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fix-native-tests.log",
+      "bytes": 2406,
+      "sha256": "a52607f9602f8b7537709d92eb3f53903cf8fff711f7c9e8aa282197e4d89a5f"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fix-web.log",
+      "bytes": 1910,
+      "sha256": "2c2f33301abf6ad27bd2b0acd13e6e0746618443553e55da23b2153597fe6e57"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fixed-native.log",
+      "bytes": 1732,
+      "sha256": "e3a347fea81704366a48ac14380465cdc44e4676375f2c7609f1d22c1d147205"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fixed-transmission-native.log",
+      "bytes": 431,
+      "sha256": "e1786cc3acc3afa6ec03c089ba80c41d973b72839b8238e8368abade98daae77"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fixed-verification.log",
+      "bytes": 179,
+      "sha256": "6f3a0cb0226778d391dc2b9942ab8dd18b07aadbd1c2447f6d185a3ce1f306d4"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest-fixed/mossa-ftest-fixed-wasm.log",
+      "bytes": 199,
+      "sha256": "82ab22bdcc3ea402ba13b32c606e8390a1935395c3939c898945cd457d9fbfc3"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/mossa_core.js",
+      "bytes": 25986,
+      "sha256": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/mossa_core_bg.wasm",
+      "bytes": 744140,
+      "sha256": "7b5bca61b06a9b26115027e89ca77a2ab74721a6b52c00f3ce55fd4714596449"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/native_fixture",
+      "bytes": 1622160,
+      "sha256": "9e95b028ebd0c77960b7723420736881a260752bd235f2379d9b1bd4d9a0e588"
+    }
+  ],
+  "note": "Qualified fixed-policy raw evidence and source/binary/log snapshots. Local archive, not committed to Git. Original fitting and F-test archives are unchanged."
+}

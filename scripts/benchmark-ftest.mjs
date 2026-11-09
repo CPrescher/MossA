@@ -9,6 +9,7 @@ import {NativeSession} from '../src/native-session.ts';
 import {startComparison} from '../src/native-comparison.ts';
 import {compareAnalytical} from './analytical-validation.mjs';
 import {ftestBenchmarkCases} from './ftest-benchmark-cases.mjs';
+import {improvementExceeds} from '../src/comparison.ts';
 
 const args=process.argv.slice(2),opt=(k,d)=>args.includes(k)?args[args.indexOf(k)+1]:d;
 const repeats=Number(opt('--repeats','3')),simulations=Number(opt('--simulations','199'));
@@ -28,7 +29,7 @@ assert.ok(cases.length);
 const workerCounts=opt('--workers','1,4').split(',').map(Number);
 const paths=['scripts/benchmark-ftest.mjs','scripts/ftest-benchmark-cases.mjs','scripts/analytical-validation.mjs',
   'src/comparison.ts','src/native-comparison.ts','src/native-session.ts','src/comparison-workers.ts','src/multistart.mjs',
-  'tests/native-transport.ts',`${baseline}/mossa_core_bg.wasm`,...Object.values(binaries)];
+  'src/types.ts','src/nuclear-constants.mjs','tests/native-transport.ts',`${baseline}/mossa_core_bg.wasm`,...Object.values(binaries)];
 const report={date:new Date().toISOString(),cpu:cpus()[0].model,node:process.version,repeats,simulations,
   baseline:'Frozen numerical-default native core before analytical derivatives (analytical/baseline). Current production comparison orchestration and full search policy for both cores.',
   method:'Complete production native startComparison, including observed fits, seeded simulation generation, all recoveries and uncertainty finalization; JSON-lines native transport in place of Tauri IPC. One excluded warmup per stage; alternating paired timing. Same input projects, seeds, worker counts and acceptance/recovery policy. No failed simulations discarded. Objective tolerance max(1e-7,1e-8*reference); exact exceedance decisions, p-values, Monte Carlo intervals, dimensions and simulation ranks; established observed parameter/std gates. Repeats must be exactly deterministic within each core.',
@@ -50,7 +51,8 @@ function quality(a,b) {
     if(x.rank!==y.rank||x.free_parameters!==y.free_parameters)failures.push(`simulation ${i} ${k}: rank/dimension`);
   }
   for(const k of ['pValue','exceedances','monteCarloInterval'])if(JSON.stringify(a[k])!==JSON.stringify(b[k]))failures.push(k);
-  const tail=a.improvements.map((d,i)=>({index:i,reference:d>=a.improvement,optimized:b.improvements[i]>=b.improvement}));
+  const inTail=(r,i)=>improvementExceeds(r.improvements[i],r.improvement,r.simpler.evaluation.objective,r.larger.evaluation.objective,r.diagnostics[i].simpler.objective,r.diagnostics[i].larger.objective);
+  const tail=a.improvements.map((_,i)=>({index:i,reference:inTail(a,i),optimized:inTail(b,i)}));
   if(tail.some(v=>v.reference!==v.optimized))failures.push('tail classification');
   return {passed:!failures.length,failures,observed:{simpler:compareAnalytical(a.simpler,b.simpler),larger:compareAnalytical(a.larger,b.larger)},
     simulation_minima:objectives,
