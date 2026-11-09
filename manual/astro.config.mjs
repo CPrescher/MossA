@@ -32,10 +32,10 @@ export default defineConfig({
       sidebar: [
         { label: 'Open MossA ↗', link: `https://cprescher.github.io${appBase}/` },
         { slug: 'index', label: 'About this manual' },
-        { label: 'Start here', items: ['getting-started/first-fit', 'getting-started/workspace'] },
+        { label: 'Start here', items: ['getting-started/workspace', 'guides/folding-and-calibration', 'getting-started/first-fit'] },
         { label: 'Physics and equations', items: ['foundations/physics', 'foundations/line-shapes', 'foundations/transmission-integral', 'foundations/model-comparison'] },
         { label: 'Measured-data tutorials', items: ['tutorials/almandine', 'tutorials/sms', 'tutorials/syncmoss'] },
-        { label: 'Analyze a spectrum', items: ['guides/importing-data', 'guides/folding-and-calibration', 'guides/building-models', 'guides/reading-results', 'guides/saving-and-exporting'] },
+        { label: 'Analyze a spectrum', items: ['guides/importing-data', 'guides/building-models', 'guides/reading-results', 'guides/saving-and-exporting'] },
         { label: 'Advanced workflows', items: ['guides/source-profiles', 'guides/xvbf', 'guides/comparing-models'], collapsed: true },
         { label: 'Reference', items: ['reference/conventions-and-validation', 'reference/troubleshooting'], collapsed: true },
       ],

@@ -68,7 +68,7 @@ $$
 
 With a constant background this reduces to $b_0\mathcal T(v)$. Higher polynomial terms are additive baseline corrections; the code does not multiply the whole polynomial by transmission. Keep that distinction when comparing another program's baseline or physical continuum model.
 
-Under **Gen → Spectrum model**, select **Full transmission integral**. Set the source response separately from the absorber site width. In a Gaussian-mixture source,
+Under **General → Spectrum model**, select **Full transmission integral**. Set the source response separately from the absorber site width. In a Gaussian-mixture source,
 
 $$
 R(s)=\sum_k p_kG(s-\bar\mu_k;w_k),\qquad

@@ -108,7 +108,7 @@ MossA compares **objective improvements $\Delta Q$** between observed and simula
 
 ### Watch noise earn an improvement
 
-Choose **No extra line** first, then **Play 199 noise trials**. Watch the two fits and the histogram of noise-only improvements. Pause or use **Next trial** to inspect one spectrum. **Show all 199** reveals the final result immediately. Reduced-motion settings replace playback with a static completion.
+Choose **No extra line** first, then **Play 199 noise trials**. Watch the two fits and the histogram of noise-only improvements. Choose **Pause replay** or use **Next trial** to inspect one spectrum. **Show all 199** reveals the final result immediately. Reduced-motion settings replace playback with a static completion.
 
 <site-comparison-lesson data-src="../../tutorial-data/site-comparison/replay.json">
 <p>The interactive replay requires JavaScript. The worked results and downloadable projects below provide the same numerical examples.</p>

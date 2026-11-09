@@ -11,7 +11,7 @@ Check that the file contains one count column, two velocity/count columns, a rec
 
 For raw channels, check maximum velocity, drive type, center shift, folding state, and the preset selected for imports. A two-column file retains its supplied axis. Selecting or saving a preset immediately calibrates the current raw-count spectrum. Use **Fold spectrum** to enable or disable folding; Undo restores previous data and fits. Inspect a reference fit before applying its scale.
 
-Also inspect **Gen → Velocity direction → Reverse velocity axis**. The SMS sample needs reversal after calibration. Reversal is a saved property of that spectrum and remains applied after recalibration; toggling it again restores the other direction and invalidates obsolete fits.
+Also inspect **General → Velocity direction → Reverse velocity axis**. The SMS sample needs reversal after calibration. Reversal is a saved property of that spectrum and remains applied after recalibration; toggling it again restores the other direction and invalidates obsolete fits.
 
 ## Folding looks asymmetric
 
@@ -21,13 +21,13 @@ Inspect both halves and their difference in the folding diagnostic. Check whethe
 
 Read Status and Fit details. Inspect the starting positions, widths, background, bounds, links, and fixed parameters. Increase the iteration limit if the fit is still progressing, or try several **Starting models** when alternative minima are plausible. Keep the stopping code and warnings with the result.
 
-![Synthetic example stopped at an intentionally small iteration limit, with the warning in Status and the iteration setting visible in Opt.](../../../assets/screenshots/iteration-limit.png)
+![Synthetic example stopped at a one-iteration limit, with the Fit warnings dialog opened from Status over the Fit options panel.](../../../assets/screenshots/iteration-limit.png)
 
-*This warning was produced deliberately with a one-iteration limit on the synthetic starting model. It is a troubleshooting illustration, not an accepted final analysis.*
+*This warning was produced deliberately with a one-iteration limit on the synthetic starting model. Select the warning count in Status to open the full message. It is a troubleshooting illustration, not an accepted final analysis.*
 
 ## Errors are missing
 
-**Fit for errors** means the current model needs fitting. **Fixed** parameters have no fitted symmetric uncertainty. **± —** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
+**Not fitted · fit to estimate std** means the current model needs fitting. **fixed** parameters have no fitted symmetric uncertainty. **(—)** can indicate an active bound or an unidentifiable direction; hover for the reason. Simplify an overparameterized model or add justified constraints. Small residuals alone do not establish parameter identifiability.
 
 ## An intensity percentage is undefined or has zero std
 
@@ -47,8 +47,12 @@ Autosave is local to the browser, device, and app address. Open a downloaded `.m
 
 ## I cannot find spectra or fitting options
 
-Use the project and options sidebar icons. A fresh session starts with the project sidebar collapsed. Individual panes scroll separately; drag their dividers to give a list or editor more room. The results table also has a resizable height.
+Use the project and options sidebar icons on a wide screen. A fresh session starts with the project sidebar collapsed. On a laptop, **Sites** and **Fitting options** share an editor; select the heading for the controls you need. Tablets also provide a **Spectrum** view. Individual panes scroll separately; drag their dividers to give a list or editor more room. The results table also has a resizable height. See [the workspace tour](/MossA/manual/getting-started/workspace/) for screenshots of each layout.
+
+## Where are folding and calibration?
+
+Open **Fitting options → General → Folding & calibration**, the first section in General. The **Fit options** tab contains solver settings. For a new velocity calibration, use + (**Add calibration preset**) → **From reference file…**. For a raw sample with folding enabled, use **Inspect this spectrum’s folding…**. Already folded channels should not be folded again, and two-column velocity/count files keep their supplied axis. Follow [folding and velocity calibration](/MossA/manual/guides/folding-and-calibration/) for the complete workflow.
 
 ## The app reports an update
 
-Save the project before reloading. The app checks build metadata but never reloads automatically. Use the version control in the footer to inspect the changelog and reload when ready. Include the version and source commit when reporting a reproducible issue through the [repository](https://github.com/CPrescher/MossA/issues).
+Save the project before reloading. The deployed browser app checks build metadata but never reloads automatically. The offline native app does not perform these deployment checks. Use the version control in the footer to inspect the changelog and reload when ready. Include the version and source commit when reporting a reproducible issue through the [repository](https://github.com/CPrescher/MossA/issues).

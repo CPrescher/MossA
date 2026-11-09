@@ -33,13 +33,13 @@ Use a single column of counts when you want MossA to construct the velocity axis
 99800
 ```
 
-Do not sort raw channels by count value. Their order carries the acquisition information. Configure the drive and velocity scale under **Gen → Folding & calibration**. Folding is enabled by default. Uncheck **Fold spectrum** for counts that are already folded. Inspect the folding before fitting an unfamiliar raw spectrum.
+Do not sort raw channels by count value. Their order carries the acquisition information. Configure the drive and velocity scale under **Fitting options → General → Folding & calibration**, the first section in General. On a laptop or tablet, choose Fitting options above the editing area. Folding is enabled by default. Uncheck **Fold spectrum** for counts that are already folded. Enable folding only if the file contains both acquisition directions, and inspect their alignment before fitting an unfamiliar raw spectrum. See [folding and velocity calibration](/MossA/manual/guides/folding-and-calibration/) for the reference workflow.
 
 Raw-count imports use the calibration preset selected with **Use for new imports**. Choosing a preset for an existing spectrum does not automatically make it the import default.
 
-![Measured almandine with its raw-count calibration controls visible in Gen and its reference preset selected for subsequent imports.](../../../assets/screenshots/importing-raw-counts.jpg)
+![Newly imported almandine raw counts with Folding & calibration first in General and the sample folding inspection button available.](../../../assets/screenshots/importing-raw-counts.jpg)
 
-*Selecting a preset immediately applies it to the current raw spectrum. Check the preset and its import-default checkbox before adding the next raw-count file. The selected spectrum retains its own applied calibration.*
+*A new raw-count import using the current import preset, before fitting. Check the velocity scale and folding against your reference measurement; selecting a preset immediately applies it to the current raw spectrum. The selected spectrum retains its own applied calibration.*
 
 ## SPEC MCA and SMS reference files
 
