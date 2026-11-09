@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-09T09:04:01.170Z",
+  "date": "2026-11-09T09:32:36.645Z",
   "passed": true,
   "checks": {
     "parallel_native": {
@@ -125,6 +125,12 @@
       "local_links": 1374,
       "log_sha256": "8a66a2f5c0b9816232d3e6ead92f5a4cc5aa35e53fab934f414adb653d7ed9f2"
     },
+    "fixture_packaging": {
+      "passed": true,
+      "original_helper_hash_checked": true,
+      "scientific_gates_exact": true,
+      "generated_cases_exact": true
+    },
     "forward_model": {
       "passed": true,
       "cases": 61,
@@ -155,14 +161,14 @@
     "rust-core/vendor/basin/src/core/math/dense_svd.rs": "847f985260239ab5a121dc838f60d159c64088d7ba09eb14ac03e071f0a97cb5",
     "rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "4bb08de3c282f06026d0e09ebe7dc97c17bc8bdd2a87bd157ef550b4de121c09",
     "rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "a3f0aa3eaedcb753c9732dd602dff88ee4c164693982ec7ec20f3299092b12d9",
-    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/analytical-validation.mjs": "7dd484262e49b48a67f9b6d0c8019b36613c96432a2f21e2993b7243b4fe235f",
     "scripts/benchmark-deterministic-projection-browser.mjs": "1907c7b55d9e0565e5b86d185c4345ac91df84fd8f1d29c33501659b9531b5da",
     "scripts/benchmark-deterministic-projection.mjs": "afdb4872c2cdb7b1d70992a6d3d7b8916de7c8ecda8345d9458a6ca468c7bfb4",
     "scripts/norm-precompute-cases.mjs": "d2a9ff4e942acf9b59dd239f738d1baba8eed91a5bf6365caef07ddb651f7cbc",
     "scripts/solver-linear-algebra-cases.mjs": "871d8b9bb94f08036dce2daefe7e8e2e6b8ca7e7cdf20aea421547fc08ce848e",
     "scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
     "scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
-    "scripts/verify-deterministic-projection.mjs": "3130b083a90cb54a722470a5c2d8cf4ae08e09908055fa12699da6d2574c3a0b",
+    "scripts/verify-deterministic-projection.mjs": "570c9b049271e0626f3c1cffa6d87859e52e5aa35d8d8c5ad73baa6eaa0e377d",
     "src/engine.ts": "af23578f662a95e668a76d0d5b13e8ad05d4583c05e94a444c76550b98ee46b9",
     "src/multistart.d.mts": "be25ee3dd107911fbd0f13583ff4de46e5041873014cca93cfbeb54f5be5b199",
     "src/multistart.mjs": "fa74601d3a3aff64c1d175c47e2f26df510a83105d43ade979a0b1cf4c512d04",
@@ -174,6 +180,8 @@
     "src/wasm/mossa_core_bg.wasm": "3d16eef5f782354cd76881412b224ce0ebc4716e8ee897ef6fe7441d9f030cad",
     "src/worker.ts": "b5d76310051d8aa095e04f348cc4e1d03593cb7024d662d49f2154959e23fee2",
     "tests/deterministic-search.test.mjs": "2d6a10f006c4cc97288203da5418f78b0007fde6c8b1bacbf70081a9a0f932b8",
+    "tests/fixtures/analytical-measured-coarse.json": "2152ca50c1c8ff4caa4a48ce731eb31e7bc7cd9c14aa8dbc6dcd2aea1dcf3c63",
+    "tests/fixtures/deterministic-search-measured.json": "ae87dcd180af65e96a49bceb33771b914f988aa39a34df05e168e739f2f42b6e",
     "tests/fixtures/stable-norm-calibration.json": "cba72e46aa1c475a042ec1aaf8776e2e7ebc774abda2e6631804bb5b2897ad83",
     "tests/native-backend.integration.tsx": "df4e6373667edac0426eb14560188ee0d16d2898ff2bd7f0c7c0d5c8fd485218",
     "tests/search-lane.test.tsx": "278203ee9170662f06af17d9b9d07071fba2edf5c333cbc0dbcacf43c0fa7283",

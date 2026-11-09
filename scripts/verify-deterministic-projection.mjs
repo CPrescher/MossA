@@ -2,11 +2,14 @@
 import assert from 'node:assert/strict';
 import {readFileSync,writeFileSync,existsSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {compareAnalytical} from './analytical-validation.mjs';
+import {compareAnalytical,analyticalCases} from './analytical-validation.mjs';
 import {acceptableFit} from '../src/comparison.ts';
 const base='validation-data/performance',runtime=`${base}/runtime/deterministic-projection`;
 const read=p=>JSON.parse(readFileSync(p,'utf8')),sha=p=>createHash('sha256').update(readFileSync(p)).digest('hex');
 const files=new Set(),checks={},all=[];
+const frozenValidationPath=`${runtime}/products/scripts/analytical-validation.mjs`;
+const frozenValidation=await import(`../${frozenValidationPath}`);
+assert.equal(compareAnalytical.toString(),frozenValidation.compareAnalytical.toString(),'Scientific acceptance gates must remain unchanged by fixture packaging');
 function audit(a,b,exact){
  assert.deepEqual(Object.keys(a).sort(),Object.keys(b).sort());
  for(const k of ['rank','free_parameters','dof'])assert.equal(a[k],b[k]);
@@ -25,7 +28,11 @@ function audit(a,b,exact){
 for(const [stage,name,count]of [['parallel','native',61],['parallel','search',8],['parallel','search12',4],['products','pilot-native',61],['products','pilot-search12',4],['products','native',183],['products','search',24],['products','search12',12]]){
  const p=`${base}/deterministic-projection-${stage}-${name}.json`,d=read(p);files.add(p);assert.ok(d.passed,p);assert.equal(d.runs.length,count,p);
  for(const [p,h]of Object.entries(d.hashes)){
-  const owner=stage==='parallel'&&!p.startsWith(runtime+'/')?`${runtime}/parallel/${p}`:p;
+  let owner=stage==='parallel'&&!p.startsWith(runtime+'/')?`${runtime}/parallel/${p}`:p;
+  // The checkpoint moved measured starts into a small tracked test fixture.
+  // Validate the original benchmark helper against its immutable snapshot;
+  // below, independently require identical generated cases and scientific gates.
+  if(p==='scripts/analytical-validation.mjs'&&sha(owner)!==h)owner=frozenValidationPath;
   assert.ok(existsSync(owner),owner);assert.equal(sha(owner),h,owner);files.add(owner);
  }
  for(const r of d.runs){
@@ -75,6 +82,12 @@ log='/tmp/mossa-products-desktop-web.log';s=readFileSync(log,'utf8');assert.ok(s
 for(const p of ['rust-core/Cargo.toml','rust-core/Cargo.lock','rust-core/src/variable_projection.rs','src/multistart.mjs','src/multistart.d.mts','src/native-engine.ts','src/native-session.ts','src/engine.ts','src/worker.ts','src/search-worker.ts','src/search-lane.ts','tests/deterministic-search.test.mjs','tests/search-lane.test.tsx','tests/native-backend.integration.tsx','scripts/benchmark-deterministic-projection.mjs','scripts/benchmark-deterministic-projection-browser.mjs','scripts/verify-deterministic-projection.mjs','README.md','PORTING.md',`${base}/DETERMINISTIC-PROJECTION.md`])files.add(p);
 const old=await import(`../${runtime}/baseline/src/wasm/mossa_core.js`),current=await import('../src/wasm/mossa_core.js');
 await old.default({module_or_path:readFileSync(`${runtime}/baseline/src/wasm/mossa_core_bg.wasm`)});await current.default({module_or_path:readFileSync('src/wasm/mossa_core_bg.wasm')});
+const evaluate=p=>JSON.parse(old.evaluate_json(JSON.stringify(p)));
+const ordered=rows=>[...rows].sort((a,b)=>a.id.localeCompare(b.id));
+assert.deepEqual(ordered(analyticalCases(evaluate)),ordered(frozenValidation.analyticalCases(evaluate)),'Tracked fixtures must preserve every qualified observation and starting model');
+files.add('scripts/analytical-validation.mjs');files.add('tests/fixtures/analytical-measured-coarse.json');files.add('tests/fixtures/deterministic-search-measured.json');
+checks.fixture_packaging={passed:true,original_helper_hash_checked:true,scientific_gates_exact:true,generated_cases_exact:true};
+
 const single=read(`${base}/deterministic-projection-products-native.json`).runs.filter(r=>r.from_stage==='baseline'&&r.to_stage==='products');
 for(const r of single){const method=r.calibration?'evaluate_source_json':'evaluate_json';assert.deepEqual(JSON.parse(old[method](JSON.stringify(r.project))),JSON.parse(current[method](JSON.stringify(r.project))),r.id);}
 checks.forward_model={passed:true,cases:61,bit_exact:true};
