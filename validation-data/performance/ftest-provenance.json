@@ -1,0 +1,176 @@
+{
+  "archive_path": "/Users/clemens/Codex/MossA-checkpoints/2026-11-09/ftest-benchmark-evidence.tar.xz",
+  "archive_bytes": 2498672,
+  "archive_sha256": "6cb05b571b574217cf4a6aeb48ce8383c206626c690e0c5e89daed413a1852b0",
+  "members_verified": true,
+  "benchmark_integrity_passed": true,
+  "scientific_equivalence_passed": false,
+  "files": [
+    {
+      "path": "package-lock.json",
+      "bytes": 106070,
+      "sha256": "f4f6a29a900242e42e0cad100b9b2374b62f56430b015efd8731a73ee6db95d3"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1920,
+      "sha256": "0eb48808e0005ba3ade2c962a64dba18b9629610344e116af43962259eb2d140"
+    },
+    {
+      "path": "rust-core/target/release/examples/native_fixture",
+      "bytes": 1895232,
+      "sha256": "693d3d23d538d6eb6dc6915e5fcaa07f213b19cd79b14a7a63195d7143f995d6"
+    },
+    {
+      "path": "scripts/analytical-validation.mjs",
+      "bytes": 5453,
+      "sha256": "7dd484262e49b48a67f9b6d0c8019b36613c96432a2f21e2993b7243b4fe235f"
+    },
+    {
+      "path": "scripts/benchmark-ftest.mjs",
+      "bytes": 7692,
+      "sha256": "98741b7b3cf3d5e3aa8f563cfb91f30f3829039539247287f0f0de6c095d3420"
+    },
+    {
+      "path": "scripts/diagnose-ftest.mjs",
+      "bytes": 3648,
+      "sha256": "1f22e1a93afa242673765cd3129da642327bcc85c9fc0aeb3d0d16f2f13abbc9"
+    },
+    {
+      "path": "scripts/ftest-benchmark-cases.mjs",
+      "bytes": 2067,
+      "sha256": "dd6468826ffa26a2d4d020ed0c4633809f19f599f2fd2ccee87fd3c457d6b1c0"
+    },
+    {
+      "path": "scripts/verify-ftest.mjs",
+      "bytes": 5881,
+      "sha256": "1dbcef364dd7d017963ab4ee8022cefb75cbdcdf7df8e0ed62f71a8ae7e3a239"
+    },
+    {
+      "path": "src/comparison-workers.ts",
+      "bytes": 439,
+      "sha256": "7cf8a167575d36420e44d58679605932751ecf5703f45fa6dcccd91578c49372"
+    },
+    {
+      "path": "src/comparison.ts",
+      "bytes": 28635,
+      "sha256": "558280a07c6ac5826ea733f14ecca9738f92fda92d7dfc8c1d88948d7d644ad9"
+    },
+    {
+      "path": "src/multistart.mjs",
+      "bytes": 13297,
+      "sha256": "fa74601d3a3aff64c1d175c47e2f26df510a83105d43ade979a0b1cf4c512d04"
+    },
+    {
+      "path": "src/native-comparison.ts",
+      "bytes": 2851,
+      "sha256": "97c3261a590a151fcddcced52114d1752a328e72425de18565e68964621f00ac"
+    },
+    {
+      "path": "src/native-session.ts",
+      "bytes": 3536,
+      "sha256": "7c48dbea153dc9183fbe69dd048601a6a9147be4d16ce7d32432a0ea6e55e469"
+    },
+    {
+      "path": "tests/native-transport.ts",
+      "bytes": 3140,
+      "sha256": "2f180df79b7f755a067af3a01472baede3a884bd89ea52cae2c9902b19bb43b0"
+    },
+    {
+      "path": "validation-data/performance/FTEST.md",
+      "bytes": 8580,
+      "sha256": "e15e028b1f90a81b235649c648a14e62d6e6edc1a2c92b472eba0ce396d35803"
+    },
+    {
+      "path": "validation-data/performance/analytical-default-native.json",
+      "bytes": 3646883,
+      "sha256": "a645c647ba51bf9d76e5dda66a7acfc5833b3759b8b57e107d387be4ede00c50"
+    },
+    {
+      "path": "validation-data/performance/deterministic-projection-verification.json",
+      "bytes": 224781,
+      "sha256": "a799d7d30c38fe867bfc24841d60a0b004770ef33022e3de1ee4d96fd9ca524a"
+    },
+    {
+      "path": "validation-data/performance/ftest-joint-native.json",
+      "bytes": 2765051,
+      "sha256": "ab6e727a73c7ba5b12802331f8dd4b9c4e756a07e3f25daba021018670a59048"
+    },
+    {
+      "path": "validation-data/performance/ftest-native.json",
+      "bytes": 11364961,
+      "sha256": "5f1844ae9723d252ea8a46825c17528928721ea4687ed92ce822d2c91d8c60dd"
+    },
+    {
+      "path": "validation-data/performance/ftest-pilot.json",
+      "bytes": 4111953,
+      "sha256": "691908db0c92ff941049c321a80f4fc5617b16519bd8e9b6d74b0c872325b8e7"
+    },
+    {
+      "path": "validation-data/performance/ftest-same-data.json",
+      "bytes": 4448996,
+      "sha256": "53caf6b5e100b4b571122e6f1b2bf9e0fc80a36843da18ac657a44ae9498dc32"
+    },
+    {
+      "path": "validation-data/performance/ftest-transmission-native.json",
+      "bytes": 1542732,
+      "sha256": "cfcace3da984b26d428c942fd7bad06350cb88d1a615857fe19432064e30c6ba"
+    },
+    {
+      "path": "validation-data/performance/ftest-verification.json",
+      "bytes": 13305,
+      "sha256": "6bce888d8a7dd7046bad9c234fc69012fa87170138b6a8552be65e71e9054f85"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-joint-native.log",
+      "bytes": 432,
+      "sha256": "329b91c5d1ed9bcad9a64aaae429d6a0767c1d703646ad919123545083394765"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-native.log",
+      "bytes": 1907,
+      "sha256": "179593e875639c2e1fe9baf2d8ad6f1f6e251a3438d545be9b5acc22fbfc3d4f"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-pilot.log",
+      "bytes": 3987,
+      "sha256": "0c860abe014fcef91930e2e981892965e9727fe6e404fa00fda707c8de71b8d8"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-regression.log",
+      "bytes": 2587,
+      "sha256": "3124c43148a383294981aba0cbc21b550737ad75c9b5b8c122d0ba26499b3aa8"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-same-data.log",
+      "bytes": 424,
+      "sha256": "bdfc4b28f3023e5e89042f1c3caef547704944d8b3a415c98c9f9ec1255ecd7b"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-transmission-native.log",
+      "bytes": 431,
+      "sha256": "60f970969d0cdbebf015514feb9432be60c61fb1cac687cf4e9f783ed5393f3e"
+    },
+    {
+      "path": "validation-data/performance/logs/ftest/mossa-ftest-verification.log",
+      "bytes": 124,
+      "sha256": "6fc24ad1b8ffebed0b9ef7c3ff12468555508cd0e0ec5922b86685eb0334d8fa"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/mossa_core.js",
+      "bytes": 25986,
+      "sha256": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/mossa_core_bg.wasm",
+      "bytes": 744140,
+      "sha256": "7b5bca61b06a9b26115027e89ca77a2ab74721a6b52c00f3ce55fd4714596449"
+    },
+    {
+      "path": "validation-data/performance/runtime/analytical/baseline/native_fixture",
+      "bytes": 1622160,
+      "sha256": "9e95b028ebd0c77960b7723420736881a260752bd235f2379d9b1bd4d9a0e588"
+    }
+  ],
+  "note": "Raw local evidence only; not committed to Git. Includes exploratory pilot with its recorded hashes. Qualified final runner/source snapshots are preserved. The original fitting archive is unchanged."
+}

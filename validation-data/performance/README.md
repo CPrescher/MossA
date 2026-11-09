@@ -27,3 +27,5 @@ To replace the archive after a new qualified benchmark run, with the expanded re
 ```sh
 python3 scripts/archive-fitting-evidence.py
 ```
+
+The [fixed-seed F-test benchmark](FTEST.md) records cumulative native speedups and the weak-component bootstrap equivalence failures. Its compact `ftest-verification.json` keeps evidence integrity separate from scientific equivalence. Additional raw records and replay artifacts are described by `ftest-provenance.json`.

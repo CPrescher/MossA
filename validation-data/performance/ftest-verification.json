@@ -1,0 +1,471 @@
+{
+  "date": "2026-11-09T11:36:03.201Z",
+  "benchmark_integrity_passed": true,
+  "equivalence_passed": false,
+  "worker_count_determinism_bit_exact": true,
+  "comparison_regression_tests": {
+    "passed": 21,
+    "failed": 0,
+    "log_sha256": "3124c43148a383294981aba0cbc21b550737ad75c9b5b8c122d0ba26499b3aa8"
+  },
+  "objective_tolerance": "max(1e-7, 1e-8 * reference objective); unchanged analytical-validation gates for observed parameters/std",
+  "rows": [
+    {
+      "id": "gaussian-absent",
+      "workers": 1,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 124.26112499999999,
+      "optimized_ms": 88.402083,
+      "speedup": 1.4056357133575685,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 9.890754881780595e-12,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.575,
+        1
+      ],
+      "exceedances": [
+        114,
+        199
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "gaussian-absent",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 48.15237500000012,
+      "optimized_ms": 41.68312500000002,
+      "speedup": 1.155200695725191,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 9.890754881780595e-12,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.575,
+        1
+      ],
+      "exceedances": [
+        114,
+        199
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 1,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 159.48241600000006,
+      "optimized_ms": 90.24683299999992,
+      "speedup": 1.7671801956751234,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 1.586522557772696e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.08,
+        0.08
+      ],
+      "exceedances": [
+        15,
+        15
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "gaussian-weak",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 56.82929100000001,
+      "optimized_ms": 42.008208000000195,
+      "speedup": 1.352813978639597,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 1.586522557772696e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.08,
+        0.08
+      ],
+      "exceedances": [
+        15,
+        15
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 1,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 193.1609169999997,
+      "optimized_ms": 99.57249999999976,
+      "speedup": 1.9399022521278482,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 1.825287654355634e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.005,
+        0.005
+      ],
+      "exceedances": [
+        0,
+        0
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "gaussian-clear",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 65.06775000000016,
+      "optimized_ms": 41.587582999999995,
+      "speedup": 1.5645956149940277,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 1.825287654355634e-8,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.005,
+        0.005
+      ],
+      "exceedances": [
+        0,
+        0
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 4834.932874999999,
+      "optimized_ms": 1407.0327920000018,
+      "speedup": 3.4362616866430447,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": false,
+      "better_simulation_minima": 5,
+      "worse_simulation_minima": 47,
+      "max_simulation_objective_delta": 16.10320852745565,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.295,
+        0.26
+      ],
+      "exceedances": [
+        58,
+        51
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 1452.2432079999999,
+      "optimized_ms": 621.202792,
+      "speedup": 2.3377924676165973,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": false,
+      "better_simulation_minima": 5,
+      "worse_simulation_minima": 47,
+      "max_simulation_objective_delta": 16.10320852745565,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.295,
+        0.26
+      ],
+      "exceedances": [
+        58,
+        51
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 5808.932209000006,
+      "optimized_ms": 1705.315542000004,
+      "speedup": 3.406367951228109,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": false,
+      "better_simulation_minima": 1,
+      "worse_simulation_minima": 47,
+      "max_simulation_objective_delta": 8.113322865498105,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.125,
+        0.115
+      ],
+      "exceedances": [
+        24,
+        22
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "default",
+      "reference_ms": 1879.5670419999951,
+      "optimized_ms": 937.9774579999939,
+      "speedup": 2.0038509731435434,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": false,
+      "better_simulation_minima": 1,
+      "worse_simulation_minima": 47,
+      "max_simulation_objective_delta": 8.113322865498105,
+      "exact_tail_classification": false,
+      "p_values": [
+        0.125,
+        0.115
+      ],
+      "exceedances": [
+        24,
+        22
+      ],
+      "p_value_exact": false,
+      "equivalence_passed": false
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 1,
+      "simulations": 99,
+      "optimized_mode": "default",
+      "reference_ms": 31852.12066700001,
+      "optimized_ms": 6946.4695000000065,
+      "speedup": 4.585368245984522,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 4.814394287677715e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.01,
+        0.01
+      ],
+      "exceedances": [
+        0,
+        0
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "transmission-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 99,
+      "optimized_mode": "default",
+      "reference_ms": 8891.922041999991,
+      "optimized_ms": 1977.8686250000028,
+      "speedup": 4.495709133360654,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 4.814394287677715e-7,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.01,
+        0.01
+      ],
+      "exceedances": [
+        0,
+        0
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "joint",
+      "reference_ms": 1368.545583,
+      "optimized_ms": 507.71600000000035,
+      "speedup": 2.6954942979933647,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": true,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 0,
+      "max_simulation_objective_delta": 0.000002300520350217994,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.295,
+        0.295
+      ],
+      "exceedances": [
+        58,
+        58
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": true
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "workers": 4,
+      "simulations": 199,
+      "optimized_mode": "joint",
+      "reference_ms": 1694.4240420000006,
+      "optimized_ms": 604.4927499999994,
+      "speedup": 2.803051057270748,
+      "observed_minima_and_std_passed": true,
+      "same_simulation_minima": false,
+      "better_simulation_minima": 0,
+      "worse_simulation_minima": 1,
+      "max_simulation_objective_delta": 0.000005436209363551825,
+      "exact_tail_classification": true,
+      "p_values": [
+        0.125,
+        0.125
+      ],
+      "exceedances": [
+        24,
+        24
+      ],
+      "p_value_exact": true,
+      "equivalence_passed": false
+    }
+  ],
+  "same_data_controls": [
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "mode": "default",
+      "p_values": [
+        0.295,
+        0.26
+      ],
+      "exceedances": [
+        58,
+        51
+      ],
+      "worse_minima": 47,
+      "better_minima": 5,
+      "max_worse_delta": 16.10320855715497,
+      "simulated_data_sha256": "f9a534548e2c97180744dc0c2c00d4be6d1e42f53e6dfd821494882a71f398b6"
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "mode": "joint",
+      "p_values": [
+        0.295,
+        0.295
+      ],
+      "exceedances": [
+        58,
+        58
+      ],
+      "worse_minima": 0,
+      "better_minima": 0,
+      "max_worse_delta": 8.11795246136171e-7,
+      "simulated_data_sha256": "f9a534548e2c97180744dc0c2c00d4be6d1e42f53e6dfd821494882a71f398b6"
+    },
+    {
+      "id": "gaussian-nonlinear-multistart",
+      "mode": "numerical",
+      "p_values": [
+        0.295,
+        0.295
+      ],
+      "exceedances": [
+        58,
+        58
+      ],
+      "worse_minima": 0,
+      "better_minima": 0,
+      "max_worse_delta": 0,
+      "simulated_data_sha256": "f9a534548e2c97180744dc0c2c00d4be6d1e42f53e6dfd821494882a71f398b6"
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "mode": "default",
+      "p_values": [
+        0.125,
+        0.115
+      ],
+      "exceedances": [
+        24,
+        22
+      ],
+      "worse_minima": 47,
+      "better_minima": 1,
+      "max_worse_delta": 8.113322865498333,
+      "simulated_data_sha256": "44ba0e762cf6dd34d967d3084e3c9ab68d5c7cfb3d808d4838e429572c3851fd"
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "mode": "joint",
+      "p_values": [
+        0.125,
+        0.125
+      ],
+      "exceedances": [
+        24,
+        24
+      ],
+      "worse_minima": 1,
+      "better_minima": 0,
+      "max_worse_delta": 0.0000054369542112908675,
+      "simulated_data_sha256": "44ba0e762cf6dd34d967d3084e3c9ab68d5c7cfb3d808d4838e429572c3851fd"
+    },
+    {
+      "id": "poisson-nonlinear-multistart",
+      "mode": "numerical",
+      "p_values": [
+        0.125,
+        0.125
+      ],
+      "exceedances": [
+        24,
+        24
+      ],
+      "worse_minima": 0,
+      "better_minima": 0,
+      "max_worse_delta": 0,
+      "simulated_data_sha256": "44ba0e762cf6dd34d967d3084e3c9ab68d5c7cfb3d808d4838e429572c3851fd"
+    }
+  ],
+  "hashes": {
+    "validation-data/performance/ftest-native.json": "5f1844ae9723d252ea8a46825c17528928721ea4687ed92ce822d2c91d8c60dd",
+    "validation-data/performance/ftest-transmission-native.json": "cfcace3da984b26d428c942fd7bad06350cb88d1a615857fe19432064e30c6ba",
+    "validation-data/performance/ftest-joint-native.json": "ab6e727a73c7ba5b12802331f8dd4b9c4e756a07e3f25daba021018670a59048",
+    "validation-data/performance/ftest-same-data.json": "53caf6b5e100b4b571122e6f1b2bf9e0fc80a36843da18ac657a44ae9498dc32",
+    "validation-data/performance/analytical-default-native.json": "a645c647ba51bf9d76e5dda66a7acfc5833b3759b8b57e107d387be4ede00c50",
+    "validation-data/performance/deterministic-projection-verification.json": "a799d7d30c38fe867bfc24841d60a0b004770ef33022e3de1ee4d96fd9ca524a",
+    "scripts/verify-ftest.mjs": "1dbcef364dd7d017963ab4ee8022cefb75cbdcdf7df8e0ed62f71a8ae7e3a239"
+  }
+}
