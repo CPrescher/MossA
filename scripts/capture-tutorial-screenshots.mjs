@@ -19,6 +19,7 @@ const record=JSON.parse(await readFile(recordPath,'utf8'));
 const refresh=record.tutorialRefresh??={records:[]};
 refresh.sourceCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
 refresh.source=base;
+refresh.wasmSha256=createHash('sha256').update(await readFile(resolve(root,'src/wasm/mossa_core_bg.wasm'))).digest('hex');
 refresh.method='Actual Chromium UI in light and dark mode. Worked fits reopened without optimization; velocity/source dialogs refitted through their real controls. No screenshot compositing.';
 const extensions={};
 for(const slug of ['almandine','sms','syncmoss']) {
@@ -32,8 +33,9 @@ try {
   const page=await context.newPage();page.setDefaultTimeout(15000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto(base);
-  await page.waitForFunction(()=>!document.querySelector('.fit-button')?.disabled);
+  await page.waitForFunction(()=>{const button=document.querySelector('.fit-button');return button&&!button.disabled;});
   async function openProject(file) {
+   await closeDialogs();
    await page.locator('input[aria-label="Project file"]').setInputFiles(resolve(data,file));
    await page.waitForFunction(()=>document.querySelector('.status-current')?.textContent?.includes('Opened'));
    await page.locator('#spectrum-plot .total-model-curve').waitFor({state:'attached'});
@@ -78,7 +80,13 @@ try {
    console.log(theme,name);
   }
   async function closeDialogs() {
-   for(let i=0;i<4&&await page.locator('dialog[open]').count();i++)await page.keyboard.press('Escape');
+   for(let i=0;i<4&&await page.locator('dialog[open]').count();i++) {
+    const button=page.locator('dialog[open]').last().locator('button[aria-label^="Close"]').first();
+    if(await button.count())await button.click();else await page.keyboard.press('Escape');
+    await page.waitForTimeout(100);
+   }
+   assert.equal(await page.locator('dialog[open]').count(),0,'All dialogs closed');
+   for(const button of await page.locator('.header-options.is-open .header-more-toggle').all()){await button.focus();await button.press('Escape');}
   }
   async function number(label,value) {
    const input=page.getByRole('textbox',{name:label,exact:true});

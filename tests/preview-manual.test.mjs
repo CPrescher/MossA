@@ -34,3 +34,30 @@ test('bootstrap replay data follows its manual base without changing external UR
   assert.equal(tree.children[1].properties['data-src'], '/MossA/preview/manual/tutorial-data/site-comparison/replay.json');
   assert.equal(tree.children[2].properties.href, 'https://example.org/reference');
 });
+
+
+test('desktop manual pins its source and retains an explicit video link without an online iframe', () => {
+  const commit = 'a'.repeat(40);
+  const tree = { children: [
+    { type: 'element', tagName: 'iframe', properties: { src: 'https://www.youtube-nocookie.com/embed/example' } },
+    { type: 'element', tagName: 'a', properties: { href: 'https://www.youtube.com/watch?v=example' } },
+    { type: 'element', tagName: 'a', properties: { href: 'https://github.com/CPrescher/MossA/blob/main/PORTING.md' } },
+  ] };
+  const browser = structuredClone(tree);
+  rebaseLinks()(browser);
+  assert.equal(browser.children.length, 3, 'browser manual retains its player');
+  rebaseLinks({ sourceRef: commit, offline: true })(tree);
+  assert.equal(tree.children.length, 2);
+  assert.equal(tree.children[0].properties.href, 'https://www.youtube.com/watch?v=example');
+  assert.equal(tree.children[1].properties.href, `https://github.com/CPrescher/MossA/blob/${commit}/PORTING.md`);
+});
+
+
+test('desktop manual removes authored raw HTML video while preserving adjacent content', () => {
+  const tree = { children: [{ type: 'raw', value: '<iframe class="tutorial-video" src="https://www.youtube-nocookie.com/embed/example" allowfullscreen></iframe><p>Keep the written tutorial.</p>' }] };
+  const browser = structuredClone(tree);
+  rebaseLinks()(browser);
+  assert.match(browser.children[0].value, /<iframe/);
+  rebaseLinks({ offline: true })(tree);
+  assert.equal(tree.children[0].value, '<p>Keep the written tutorial.</p>');
+});

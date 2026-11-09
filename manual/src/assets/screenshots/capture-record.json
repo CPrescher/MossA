@@ -4,86 +4,86 @@
     {
       "name": "almandine-two-doublets",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "almandine-one-doublet",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 9 iterationsFit detailsSSE1.889e+9Reduced7,524,600",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "bounds-and-links",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "fit-options",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "calibration-preset",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "almandine-calibration",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "figure-export",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "model-comparison",
       "spectrum": "almandine",
-      "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusConverged · 11 iterationsFit detailsSSE9.804e+8Reduced3,985,300",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "transmission-overlays",
       "spectrum": "Synthetic singlet reference",
       "status": "StatusOpened 1 spectra with all models and saved fit results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "source-calibration",
       "spectrum": "Synthetic singlet reference",
       "status": "StatusOpened 1 spectra with all models and saved fit results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-distributions",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-correlation",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "xvbf-map",
       "spectrum": "Synthetic iron mixture",
       "status": "StatusModel changed; fit again to update results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "iteration-limit",
       "spectrum": "Synthetic iron mixture",
-      "status": "StatusStopped \u00b7 1 iterations \u00b7 14 ms\u25be Fit details \u00b7 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
-      "title": "MossA 2 preview \u00b7 M\u00f6ssbauer analysis"
+      "status": "StatusStopped · 1 iterations · 14 ms▾ Fit details · 1 warningSSE3.269e+6Reduced6,498.21 warningSolver stopped without satisfying its convergence criterion; inspect this fit before using the results.",
+      "title": "MossA 2 preview · Mössbauer analysis"
     },
     {
       "name": "../first-fit",
@@ -106,7 +106,7 @@
   "sms": {
     "context": "Actual local browser workflow; original measured SMS files; example browser refits, unresolved pressure labels retained.",
     "browser": {
-      "buildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build \u2014 click for changelog",
+      "buildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T22:42:01.104Z\nLocal build — click for changelog",
       "scripts": [
         "http://127.0.0.1:4175/MossA/assets/index-DzSRhK_3.js"
       ]
@@ -125,47 +125,47 @@
       {
         "name": "sms-final-fit",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-two-sextets",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
+        "status": "StatusConverged · 8 iterationsFit detailsSSE9.262e+6Reduced18,414"
       },
       {
         "name": "sms-two-sextets-qs",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
+        "status": "StatusConverged · 11 iterationsFit detailsSSE4.503e+6Reduced8,988.7"
       },
       {
         "name": "sms-three-sextets",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 17 iterations\u25b8 Fit detailsSSE4.115e+6Reduced8,296.9"
+        "status": "StatusConverged · 17 iterations▸ Fit detailsSSE4.115e+6Reduced8,296.9"
       },
       {
         "name": "sms-intensity-links",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-velocity-calibration",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "StatusConverged \u00b7 26 iterations\u25b8 Fit detailsSSE3.196e+6Reduced6,482.1"
+        "status": "StatusConverged · 26 iterations▸ Fit detailsSSE3.196e+6Reduced6,482.1"
       },
       {
         "name": "sms-reference-columns",
         "spectrum": "singleLineBefore.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
       },
       {
         "name": "sms-source-before",
         "spectrum": "singleLineBefore.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.530e+6Reduced3,017.1"
       },
       {
         "name": "sms-source-after",
         "spectrum": "singleLineAfter.dat",
-        "status": "StatusConverged \u00b7 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
+        "status": "StatusConverged · 2 iterationsFit detailsSSE1.517e+6Reduced2,991.4"
       }
     ]
   },
@@ -472,7 +472,7 @@
   "syncmoss": {
     "context": "Actual local browser UI; original pinned SYNCmoss measured CMS/SMS standards; new MossA worked fits, with empirical CMS and deliberate fixed-source control limits described in the chapter.",
     "upstreamCommit": "b712fbc1521004a47409b964b9ab012fe5c5e255",
-    "browserBuildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-06T23:02:48.671Z\nLocal build \u2014 click for changelog",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-06T23:02:48.671Z\nLocal build — click for changelog",
     "records": [
       {
         "name": "syncmoss-import",
@@ -703,7 +703,7 @@
   },
   "comparison_lesson": {
     "context": "Actual completed local browser comparison tests; original synthetic fixed-shape singlet examples generated by scripts/prepare-comparison-tutorial.ts. Gaussian noise, 199 simulations, seed 12345, one worker. Separate runs in each app theme; no image recoloring. The weak-line observed one-line fit retains its stationary-solver warning.",
-    "browserBuildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-07T04:33:00.987Z\nLocal build \u2014 click for changelog",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:33:00.987Z\nLocal build — click for changelog",
     "records": [
       {
         "name": "comparison-no-extra-result",
@@ -753,7 +753,7 @@
   },
   "almandine_only_refresh": {
     "context": "Actual local app, almandine-only project with four saved model stages; replacements for workspace, raw-count import controls, and folding diagnostic. Separate classroom exercises are excluded. No pixel recoloring.",
-    "browserBuildTitle": "v2.0.0-preview.16 \u00b7 6c82146 (modified)\nBuilt 2026-11-07T04:56:45.507Z\nLocal build \u2014 click for changelog",
+    "browserBuildTitle": "v2.0.0-preview.16 · 6c82146 (modified)\nBuilt 2026-11-07T04:56:45.507Z\nLocal build — click for changelog",
     "records": [
       {
         "name": "workspace",
@@ -831,159 +831,172 @@
   },
   "workspaceRefresh": {
     "capturedAt": "2026-11-07T21:18:14.504Z",
-    "source": "Current local checkout at http://127.0.0.1:5181; actual Chromium screenshots in both themes",
+    "source": "http://127.0.0.1:5428/",
     "records": [
       {
         "name": "workspace-wide",
         "theme": "light",
         "file": "manual/src/assets/screenshots/workspace-wide.png",
+        "description": "Wide workspace with the synthetic mixture, updated project/site lists and direct Fold spectrum control.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:21.588Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
-      },
-      {
-        "name": "first-fit",
-        "theme": "light",
-        "file": "manual/src/assets/first-fit.png",
-        "viewport": {
-          "width": 1920,
-          "height": 1080
-        },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "ba06f5c6eb3d16ca4cad8daa86387484898aa2fbb6bb0a929c8adc2e3decb6f2",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
       },
       {
         "name": "workspace-laptop",
         "theme": "light",
         "file": "manual/src/assets/screenshots/workspace-laptop.png",
+        "description": "Laptop shared editor with Fitting options selected and the synthetic spectrum visible beside it.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:21.989Z",
         "viewport": {
           "width": 1180,
-          "height": 800
+          "height": 900
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "ee4548cabccd2b6fbfe60b5d67ace5e72805b9789b6fe1295d6896a7917ea77f",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
       },
       {
         "name": "workspace-tablet",
         "theme": "light",
         "file": "manual/src/assets/screenshots/workspace-tablet.png",
+        "description": "Tall portrait tablet: live synthetic graph above General with Folding & calibration first.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:22.501Z",
         "viewport": {
           "width": 820,
           "height": 1180
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "ced096eaab2983653559e7721ea313357324777660a9f29a7d7a47a9f469d333",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "first-fit",
+        "theme": "light",
+        "file": "manual/src/assets/first-fit.png",
+        "description": "Actual completed fit of the built-in synthetic mixture, updated lists and results with approximate 1 std.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:23.004Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "667cb4e920aa2177ac73f972bbca12403845af339200c1bb7c15f09d5d2a6af1",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Converged · 8 iterations · 72 ms",
+        "dialogs": []
       },
       {
         "name": "importing-raw-counts",
         "theme": "light",
         "file": "manual/src/assets/screenshots/importing-raw-counts.jpg",
-        "spectrum": "Redistributable Freiburg almandine raw channels",
-        "state": "New raw import; folding diagnostic button visible; not fitted"
+        "description": "Fresh measured almandine raw-count import with Fold spectrum enabled, loaded/folded point counts and immediate calibration controls; not a reference-calibration result.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:23.564Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "86fd713d82464ab588260119a53ed524e955cbef84b7a32e71558160d2bbcb96",
+        "spectrum": "almandine.dat",
+        "status": "Added 1 spectrum to the project.",
+        "dialogs": []
       },
       {
         "name": "workspace-wide",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/workspace-wide.jpg",
+        "description": "Wide workspace with the synthetic mixture, updated project/site lists and direct Fold spectrum control.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:34.984Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
-      },
-      {
-        "name": "first-fit",
-        "theme": "dark",
-        "file": "manual/public/screenshots/dark/first-fit.jpg",
-        "viewport": {
-          "width": 1920,
-          "height": 1080
-        },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "c5edb8c49cbd535a3bae07a6a032f945734f0286947ab16a0acbfe095044c453",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
       },
       {
         "name": "workspace-laptop",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/workspace-laptop.jpg",
+        "description": "Laptop shared editor with Fitting options selected and the synthetic spectrum visible beside it.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:35.363Z",
         "viewport": {
           "width": 1180,
-          "height": 800
+          "height": 900
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "e00a3ea4db013bb103f521cf7f5538451254226c7c33e2166f9201e65d6cc540",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
       },
       {
         "name": "workspace-tablet",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/workspace-tablet.jpg",
+        "description": "Tall portrait tablet: live synthetic graph above General with Folding & calibration first.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:35.861Z",
         "viewport": {
           "width": 820,
           "height": 1180
         },
-        "spectrum": "Built-in synthetic iron mixture",
-        "state": "Completed fit; General selected; Folding & calibration first",
-        "headings": [
-          "Folding & calibration",
-          "General",
-          "Background",
-          "Velocity direction"
-        ]
+        "sha256": "90640b3412c091b8a917f71ab624f82b2c3aed36963bf467de733244c2567654",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Opened 1 spectra with all models and saved fit results.",
+        "dialogs": []
+      },
+      {
+        "name": "first-fit",
+        "theme": "dark",
+        "file": "manual/public/screenshots/dark/first-fit.jpg",
+        "description": "Actual completed fit of the built-in synthetic mixture, updated lists and results with approximate 1 std.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:36.351Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "f63a96a7af3e4f0d96202e5eb95474ae5a711f510ddb831b2a1dc869199ecede",
+        "spectrum": "Synthetic iron mixture",
+        "status": "Converged · 8 iterations · 72 ms",
+        "dialogs": []
       },
       {
         "name": "importing-raw-counts",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/importing-raw-counts.jpg",
-        "spectrum": "Redistributable Freiburg almandine raw channels",
-        "state": "New raw import; folding diagnostic button visible; not fitted"
+        "description": "Fresh measured almandine raw-count import with Fold spectrum enabled, loaded/folded point counts and immediate calibration controls; not a reference-calibration result.",
+        "details": {},
+        "capturedAt": "2026-11-09T09:23:36.917Z",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "sha256": "eec1f1e452e131ec301654471d0eedb85500975ec307a03f471d87ac5a0fd516",
+        "spectrum": "almandine.dat",
+        "status": "Added 1 spectrum to the project.",
+        "dialogs": []
       }
-    ]
+    ],
+    "sourceCommit": "819e68ddc2152444da1d4fc1738d7023134b9c28",
+    "method": "Actual current Chromium UI in light and dark mode at desktop, laptop and tablet widths; synthetic first fit and measured raw-count import through the real controls. No compositing.",
+    "wasmSha256": "b0dd43b55abedfa1838b90e886f2885f5e199d350124be0c985eecaa4c855ffa"
   },
   "tutorialRefresh": {
     "records": [
@@ -992,14 +1005,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-velocity-location-wide.png",
         "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
-        "capturedAt": "2026-11-08T05:16:52.191Z",
+        "capturedAt": "2026-11-09T09:21:59.954Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "f4addb25cb27d10e84976223a3d6ed09223d15361f3bd9c3c8dae52a217a8d7e",
+        "sha256": "5ab1893061747a160a674ce9ba962bf3b9eb72d10718bc52ccbdaf37db39d96c",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1007,14 +1020,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-velocity-location-laptop.png",
         "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
-        "capturedAt": "2026-11-08T05:16:52.959Z",
+        "capturedAt": "2026-11-09T09:22:00.744Z",
         "viewport": {
           "width": 1180,
           "height": 900
         },
-        "sha256": "69a6cdb302ef2ff8040ebca6a0dfc375b1142c2cb12ade9ee8bac95fbb075104",
+        "sha256": "0c5a91e3e4f3b80e88e368bf222ccf87f1f86e995edc52c0a5c19b0be952cf4f",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1022,14 +1035,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-calibration.png",
         "description": "Fresh velocity-reference fit through GUI; Max. velocity\n5.02155 mm/s\nStandard CS\n-0.108591 mm/s",
-        "capturedAt": "2026-11-08T05:16:54.162Z",
+        "capturedAt": "2026-11-09T09:22:01.867Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fac70a6c89aef977928b627bb68bdfc742a72d6bad630005bde690acc267ef40",
+        "sha256": "5eb937e9ebecd92a644b5ccb1a82ab51a997710b66b399d9150e00b17094417a",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": [
           "New calibration preset",
           "Velocity calibration"
@@ -1040,14 +1053,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-one-doublet.png",
         "description": "Reopened one-doublet constant-background worked fit; no refitting.",
-        "capturedAt": "2026-11-08T05:16:54.486Z",
+        "capturedAt": "2026-11-09T09:22:02.443Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "0e9afa6d59adbda0414a453ae793eaca447c54eae81d5975c8c4d6d91051c9ee",
+        "sha256": "4337f606ce23e2712ee159a69d4b7a33ab340405d79d4ce7cab6e69d01a1ae4e",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1055,14 +1068,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-two-doublets.png",
         "description": "Reopened two-doublet linear-background worked fit; no refitting.",
-        "capturedAt": "2026-11-08T05:16:54.987Z",
+        "capturedAt": "2026-11-09T09:22:02.945Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "b5014cb122b442b3326abba2eca54b2522a91945b0026de464ba9d67737ddbcb",
+        "sha256": "b7fa568447d6c74b99dde0fd9376a6cf69593c10baf898df6a43e4921beb6ffe",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1070,12 +1083,12 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-velocity-location-wide.png",
         "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
-        "capturedAt": "2026-11-08T05:16:55.681Z",
+        "capturedAt": "2026-11-09T09:22:03.669Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "a61533c80e9d07dc95f0686910c891dcce156186f20dbf06c1715e5269a48c02",
+        "sha256": "e1d08963d4f643bccf67bf1e135b5eaf13591a933903b6e46cb6a718f7f3f7d8",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 3 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1085,12 +1098,12 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-velocity-location-laptop.png",
         "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
-        "capturedAt": "2026-11-08T05:16:56.480Z",
+        "capturedAt": "2026-11-09T09:22:04.418Z",
         "viewport": {
           "width": 1180,
           "height": 900
         },
-        "sha256": "79e25d7e9b6e322129ba003a57684d3629e2ef0fc35a9069ac6a82ced1e50114",
+        "sha256": "f1ea82dea0ee80e8bc3e5fea0d7f035ffbddb25ce36cc06b1ffc0c2f27ca4bd7",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 3 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1100,14 +1113,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-velocity-calibration.png",
         "description": "Fresh velocity-reference fit through GUI; Max. velocity\n8.73429 mm/s\nStandard CS\n0.712028 mm/s",
-        "capturedAt": "2026-11-08T05:16:57.817Z",
+        "capturedAt": "2026-11-09T09:22:05.710Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "34b791b381f83989b31c728217c386df7552e69a0cd9eb39ab9c24a52a5b4d55",
+        "sha256": "b44867e2d32153bed7974837a288e9cabb28a5baf553507027256c12bd1791dc",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": [
           "New calibration preset",
           "Velocity calibration"
@@ -1118,14 +1131,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-reference-columns.png",
         "description": "Saved five-column singlet reference; actual Import details names velocity column 1 and total counts column 2.",
-        "capturedAt": "2026-11-08T05:16:58.677Z",
+        "capturedAt": "2026-11-09T09:22:06.772Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "5dc735a3dc4c0eba7ec9bee6ede8260cb21155bd835b7dec781a15c6343f520d",
+        "sha256": "8de547e736f74f7edfb950a527a9387e2c8b2f69d7759d1308c4af37b3376a3e",
         "spectrum": "singleLineBefore.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1134,15 +1147,15 @@
         "name": "sms-source-before",
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-source-before.png",
-        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n\u00b1 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
-        "capturedAt": "2026-11-08T05:16:59.845Z",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n± 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
+        "capturedAt": "2026-11-09T09:22:07.371Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "81963ec8f6addfa279dec802d9f1e753dcf39ce38f37b1ead7f2d883f05dedcf",
+        "sha256": "ef9da994cdd462e7d9da45ed751c9ed5e776c3b1fdf126eb01c2adc848922603",
         "spectrum": "singleLineBefore.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1151,15 +1164,15 @@
         "name": "sms-source-after",
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-source-after.png",
-        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n\u00b1 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
-        "capturedAt": "2026-11-08T05:17:01.661Z",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n± 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
+        "capturedAt": "2026-11-09T09:22:08.671Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "12ad5c463f24a52d25acbdc8b53e8d884c15b8d54de76dbb5ea8a97ae80b5d80",
+        "sha256": "d78d22781fdffdf950f4326eacaa34e6b1582af8a2f7f4c80b25bb3019351eb8",
         "spectrum": "singleLineAfter.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1169,14 +1182,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-reversed-axis.png",
         "description": "Saved raw SPEC MCA sample with Reverse velocity axis checked and original acquisition header expanded.",
-        "capturedAt": "2026-11-08T05:17:02.380Z",
+        "capturedAt": "2026-11-09T09:22:09.369Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "906ffce95e433b712b94d725390a24641a1c69634e5865d5d05826f02839a593",
+        "sha256": "f94fa7587a04f38c506a96f289f7d399e5253d246b0491db8187fb8b2f5724e4",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": []
       },
       {
@@ -1184,14 +1197,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-two-sextets.png",
         "description": "Saved SMS tutorial stage 1 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:03.158Z",
+        "capturedAt": "2026-11-09T09:22:10.100Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "ae13f34c7e4e5acbe98c4dd7060f7796468593f3d39c87acff72f0be9f6bfb77",
+        "sha256": "91d37c84574f18282ebc68caf3662e1211a1742a9c9642adc5fdd5827813e03b",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 8 iterations",
+        "status": "Converged · 8 iterations",
         "dialogs": []
       },
       {
@@ -1199,14 +1212,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-two-sextets-qs.png",
         "description": "Saved SMS tutorial stage 2 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:03.929Z",
+        "capturedAt": "2026-11-09T09:22:10.820Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d1077fda8a6ab64e0c6c51ebd51638aa14fc4696d00c5887beadc07de830a42e",
+        "sha256": "746348c9224891a6d6fe861c80f1d4575a85050b34035286d376e3ef899636d9",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1214,14 +1227,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-three-sextets.png",
         "description": "Saved SMS tutorial stage 3 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:04.700Z",
+        "capturedAt": "2026-11-09T09:22:11.521Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "ddcd0028d0ab63a5b754d9961f5098f6e567a0a23f1ae4b8c17f1ab89f1f74c8",
+        "sha256": "4bf9be477db6408fd9076b2524fe142bcc6b8f5a80d7e7c10d6b5a0d93354c13",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 17 iterations",
+        "status": "Converged · 17 iterations",
         "dialogs": []
       },
       {
@@ -1229,14 +1242,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-final-fit.png",
         "description": "Saved SMS tutorial stage 5 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:05.281Z",
+        "capturedAt": "2026-11-09T09:22:12.126Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "07ba4a69183873ba327cc740a0943fe09f0ed56c7b70f59d98f022f32e0bb9fc",
+        "sha256": "dd7e5868787d0f04ca172cc4e53bc961c8039f396b8e37bba6b0eef429df485d",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": []
       },
       {
@@ -1244,14 +1257,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-intensity-links.png",
         "description": "Existing site-3 intensity link to one third of site 1; target/source/factor controls selected for inspection, not applied.",
-        "capturedAt": "2026-11-08T05:17:06.190Z",
+        "capturedAt": "2026-11-09T09:22:13.037Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "54a0465ba5ae248023183756b39f3f75593808abd18bf54c85f01db05264f7e7",
+        "sha256": "292f0d988f15e15194ed81b78bc0afdb71d3f319fd84866d3d3abe151db45a31",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 12 iterations",
+        "status": "Converged · 12 iterations",
         "dialogs": []
       },
       {
@@ -1259,12 +1272,12 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/sms-mca-import.png",
         "description": "Unfitted tutorial start, original raw MCA and headers; Reverse velocity axis still off.",
-        "capturedAt": "2026-11-08T05:17:06.831Z",
+        "capturedAt": "2026-11-09T09:22:13.583Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "a0a475fdb319324f580d877621e4d23c22876c9cbb69b6dd31fe998510037a0c",
+        "sha256": "d80b5701194ead327b59d7f57cb07d9bf2a7b4843839ff1f4e16cb969f5c7f0e",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1274,12 +1287,12 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-import.jpg",
         "description": "Actual original CMS file imported into an empty project; no fitted sites and supplied velocity axis retained.",
-        "capturedAt": "2026-11-08T05:17:07.342Z",
+        "capturedAt": "2026-11-09T09:22:14.144Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "aec4b29ee7d59ccf1fea43df2394380a43edd43c8937ebdc55049bae8f139260",
+        "sha256": "410fa3a0fd4e43acd9e0a7055d725b477e56ff97aa1499912e44e5f595de32f0",
         "spectrum": "Standard_CMS.dat",
         "status": "Added 1 spectrum to the project.",
         "dialogs": []
@@ -1289,14 +1302,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-cms-lorentzian.jpg",
         "description": "Reopened measured CMS empirical model; saved fit and std retained.",
-        "capturedAt": "2026-11-08T05:17:08.559Z",
+        "capturedAt": "2026-11-09T09:22:15.356Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2898a4b236ddbfa237752629849e2ced61b590a8725081981fa005abb9a61c06",
+        "sha256": "5f67397cf7a3ea649e0ac22f13745ecf3239356f0d35b147c345d8891fe0fe09",
         "spectrum": "Standard_CMS.dat",
-        "status": "Converged \u00b7 7 iterations",
+        "status": "Converged · 7 iterations",
         "dialogs": []
       },
       {
@@ -1304,14 +1317,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-cms-pseudovoigt.jpg",
         "description": "Reopened measured CMS empirical model; saved fit and std retained.",
-        "capturedAt": "2026-11-08T05:17:09.309Z",
+        "capturedAt": "2026-11-09T09:22:16.039Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fd2e608fc7982c715acd7182ad933239b3958c6529013c36ae1fae17d2dd2d49",
+        "sha256": "669cc5f1896e5a504ef6d5e3347f755482d3d6b0abf9cde8e706e42b58b78e8e",
         "spectrum": "Standard_CMS.dat",
-        "status": "Converged \u00b7 8 iterations",
+        "status": "Converged · 8 iterations",
         "dialogs": []
       },
       {
@@ -1319,14 +1332,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-sms-gaussian.jpg",
         "description": "Saved measured SMS fit with supplied three-Gaussian source controls visible.",
-        "capturedAt": "2026-11-08T05:17:10.123Z",
+        "capturedAt": "2026-11-09T09:22:16.842Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d09fd55647aca2e308d2de75a8ed3c7708b73bcd101112da5b96e14c63d10414",
+        "sha256": "31075546c92bbf345846bd60bda2bbba28062ee103c6c914e923940256000a9e",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1334,14 +1347,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-weighting.jpg",
         "description": "Observed-count weighting, one current-model start and iteration limit for the saved SMS model.",
-        "capturedAt": "2026-11-08T05:17:10.459Z",
+        "capturedAt": "2026-11-09T09:22:17.189Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fd851f5e973110efe82c5704dc6111509810ea23ec6a4fc5da47ea843236ae9f",
+        "sha256": "24caede00c30cc85a83626ad795ea4c92895cedd1fbb68996dec54eefea8a01b",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1349,14 +1362,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-sms-squared.jpg",
         "description": "Saved deliberate 0.200 mm/s Lorentzian-squared source control; no refitting.",
-        "capturedAt": "2026-11-08T05:17:11.223Z",
+        "capturedAt": "2026-11-09T09:22:17.924Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "5f2a490fc3372104e0c6a74f05c922d1e4947fc0bc6a9ddfa800b7c241316ffe",
+        "sha256": "46c1dd818d573b4a261915851c32bf331870e5e95aaf5f6589721ec9b4e9c244",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 15 iterations",
+        "status": "Converged · 15 iterations",
         "dialogs": []
       },
       {
@@ -1364,14 +1377,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-workspace.jpg",
         "description": "Current GUI with original CMS/SMS spectra and saved model alternatives in expanded project browser.",
-        "capturedAt": "2026-11-08T05:17:11.777Z",
+        "capturedAt": "2026-11-09T09:22:18.506Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "243eb13be245c567d4e6de7a7623b8dae727cb18d99eedaa402e383d4925b132",
+        "sha256": "4bc60854eb875df6b0cdcaccd7f1785ef95a146d5abb8d5253ebc170fe75a865",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1379,14 +1392,14 @@
         "theme": "light",
         "file": "manual/src/assets/screenshots/syncmoss-export.jpg",
         "description": "Actual current figure studio with saved SMS model, white-page preview, current export controls.",
-        "capturedAt": "2026-11-08T05:17:12.233Z",
+        "capturedAt": "2026-11-09T09:22:19.002Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "415d504d428797cda9a94eb065af5fd9ff2990693d4496a9355a9926df6347de",
+        "sha256": "9678efd08d66c71492955906e8600b33c24895ddbefe982069ab1bbe5fe80ee6",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": [
           "Export figure"
         ]
@@ -1396,14 +1409,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-velocity-location-wide.jpg",
         "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
-        "capturedAt": "2026-11-08T05:17:13.434Z",
+        "capturedAt": "2026-11-09T09:22:20.405Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "07580d173e54e4fe744f8dc981c66170993c16b61e3288a16684376f53432264",
+        "sha256": "132821148c004b46ce7051856accd06a88db41841940477e50b0bc976a979a0b",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1411,14 +1424,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-velocity-location-laptop.jpg",
         "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
-        "capturedAt": "2026-11-08T05:17:14.193Z",
+        "capturedAt": "2026-11-09T09:22:21.166Z",
         "viewport": {
           "width": 1180,
           "height": 900
         },
-        "sha256": "a005219bf1ba59f524a95e653e8eec92979b1318a188041f8c4015392bce0747",
+        "sha256": "667cf0ff83f43844f498235c76228eea830d063039bf1e92eccf779c08c0ab53",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1426,14 +1439,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-calibration.jpg",
         "description": "Fresh velocity-reference fit through GUI; Max. velocity\n5.02155 mm/s\nStandard CS\n-0.108591 mm/s",
-        "capturedAt": "2026-11-08T05:17:15.317Z",
+        "capturedAt": "2026-11-09T09:22:22.241Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "668a0332dc317cf81f5517d1a34622781bc4d1a65bde75781fe4ad33a209fc9a",
+        "sha256": "445582e4a1ac4d377bb6a3a3bb825dcc59a43663962ca4683361a2a2b512a76a",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": [
           "New calibration preset",
           "Velocity calibration"
@@ -1444,14 +1457,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-one-doublet.jpg",
         "description": "Reopened one-doublet constant-background worked fit; no refitting.",
-        "capturedAt": "2026-11-08T05:17:15.616Z",
+        "capturedAt": "2026-11-09T09:22:22.805Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fc7da4c0f4cfc33f50c708bb2dabd2dbda8b17624c9557a4cd13176a89ecdd84",
+        "sha256": "2020b87e99c7f1f77cc7c84361dbafa89fce22c97738ccb827c59d872f0cd3d9",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 9 iterations",
+        "status": "Converged · 9 iterations",
         "dialogs": []
       },
       {
@@ -1459,14 +1472,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-two-doublets.jpg",
         "description": "Reopened two-doublet linear-background worked fit; no refitting.",
-        "capturedAt": "2026-11-08T05:17:16.101Z",
+        "capturedAt": "2026-11-09T09:22:23.288Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "42d9f546b796d135867ee757880a820baa2a9fe4fbd5c6270022fde69702ea2e",
+        "sha256": "b7153f216176d4a0c0e8b7ed2aeec0a45507f0ab5db39e4381b2ad03b0f7dc15",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1474,12 +1487,12 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-velocity-location-wide.jpg",
         "description": "General in the right Fitting options panel; + menu exposes From reference file for velocity-scale calibration.",
-        "capturedAt": "2026-11-08T05:17:16.785Z",
+        "capturedAt": "2026-11-09T09:22:24.129Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "87921e935e4903a11b529e9eb54bc2350c8361883f174e25d11c14105932bf88",
+        "sha256": "636a30409f2151b43ee9953383d97295f11fcc930af2501a91c9e6ac3359eeb2",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 3 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1489,12 +1502,12 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-velocity-location-laptop.jpg",
         "description": "Laptop shared editor with Fitting options and General selected; + menu exposes From reference file.",
-        "capturedAt": "2026-11-08T05:17:17.545Z",
+        "capturedAt": "2026-11-09T09:22:24.805Z",
         "viewport": {
           "width": 1180,
           "height": 900
         },
-        "sha256": "0059c2d187c0daadf17ec888c4ab55948251d40be1f6f154231d66dfe53a76ba",
+        "sha256": "fa5d45c97cecb0b695499fa5bdd1ac4fbe01acf3b0b852c3aec88495d3f0391f",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 3 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1504,14 +1517,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-velocity-calibration.jpg",
         "description": "Fresh velocity-reference fit through GUI; Max. velocity\n8.73429 mm/s\nStandard CS\n0.712028 mm/s",
-        "capturedAt": "2026-11-08T05:17:18.867Z",
+        "capturedAt": "2026-11-09T09:22:25.960Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d12343a3ce03a300fedf54f23577f5a5f8297a606e3c312a4f54e519a72e4079",
+        "sha256": "cc4852ba7f41be05444f1a5d9c14b06759dcbfbd17cc150eb61d64ff9090c44d",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": [
           "New calibration preset",
           "Velocity calibration"
@@ -1522,14 +1535,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-reference-columns.jpg",
         "description": "Saved five-column singlet reference; actual Import details names velocity column 1 and total counts column 2.",
-        "capturedAt": "2026-11-08T05:17:19.703Z",
+        "capturedAt": "2026-11-09T09:22:27.029Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "9d6bbef008ce58858fdc727eafa9ff37de057e88ce0bcde467581694e3a31516",
+        "sha256": "c02cf3b56e3725182f695152b2e78695721851433641c84e7277aa58a39e5d8f",
         "spectrum": "singleLineBefore.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1538,15 +1551,15 @@
         "name": "sms-source-before",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-source-before.jpg",
-        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n\u00b1 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
-        "capturedAt": "2026-11-08T05:17:20.850Z",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.41597 mm/s\n± 1 std\n0.015 mm/s\nLine center\n-0.75944 mm/s",
+        "capturedAt": "2026-11-09T09:22:27.566Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "4c4a3be0dd7179320105d521eb8fbc53e33750d09bde3a96ddd1e967ed5ec88e",
+        "sha256": "b3b54d1267a028d5d2576893992343ad8da1d33357425652d2f4b9dc345bd99b",
         "spectrum": "singleLineBefore.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1555,15 +1568,15 @@
         "name": "sms-source-after",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-source-after.jpg",
-        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n\u00b1 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
-        "capturedAt": "2026-11-08T05:17:22.616Z",
+        "description": "Fresh known-width singlet source calibration; Source width\n0.45599 mm/s\n± 1 std\n0.016 mm/s\nLine center\n-0.76713 mm/s",
+        "capturedAt": "2026-11-09T09:22:28.779Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "64c44eb9c52d821b777e0e7e33e3dd404a778d286c0290f45f959a418ba6dee8",
+        "sha256": "3d62c8d743da97c7ca74c96ea0772f34f86adf5f2f596d42d68a6ea44350b6a7",
         "spectrum": "singleLineAfter.dat",
-        "status": "Converged \u00b7 2 iterations",
+        "status": "Converged · 2 iterations",
         "dialogs": [
           "Source-profile calibration"
         ]
@@ -1573,14 +1586,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-reversed-axis.jpg",
         "description": "Saved raw SPEC MCA sample with Reverse velocity axis checked and original acquisition header expanded.",
-        "capturedAt": "2026-11-08T05:17:23.318Z",
+        "capturedAt": "2026-11-09T09:22:29.610Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "5796dea9d9f8ae1a04976c4e99a7e853637f73c4c90e487362c2c16871fcfac4",
+        "sha256": "50c56f791a5ebd6e43e0f0321b074c6fbca49ea67827915ad7622161011ca6bd",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": []
       },
       {
@@ -1588,14 +1601,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-two-sextets.jpg",
         "description": "Saved SMS tutorial stage 1 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:24.050Z",
+        "capturedAt": "2026-11-09T09:22:30.345Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e5c2cedfcb4660ba32d445877001329b5b7d0e5ee9ff68c123109943a7d6b1e4",
+        "sha256": "78d7861b5249aba7c9f6688110cb111dfbb254ac17c26abf6351756521da3be6",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 8 iterations",
+        "status": "Converged · 8 iterations",
         "dialogs": []
       },
       {
@@ -1603,14 +1616,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-two-sextets-qs.jpg",
         "description": "Saved SMS tutorial stage 2 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:24.783Z",
+        "capturedAt": "2026-11-09T09:22:31.060Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "9026dcc7362c108638640b0badd28a46a1be5d7cdbb09666763d73ff902ca4b2",
+        "sha256": "6759d141ef6089cad388a1f44d659f7ccfdf6c417395e84465fdcdbe45448cb0",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1618,14 +1631,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-three-sextets.jpg",
         "description": "Saved SMS tutorial stage 3 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:25.535Z",
+        "capturedAt": "2026-11-09T09:22:31.777Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "49b1fc3df903464f43fbfa167f58a1cb68f4b5eff8d18b881f40af7c381edf12",
+        "sha256": "815a959129de06500f24e33a9d3482e0be3d65b779eff67e9ee6d24dc377d351",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 17 iterations",
+        "status": "Converged · 17 iterations",
         "dialogs": []
       },
       {
@@ -1633,14 +1646,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-final-fit.jpg",
         "description": "Saved SMS tutorial stage 5 with current GUI, residuals and fitted parameter table; no refitting.",
-        "capturedAt": "2026-11-08T05:17:26.098Z",
+        "capturedAt": "2026-11-09T09:22:32.293Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2b416ab7a135d97fe5868947bcd63e641417b054dfcefa80bee97a4d500475b1",
+        "sha256": "d380cfeb793ebf018194979a34a9fb093636ca2a32423fa28ed090dc0457a405",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 26 iterations",
+        "status": "Converged · 26 iterations",
         "dialogs": []
       },
       {
@@ -1648,14 +1661,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-intensity-links.jpg",
         "description": "Existing site-3 intensity link to one third of site 1; target/source/factor controls selected for inspection, not applied.",
-        "capturedAt": "2026-11-08T05:17:27.000Z",
+        "capturedAt": "2026-11-09T09:22:33.128Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "69774ac44eec51bcfc1a6de8cbaaa78f2da09b3773d52b389ad0a7b1b4c49c3c",
+        "sha256": "a8276c16899807d7a04602bd5b0784e5169f6df50871554d1932004c8dbeb349",
         "spectrum": "Fe7C3_01GPa.mca",
-        "status": "Converged \u00b7 12 iterations",
+        "status": "Converged · 12 iterations",
         "dialogs": []
       },
       {
@@ -1663,12 +1676,12 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/sms-mca-import.jpg",
         "description": "Unfitted tutorial start, original raw MCA and headers; Reverse velocity axis still off.",
-        "capturedAt": "2026-11-08T05:17:27.501Z",
+        "capturedAt": "2026-11-09T09:22:33.591Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "a21639d6fe22822bf8a3f16aa462d7adc3112fde034724339ea50b4e72048e9a",
+        "sha256": "7a3839ad1fa5cbeb7c3a42964ab9de349558f85a97896969214e82d8bf39a740",
         "spectrum": "Fe7C3_01GPa.mca",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1678,12 +1691,12 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-import.jpg",
         "description": "Actual original CMS file imported into an empty project; no fitted sites and supplied velocity axis retained.",
-        "capturedAt": "2026-11-08T05:17:28.081Z",
+        "capturedAt": "2026-11-09T09:22:34.191Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2a4d3cbe6977ac1f542e7e09974799b9fe438a8d81507afb1a9f188349cfaa83",
+        "sha256": "542c6ebb303e5209c5a002217c1ee4b26f86958db72341f234bee183f2f708a2",
         "spectrum": "Standard_CMS.dat",
         "status": "Added 1 spectrum to the project.",
         "dialogs": []
@@ -1693,14 +1706,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-cms-lorentzian.jpg",
         "description": "Reopened measured CMS empirical model; saved fit and std retained.",
-        "capturedAt": "2026-11-08T05:17:29.182Z",
+        "capturedAt": "2026-11-09T09:22:35.279Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "60b4e0e51ffb6374e35ad003de5e12e45bae6940c72864083566e1b5bb1f64e0",
+        "sha256": "852ba81c27f4bffddbe88f9de70bedf07be28ea186982cd432cf92533764234d",
         "spectrum": "Standard_CMS.dat",
-        "status": "Converged \u00b7 7 iterations",
+        "status": "Converged · 7 iterations",
         "dialogs": []
       },
       {
@@ -1708,14 +1721,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-cms-pseudovoigt.jpg",
         "description": "Reopened measured CMS empirical model; saved fit and std retained.",
-        "capturedAt": "2026-11-08T05:17:29.935Z",
+        "capturedAt": "2026-11-09T09:22:35.992Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2cb0eedd74b1feb00373eaaf6fd42d2d7d5d8bd8ca1abb8040b141061e04d025",
+        "sha256": "f8d6e275a14e4a47bd898ebb39ef05ace9036073b35fc5b18c56941247fdcd67",
         "spectrum": "Standard_CMS.dat",
-        "status": "Converged \u00b7 8 iterations",
+        "status": "Converged · 8 iterations",
         "dialogs": []
       },
       {
@@ -1723,14 +1736,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-sms-gaussian.jpg",
         "description": "Saved measured SMS fit with supplied three-Gaussian source controls visible.",
-        "capturedAt": "2026-11-08T05:17:30.763Z",
+        "capturedAt": "2026-11-09T09:22:36.861Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "0216c9d09a6b56518e998fb834eb0191b152867fd5321f56d2ed3bf93d80fe4e",
+        "sha256": "555268f1a3c431e9824f42abaf3f3502449022fa8d532c7fae147bd2c4187958",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1738,14 +1751,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-weighting.jpg",
         "description": "Observed-count weighting, one current-model start and iteration limit for the saved SMS model.",
-        "capturedAt": "2026-11-08T05:17:31.099Z",
+        "capturedAt": "2026-11-09T09:22:37.210Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "97fc03585dc28f3ca421b9bba77460c63831c5947e5992ab4e6d371740052880",
+        "sha256": "81f8d364aac3c051d1315e41c1959ea0a2ba467625f98549be0673a04e23ad5d",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1753,14 +1766,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-sms-squared.jpg",
         "description": "Saved deliberate 0.200 mm/s Lorentzian-squared source control; no refitting.",
-        "capturedAt": "2026-11-08T05:17:31.899Z",
+        "capturedAt": "2026-11-09T09:22:37.961Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "c564c5c34049fe9dfd2ca3990b8949d3ae2f9a0d1872e48f2819b16b4b007062",
+        "sha256": "aaac5f8b65536502dfc64b58849e64a8ab7360c78b63c82b874792118db3d470",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 15 iterations",
+        "status": "Converged · 15 iterations",
         "dialogs": []
       },
       {
@@ -1768,14 +1781,14 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-workspace.jpg",
         "description": "Current GUI with original CMS/SMS spectra and saved model alternatives in expanded project browser.",
-        "capturedAt": "2026-11-08T05:17:32.483Z",
+        "capturedAt": "2026-11-09T09:22:38.546Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e3ddfa321194bcbf84fcb94f5069090e424f693ab58ee47e0b27877c65343b74",
+        "sha256": "cf97368200464e5135e1badf91aba23e3698b5e52946375647a046c194ca7eb5",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": []
       },
       {
@@ -1783,22 +1796,23 @@
         "theme": "dark",
         "file": "manual/public/screenshots/dark/syncmoss-export.jpg",
         "description": "Actual current figure studio with saved SMS model, white-page preview, current export controls.",
-        "capturedAt": "2026-11-08T05:17:32.943Z",
+        "capturedAt": "2026-11-09T09:22:39.037Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "9239ad7abdeb711044b787804fec0d5c2c813fbdc0303a1c4d9947c47180838d",
+        "sha256": "e2d8f8032ea87307d8de91da8a4d967d91bbed521550f31096977ee9f266ac03",
         "spectrum": "Standard_SMS.dat",
-        "status": "Converged \u00b7 3 iterations",
+        "status": "Converged · 3 iterations",
         "dialogs": [
           "Export figure"
         ]
       }
     ],
-    "sourceCommit": "0807b7789e14db04baee1242d24e8bfb7445d823",
+    "sourceCommit": "819e68ddc2152444da1d4fc1738d7023134b9c28",
     "source": "http://127.0.0.1:5428/",
-    "method": "Actual Chromium UI in light and dark mode. Worked fits reopened without optimization; velocity/source dialogs refitted through their real controls. No screenshot compositing."
+    "method": "Actual Chromium UI in light and dark mode. Worked fits reopened without optimization; velocity/source dialogs refitted through their real controls. No screenshot compositing.",
+    "wasmSha256": "b0dd43b55abedfa1838b90e886f2885f5e199d350124be0c985eecaa4c855ffa"
   },
   "manualRefresh": {
     "records": [
@@ -1808,14 +1822,14 @@
         "file": "manual/src/assets/screenshots/workspace.jpg",
         "description": "Measured almandine, complete project browser and saved alternative fits in the current GUI.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:33.484Z",
+        "capturedAt": "2026-11-09T09:23:24.031Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "6b89b1ec228c0ea74470e2fc8a8651047fa9ca2dd4e3767b56f7c56f8db4f3d3",
+        "sha256": "a22dd516545ab0e1265bd8d3c14b4d05b84cf56bed28d09b3fd7d42afcc22815",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1824,14 +1838,14 @@
         "file": "manual/src/assets/screenshots/bounds-and-links.png",
         "description": "Current Bounds tab with selected-site bounds and proportional-link controls; saved fit unchanged.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:33.787Z",
+        "capturedAt": "2026-11-09T09:23:24.385Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "ff379fea13dcabd691406c7a5324fbf0451449dfd56a0c5a799b1d622e42af9a",
+        "sha256": "7a3e1a32029e4504207067caa8f2d3a9e12db2772e4e6f2c97e0c94b3a0cd8e1",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1840,14 +1854,14 @@
         "file": "manual/src/assets/screenshots/fit-options.png",
         "description": "Current Fit options tab: unweighted residuals, one current-model start and iteration limit from the almandine worked model.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:34.120Z",
+        "capturedAt": "2026-11-09T09:23:24.734Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d2c94faf817bfb31ece76dbf8821429a02c24087bf6ee792c5aed20816482630",
+        "sha256": "9fffd4acfe543ebc724b99edd7df2ea557ff73adc2ae15979e9b23b5bb46931d",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -1856,14 +1870,14 @@
         "file": "manual/src/assets/screenshots/calibration-preset.png",
         "description": "Current named velocity-calibration preset editor with velocity scale, folding and explicit save/cancel controls; no edits.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:34.512Z",
+        "capturedAt": "2026-11-09T09:23:25.163Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d7ebd92d2ea1c1a8b56dc3674419766dfe752b5fd2ce65ed9f00ef33ca3b8e88",
+        "sha256": "5b376cc78252c2afc109efe2e3a8c619bb98dec61e6c0be156cc3b6a628ba5a7",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Edit calibration preset"
         ]
@@ -1872,16 +1886,16 @@
         "name": "almandine-folding",
         "theme": "light",
         "file": "manual/src/assets/screenshots/almandine-folding.jpg",
-        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; not applied.",
+        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; center changes apply immediately.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:35.085Z",
+        "capturedAt": "2026-11-09T09:23:25.766Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "4696776fd4e37ee31b9a9863753576842a202974dfd3cd676c8a4e01a5e206a7",
+        "sha256": "ce050caefa3d29eeb5d37f1685d2bc0c7dd50402eb742ffc48f0029f4b94ddae",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Folding alignment"
         ]
@@ -1892,14 +1906,14 @@
         "file": "manual/src/assets/screenshots/figure-export.png",
         "description": "Current almandine figure studio, real white-page preview and export controls.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:35.697Z",
+        "capturedAt": "2026-11-09T09:23:26.351Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "f837ef4f95387035c5715a5e3dc95ab0c9bb593ab491131f8fe981ad1e18fef2",
+        "sha256": "1874bd6d26f8590225d43e302f566e874e37407007af0cfbbb13679848103349",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Export figure"
         ]
@@ -1910,14 +1924,14 @@
         "file": "manual/src/assets/screenshots/model-comparison.png",
         "description": "Actual comparison setup for one and two almandine doublets with identical constant-background constraints; no simulation run.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:36.287Z",
+        "capturedAt": "2026-11-09T09:23:27.025Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e5ddfd6f641e501bf8d250fcdcc98fa45bcddbc89e14c913d9efd4d122a0d3f5",
+        "sha256": "03da6e4fe60fadb5a26056f33cb8bcf3afa641729b5b1e287141567b207613dc",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Compare models"
         ]
@@ -1928,12 +1942,12 @@
         "file": "manual/src/assets/screenshots/transmission-overlays.png",
         "description": "Noiseless synthetic singlet in full-transmission mode; absorber width 0.097 and fixed Lorentzian source width 0.17 mm/s. Not measured data.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:37.069Z",
+        "capturedAt": "2026-11-09T09:23:27.732Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "1e6c75b6e0db26cf8a4e9ef10397cf696a552efee84651cf85cda4f6cf4e4630",
+        "sha256": "b019ecebf05605df86a8e5a359397a8aea7ba336d1960fcf14ce7323eb52aa3c",
         "spectrum": "Synthetic singlet reference",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": []
@@ -1944,14 +1958,14 @@
         "file": "manual/src/assets/screenshots/source-calibration.png",
         "description": "Actual source calibration of the explicitly constructed noiseless reference; tiny residual/std reflect construction, not experimental precision.",
         "details": {
-          "values": "Source width\n0.17 mm/s\n\u00b1 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
+          "values": "Source width\n0.17 mm/s\n± 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
         },
-        "capturedAt": "2026-11-08T05:35:38.344Z",
+        "capturedAt": "2026-11-09T09:23:28.641Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "76851c3c8263318a1ed171d23c11c1d8867b8ade6269a791a9c3b404109f575a",
+        "sha256": "0e8dc485799c730805894f4d2f77385087b3e7122dd4aad17ff287fd2ba55089",
         "spectrum": "Synthetic singlet reference",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": [
@@ -1964,12 +1978,12 @@
         "file": "manual/src/assets/screenshots/xvbf-distributions.png",
         "description": "Synthetic starting doublet enabled for xVBF, two CS components, normalized weights, current parameter cards and bounds controls; not fitted.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:39.188Z",
+        "capturedAt": "2026-11-09T09:23:29.533Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "40515f41e892817d109559549d059400cb783c2c6ecc2c413fb341985ff39cf9",
+        "sha256": "bb4f7758ff3f5e595e64ffd5041d8fe5ffe99a694822b53bfe108e8567ce5af3",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": []
@@ -1980,12 +1994,12 @@
         "file": "manual/src/assets/screenshots/xvbf-correlation.png",
         "description": "Current xVBF correlation view at its initial delta=0, with live synthetic spectrum and joint map.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:39.537Z",
+        "capturedAt": "2026-11-09T09:23:29.884Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "6913d4976b991c79202d8fdafbe6bc9b07d499e6c1a87f71a2fe720675558277",
+        "sha256": "10b52c45ae7df8199d56e329f9ff078e5fdd5587c01bf8ba2dc6122c30e7a795",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": []
@@ -1994,18 +2008,18 @@
         "name": "xvbf-map",
         "theme": "light",
         "file": "manual/src/assets/screenshots/xvbf-map.png",
-        "description": "Actual enlarged joint CS\u2013QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
+        "description": "Actual enlarged joint CS–QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:40.297Z",
+        "capturedAt": "2026-11-09T09:23:30.661Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "818af5e172552a1a3d270dd6c412c48fd04ca67736cc4a55ab3c6e0cc5a06c3f",
+        "sha256": "acd0f3ab4d65bf29ca8a2a731dd7cb0ac60678bbec546362d6e9761a03e4b59d",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": [
-          "CS\u2013QS correlation"
+          "CS–QS correlation"
         ]
       },
       {
@@ -2014,14 +2028,14 @@
         "file": "manual/src/assets/screenshots/iteration-limit.png",
         "description": "Intentionally stopped one-iteration synthetic fit. Actual warning dialog opened from Status; Fit options iteration limit visible behind it.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:41.336Z",
+        "capturedAt": "2026-11-09T09:23:31.730Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "ca8d2b1fae11cc60cf296b3bd5d82b9acf029d94be5381748caab7167c19fab5",
+        "sha256": "ee931ab74533775141428385d9528d1167573707ec3b06a7e048e99a00d34293",
         "spectrum": "Synthetic iron mixture",
-        "status": "Stopped \u26a0 1 warning",
+        "status": "Stopped ⚠ 1 warning",
         "dialogs": [
           "Fit warnings"
         ]
@@ -2037,14 +2051,14 @@
           "seed": 12345,
           "workers": 1
         },
-        "capturedAt": "2026-11-08T05:35:42.479Z",
+        "capturedAt": "2026-11-09T09:23:32.864Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "14c65e54557ecaf79a6cfef470597fe4c2c4590f107241a98610662163217b52",
-        "spectrum": "Synthetic \u00b7 No extra line",
-        "status": "Converged \u00b7 6 iterations",
+        "sha256": "d58eabd2b7e2f4ed07502da5288dc7ae0e200ec00ccd82ed5b7aa7777348e5cb",
+        "spectrum": "Synthetic · No extra line",
+        "status": "Converged · 6 iterations",
         "dialogs": [
           "Compare models"
         ]
@@ -2060,14 +2074,14 @@
           "seed": 12345,
           "workers": 1
         },
-        "capturedAt": "2026-11-08T05:35:44.058Z",
+        "capturedAt": "2026-11-09T09:23:33.981Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e08d0f08833e22c9591182d38fa4c41718b15a433c2cc645a0b6cea4ca6a2765",
-        "spectrum": "Synthetic \u00b7 Weak extra line",
-        "status": "Converged \u00b7 3 iterations",
+        "sha256": "63e1845275816d5414ed5d078e79427616c5e984b815be81d1a9f4476fd1e9e4",
+        "spectrum": "Synthetic · Weak extra line",
+        "status": "Converged · 3 iterations",
         "dialogs": [
           "Compare models"
         ]
@@ -2078,14 +2092,14 @@
         "file": "manual/public/screenshots/dark/workspace.jpg",
         "description": "Measured almandine, complete project browser and saved alternative fits in the current GUI.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:45.030Z",
+        "capturedAt": "2026-11-09T09:23:37.367Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "d82a2f65572ed6c86a770a72895f777c9ac7ae096cf276ff5ed13fec8031cd69",
+        "sha256": "e61d218ffe4babf9b68b4357353633e11584d2d98202ff20b4d001dd6be6b612",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -2094,14 +2108,14 @@
         "file": "manual/public/screenshots/dark/bounds-and-links.jpg",
         "description": "Current Bounds tab with selected-site bounds and proportional-link controls; saved fit unchanged.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:45.319Z",
+        "capturedAt": "2026-11-09T09:23:37.701Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "c2f16a84586a14394a520a6125cb7bc38997cc7f12abc96dcd38fd53b3c3d3b4",
+        "sha256": "63c4377d4f8bc87834b94df356fcc55183b8cc4b9a2171520b14d18c360d6d71",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -2110,14 +2124,14 @@
         "file": "manual/public/screenshots/dark/fit-options.jpg",
         "description": "Current Fit options tab: unweighted residuals, one current-model start and iteration limit from the almandine worked model.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:45.630Z",
+        "capturedAt": "2026-11-09T09:23:38.034Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "480fcb9d391ed31b4a59e5ddf83a7c7e1799b02eb01be0d4d9501022ad47c8ce",
+        "sha256": "1b816e733945a616055d0cc3efc5c480919b47ee5aae8483dbb0fb3427a7d6b2",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": []
       },
       {
@@ -2126,14 +2140,14 @@
         "file": "manual/public/screenshots/dark/calibration-preset.jpg",
         "description": "Current named velocity-calibration preset editor with velocity scale, folding and explicit save/cancel controls; no edits.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:46.009Z",
+        "capturedAt": "2026-11-09T09:23:38.437Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fa91afe194b3248a319f1a0180ca3262f69e6afba32ad1f9ce21dd5a17e6a62e",
+        "sha256": "2ea4c459768cc92007a7679ccdda93d48a4c7b14b10558d839a7e18ff8cf3e90",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Edit calibration preset"
         ]
@@ -2142,16 +2156,16 @@
         "name": "almandine-folding",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/almandine-folding.jpg",
-        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; not applied.",
+        "description": "Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; center changes apply immediately.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:46.583Z",
+        "capturedAt": "2026-11-09T09:23:39.053Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "da6e44d363ef568de684df0b302433a1d89c35f6450d8b8be302d84b92f2d5ea",
+        "sha256": "53e43c830231abc94c1141ed9c9cdf169544613948e9bdb4a0119d231d0cca5f",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Folding alignment"
         ]
@@ -2162,14 +2176,14 @@
         "file": "manual/public/screenshots/dark/figure-export.jpg",
         "description": "Current almandine figure studio, real white-page preview and export controls.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:47.132Z",
+        "capturedAt": "2026-11-09T09:23:39.589Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "4344cac16e0f79aac305f6ba20c07366240fa4de2e8f0bfda35b523721c06572",
+        "sha256": "57d96c887319aac1eb98dd201aaa5f4f3bd691b40b72658cde1d2488144dbead",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Export figure"
         ]
@@ -2180,14 +2194,14 @@
         "file": "manual/public/screenshots/dark/model-comparison.jpg",
         "description": "Actual comparison setup for one and two almandine doublets with identical constant-background constraints; no simulation run.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:47.712Z",
+        "capturedAt": "2026-11-09T09:23:40.187Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "faaea65a9a0fd4ef0c1f68045fb6a45afb81e73fae6a4121c81521c40528caf7",
+        "sha256": "32cf9ff069ac999f530c09b03f227ccacd1c3e99bd3b3b6659138ed16d7a4980",
         "spectrum": "almandine",
-        "status": "Converged \u00b7 11 iterations",
+        "status": "Converged · 11 iterations",
         "dialogs": [
           "Compare models"
         ]
@@ -2198,12 +2212,12 @@
         "file": "manual/public/screenshots/dark/transmission-overlays.jpg",
         "description": "Noiseless synthetic singlet in full-transmission mode; absorber width 0.097 and fixed Lorentzian source width 0.17 mm/s. Not measured data.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:48.430Z",
+        "capturedAt": "2026-11-09T09:23:40.902Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "53aa00a0e6d95dec303c29a365c52ed29956d9e071cb7019fefa8f64f99f2279",
+        "sha256": "8a9f3a8962afd08236f4ceef92c5fb2c040e5a9bbd9c8357c682ad36452881a7",
         "spectrum": "Synthetic singlet reference",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": []
@@ -2214,14 +2228,14 @@
         "file": "manual/public/screenshots/dark/source-calibration.jpg",
         "description": "Actual source calibration of the explicitly constructed noiseless reference; tiny residual/std reflect construction, not experimental precision.",
         "details": {
-          "values": "Source width\n0.17 mm/s\n\u00b1 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
+          "values": "Source width\n0.17 mm/s\n± 1 std\n5.7e-16 mm/s\nLine center\n0.23 mm/s"
         },
-        "capturedAt": "2026-11-08T05:35:49.690Z",
+        "capturedAt": "2026-11-09T09:23:42.041Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "fdddca6a47f525b24649327e547309c12f943ce596f02e429678f9246264bbad",
+        "sha256": "94c56f8bc658c3ecbbe1682c20d1f7edf36a3680c68b2b4626cfd6514ea7c213",
         "spectrum": "Synthetic singlet reference",
         "status": "Opened 1 spectra with all models and saved fit results.",
         "dialogs": [
@@ -2234,12 +2248,12 @@
         "file": "manual/public/screenshots/dark/xvbf-distributions.jpg",
         "description": "Synthetic starting doublet enabled for xVBF, two CS components, normalized weights, current parameter cards and bounds controls; not fitted.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:50.515Z",
+        "capturedAt": "2026-11-09T09:23:43.035Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2255b55ab73daf0d1dee243c7f577496c7e0132198cfcabca0899f7f8a19ddf5",
+        "sha256": "54d8156fc90d77537e300052e0035f51d283f6a40bf40de6a01284a615b62c8d",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": []
@@ -2250,12 +2264,12 @@
         "file": "manual/public/screenshots/dark/xvbf-correlation.jpg",
         "description": "Current xVBF correlation view at its initial delta=0, with live synthetic spectrum and joint map.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:50.857Z",
+        "capturedAt": "2026-11-09T09:23:43.401Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "f240d2c42fce1f6a22d9b6c9f12f8509324b262f5170fde27f72c5f1954daa0a",
+        "sha256": "6793db0d7044d95b2e5c9d58956499c205032fea2a7b1b50f5fa848a6a4a8634",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": []
@@ -2264,18 +2278,18 @@
         "name": "xvbf-map",
         "theme": "dark",
         "file": "manual/public/screenshots/dark/xvbf-map.jpg",
-        "description": "Actual enlarged joint CS\u2013QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
+        "description": "Actual enlarged joint CS–QS density map at manually chosen delta=0.35; illustration, not a fitted correlation.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:51.581Z",
+        "capturedAt": "2026-11-09T09:23:44.085Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "2a0cee2bfe935a9ddc6fd42bde59d86de5162d5673266cfa0e78b7dc66160605",
+        "sha256": "80635789644db265fe89d60ce122b6ced7b07e92f2d0bf6a49939213a6ce3180",
         "spectrum": "Synthetic iron mixture",
         "status": "Model changed; fit again to update results.",
         "dialogs": [
-          "CS\u2013QS correlation"
+          "CS–QS correlation"
         ]
       },
       {
@@ -2284,14 +2298,14 @@
         "file": "manual/public/screenshots/dark/iteration-limit.jpg",
         "description": "Intentionally stopped one-iteration synthetic fit. Actual warning dialog opened from Status; Fit options iteration limit visible behind it.",
         "details": {},
-        "capturedAt": "2026-11-08T05:35:52.559Z",
+        "capturedAt": "2026-11-09T09:23:45.091Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e771f20c9a51c4d019273b13a8618d721e3cae2feb75b0785092b8d63a5f8442",
+        "sha256": "2a2d8cd19b1ce5da95b3bf0d40aa03aeff08aab8d914b42d90f24e37176f5676",
         "spectrum": "Synthetic iron mixture",
-        "status": "Stopped \u26a0 1 warning",
+        "status": "Stopped ⚠ 1 warning",
         "dialogs": [
           "Fit warnings"
         ]
@@ -2307,14 +2321,14 @@
           "seed": 12345,
           "workers": 1
         },
-        "capturedAt": "2026-11-08T05:35:53.493Z",
+        "capturedAt": "2026-11-09T09:23:46.214Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "64f8961b9236fd19433d3632b2748c2cd8e721002f7e5bbab8be4d12e1a76734",
-        "spectrum": "Synthetic \u00b7 No extra line",
-        "status": "Converged \u00b7 6 iterations",
+        "sha256": "9ba0645db5356ccd9f4e7d6202aad3ac8be98390d8621770f2535d1613ab145d",
+        "spectrum": "Synthetic · No extra line",
+        "status": "Converged · 6 iterations",
         "dialogs": [
           "Compare models"
         ]
@@ -2330,21 +2344,37 @@
           "seed": 12345,
           "workers": 1
         },
-        "capturedAt": "2026-11-08T05:35:54.906Z",
+        "capturedAt": "2026-11-09T09:23:47.356Z",
         "viewport": {
           "width": 1920,
           "height": 1080
         },
-        "sha256": "e79b293e159f3fb12f0f046e79793adca9a7e5b329ef9823a75d2bd6aabb1b45",
-        "spectrum": "Synthetic \u00b7 Weak extra line",
-        "status": "Converged \u00b7 3 iterations",
+        "sha256": "1097db7c3ef2cc89c2efb76b35f48a1e965ccb3fd97a693af2627980427da0f6",
+        "spectrum": "Synthetic · Weak extra line",
+        "status": "Converged · 3 iterations",
         "dialogs": [
           "Compare models"
         ]
       }
     ],
-    "sourceCommit": "881a88c67210125eb3e4c981858e9d7c5388a7d1",
+    "sourceCommit": "819e68ddc2152444da1d4fc1738d7023134b9c28",
     "source": "http://127.0.0.1:5428/",
-    "method": "Actual current Chromium GUI in both themes. Public worked fits reopened; synthetic source generated with the production evaluator and explicitly labeled. Comparison results recomputed through the real UI (199 Gaussian simulations, seed 12345, one worker). No screenshot compositing."
+    "method": "Actual current Chromium GUI in both themes. Public worked fits reopened; synthetic source generated with the production evaluator and explicitly labeled. Comparison results recomputed through the real UI (199 Gaussian simulations, seed 12345, one worker). No screenshot compositing.",
+    "wasmSha256": "b0dd43b55abedfa1838b90e886f2885f5e199d350124be0c985eecaa4c855ffa"
+  },
+  "latestGuiRefresh": {
+    "capturedOn": "2026-11-09",
+    "guiSourceCommit": "819e68ddc2152444da1d4fc1738d7023134b9c28",
+    "engineSourceCommit": "e392bf4a07318b3d2f3358284d5b52abdc9d806c",
+    "engineNote": "Reused the verified main-worktree WASM; rust-core is unchanged between its source revision and the GUI source revision.",
+    "wasmSha256": "b0dd43b55abedfa1838b90e886f2885f5e199d350124be0c985eecaa4c855ffa",
+    "guiScenes": 46,
+    "themeCaptures": 92,
+    "groups": [
+      "workspaceRefresh",
+      "tutorialRefresh",
+      "manualRefresh"
+    ],
+    "method": "Fresh actual Chromium captures, including direct Fold spectrum and the unified list controls. Light and dark themes captured independently. Calculated physics/source-response figures are retained separately."
   }
 }

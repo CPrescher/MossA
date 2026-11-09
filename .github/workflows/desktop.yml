@@ -49,11 +49,25 @@ jobs:
           rustup toolchain install "$RUST_VERSION" --profile minimal --target wasm32-unknown-unknown
           rustup default "$RUST_VERSION"
       - run: npm ci
+      - run: npm ci --prefix manual
       - run: npm test
       - name: Verify native backend parity, progress, cancellation, and parallel comparisons
         run: npm run test:native
       - name: Test notarization recovery without Apple credentials
         run: python3 -m unittest discover -s tests -p '*_test.py'
+      - name: Build the candidate browser app and matching manual
+        env:
+          MOSSA_SOURCE_REF: ${{ github.sha }}
+        run: |
+          npm run build:pages
+          python3 scripts/package-web.py
+      - name: Upload the browser app without deploying it
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: MossA-browser
+          path: release-web/
+          if-no-files-found: error
+          retention-days: 30
 
   desktop:
     needs: scientific-tests

@@ -12,14 +12,18 @@ const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const module=option('--playwright-module',null);
 const {chromium}=await import(module?pathToFileURL(resolve(module)).href:'playwright');
 const base=option('--base','http://127.0.0.1:5428/');
-const sections=option('--section','almandine,source,xvbf,warning,comparison').split(',');
+const sections=option('--section','workspace,almandine,source,xvbf,warning,comparison').split(',');
 const themes=option('--theme','light,dark').split(',');
 const data=resolve(root,'manual/public/tutorial-data');
 const recordPath=resolve(root,'manual/src/assets/screenshots/capture-record.json');
 const record=JSON.parse(await readFile(recordPath,'utf8'));
 const refresh=record.manualRefresh??={records:[]};
+const workspaceNames=new Set(['workspace-wide','workspace-laptop','workspace-tablet','first-fit','importing-raw-counts']);
+const workspaceRefresh=record.workspaceRefresh??={records:[]};
 refresh.sourceCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8'}).trim();
 refresh.source=base;
+refresh.wasmSha256=createHash('sha256').update(await readFile(resolve(root,'src/wasm/mossa_core_bg.wasm'))).digest('hex');
+Object.assign(workspaceRefresh,{sourceCommit:refresh.sourceCommit,source:base,wasmSha256:refresh.wasmSha256,method:'Actual current Chromium UI in light and dark mode at desktop, laptop and tablet widths; synthetic first fit and measured raw-count import through the real controls. No compositing.'});
 refresh.method='Actual current Chromium GUI in both themes. Public worked fits reopened; synthetic source generated with the production evaluator and explicitly labeled. Comparison results recomputed through the real UI (199 Gaussian simulations, seed 12345, one worker). No screenshot compositing.';
 await init({module_or_path:await readFile(resolve(root,'src/wasm/mossa_core_bg.wasm'))});
 const starting=JSON.parse(await readFile(resolve(data,'synthetic-first-fit.mossa'),'utf8'));
@@ -42,9 +46,10 @@ try {
   const context=await browser.newContext({viewport:{width:1920,height:1080},deviceScaleFactor:1,colorScheme:theme});
   const page=await context.newPage();page.setDefaultTimeout(20000);
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto(base);await page.waitForFunction(()=>!document.querySelector('.fit-button')?.disabled);
-  async function general() {await page.getByRole('tab',{name:'General',exact:true}).click();await page.locator('.options-content').evaluate(n=>n.scrollTop=0);}
+  await page.goto(base);await page.waitForFunction(()=>{const button=document.querySelector('.fit-button');return button&&!button.disabled;});
+  async function general() {const switcher=page.getByRole('button',{name:'Fitting options',exact:true});if(await switcher.isVisible())await switcher.click();const show=page.getByRole('button',{name:'Show fitting options',exact:true});if(await show.isVisible())await show.click();await page.getByRole('tab',{name:'General',exact:true}).click();await page.locator('.options-content').evaluate(n=>n.scrollTop=0);}
   async function open(file) {
+   await close();
    await page.locator('input[aria-label="Project file"]').setInputFiles(typeof file==='string'?resolve(data,file):{name:'manual-synthetic-illustration.mossa',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(file))});
    await page.waitForFunction(()=>document.querySelector('.status-current')?.textContent?.includes('Opened'));
    await page.locator('#spectrum-plot .total-model-curve').waitFor({state:'attached'});
@@ -56,14 +61,34 @@ try {
   async function capture(name,description,details={}) {
    assert.deepEqual(errors,[]);assert.equal(await page.locator('html').getAttribute('data-theme'),theme);
    await page.mouse.move(0,0);await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(200);
-   const extension=theme==='dark'||['workspace','almandine-folding','comparison-no-extra-result','comparison-borderline-result'].includes(name)?'jpg':'png';
-   const file=theme==='dark'?`manual/public/screenshots/dark/${name}.jpg`:`manual/src/assets/screenshots/${name}.${extension}`;
+   const extension=theme==='dark'||['workspace','importing-raw-counts','almandine-folding','comparison-no-extra-result','comparison-borderline-result'].includes(name)?'jpg':'png';
+   const file=theme==='dark'?`manual/public/screenshots/dark/${name}.jpg`:name==='first-fit'?'manual/src/assets/first-fit.png':`manual/src/assets/screenshots/${name}.${extension}`;
    await page.screenshot({path:resolve(root,file),type:extension==='jpg'?'jpeg':'png',...(extension==='jpg'?{quality:92}:{})});
    const item={name,theme,file,description,details,capturedAt:new Date().toISOString(),viewport:page.viewportSize(),sha256:createHash('sha256').update(await readFile(resolve(root,file))).digest('hex'),spectrum:await page.locator('.document-bar strong').innerText(),status:await page.locator('.status-current').innerText(),dialogs:await page.locator('dialog[open] h2').allTextContents()};
-   refresh.records=refresh.records.filter(old=>old.name!==name||old.theme!==theme);refresh.records.push(item);
+   const bucket=workspaceNames.has(name)?workspaceRefresh:refresh;bucket.records=bucket.records.filter(old=>old.name!==name||old.theme!==theme);bucket.records.push(item);
    await writeFile(recordPath,JSON.stringify(record,null,2)+'\n');console.log(theme,name);
   }
-  async function close() {for(let i=0;i<4&&await page.locator('dialog[open]').count();i++){const button=page.locator('dialog[open]').last().locator('button[aria-label^="Close"]').first();if(await button.count())await button.click();else await page.keyboard.press('Escape');await page.waitForTimeout(100);}assert.equal(await page.locator('dialog[open]').count(),0,'All dialogs closed');}
+  async function close() {for(let i=0;i<4&&await page.locator('dialog[open]').count();i++){const button=page.locator('dialog[open]').last().locator('button[aria-label^="Close"]').first();if(await button.count())await button.click();else await page.keyboard.press('Escape');await page.waitForTimeout(100);}assert.equal(await page.locator('dialog[open]').count(),0,'All dialogs closed');for(const button of await page.locator('.header-options.is-open .header-more-toggle').all()){await button.focus();await button.press('Escape');}}
+  if(sections.includes('workspace')) {
+   await open('synthetic-first-fit.mossa');
+   await capture('workspace-wide','Wide workspace with the synthetic mixture, updated project/site lists and direct Fold spectrum control.');
+   await page.getByRole('button',{name:'Collapse project sidebar',exact:true}).click();
+   await page.setViewportSize({width:1180,height:900});await general();
+   await capture('workspace-laptop','Laptop shared editor with Fitting options selected and the synthetic spectrum visible beside it.');
+   await page.setViewportSize({width:820,height:1180});await general();
+   await capture('workspace-tablet','Tall portrait tablet: live synthetic graph above General with Folding & calibration first.');
+   await page.setViewportSize({width:1920,height:1080});
+   await page.getByRole('button',{name:'Expand project sidebar',exact:true}).click();await general();
+   await page.getByRole('button',{name:'Fit spectrum',exact:true}).click();
+   await page.waitForFunction(()=>document.querySelector('.status-current')?.textContent?.includes('Converged'));
+   await capture('first-fit','Actual completed fit of the built-in synthetic mixture, updated lists and results with approximate 1 std.');
+   await page.getByRole('button',{name:'New project',exact:true}).click();
+   await page.getByRole('heading',{name:'Start a new project',exact:true}).waitFor();
+   await page.locator('input[aria-label="Spectrum file"]').setInputFiles(resolve(data,'freiburg/almandine.dat'));
+   await page.waitForFunction(()=>document.querySelector('.status-current')?.textContent?.includes('Added'));
+   await general();assert(await page.getByLabel('Fold spectrum',{exact:true}).isChecked());
+   await capture('importing-raw-counts','Fresh measured almandine raw-count import with Fold spectrum enabled, loaded/folded point counts and immediate calibration controls; not a reference-calibration result.');
+  }
   if(sections.includes('almandine')) {
    await open('freiburg/almandine.mossa');await page.locator('#model-teaching-almandine-model-2').click();
    await capture('workspace','Measured almandine, complete project browser and saved alternative fits in the current GUI.');
@@ -76,7 +101,7 @@ try {
    await close();await page.getByRole('button',{name:'Inspect this spectrum’s folding…',exact:true}).click();
    await page.waitForFunction(()=>!document.querySelector('input[aria-label="Inspected fold center"]')?.disabled);
    await number('Inspected fold center',256.5);
-   await capture('almandine-folding','Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; not applied.');
+   await capture('almandine-folding','Folding diagnostic at the teaching manual center 256.5 with the independently computed automatic refinement retained; center changes apply immediately.');
    await close();await page.getByRole('button',{name:'Export',exact:true}).click();
    await page.locator('.export-action button').filter({hasText:'Figure'}).click();await page.locator('.figure-preview-svg > svg').waitFor();
    await capture('figure-export','Current almandine figure studio, real white-page preview and export controls.');await close();

@@ -2223,7 +2223,7 @@ dependencies = [
 
 [[package]]
 name = "mossa-desktop"
-version = "2.0.0-preview.17"
+version = "2.0.0-rc.1"
 dependencies = [
  "mossa-core",
  "serde",

@@ -25,3 +25,5 @@ validation-data/performance/*.json
 !validation-data/performance/*-provenance.json
 !validation-data/performance/evidence-manifest.json
 validation-data/performance/*.tar.xz.tmp
+
+release-web/

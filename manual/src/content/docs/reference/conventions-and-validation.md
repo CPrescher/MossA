@@ -7,6 +7,14 @@ MossA 2 retains many numerical expressions from the original MATLAB MossA while 
 
 The [physics overview](/MossA/manual/foundations/physics/), [line-profile equations](/MossA/manual/foundations/line-shapes/), and [transmission derivation](/MossA/manual/foundations/transmission-integral/) distinguish the ideal physical expressions from the current code's width, normalization, and finite-grid conventions.
 
+## Release-candidate scope
+
+**2.0.0-rc.1 is a prerelease for evaluation before the stable MossA 2.0 release.** The browser uses WASM workers and the desktop uses native Rust jobs from the same fitting core. Their selected parity tests do not establish identical optimization trajectories for every spectrum.
+
+Ordinary line models, folding/calibration, full transmission, project restoration, and model comparisons have the numerical and selected measured-data checks described below. **xVBF and Gaussian-mixture source extraction remain experimental pending suitable measured-reference validation.** Local-Jacobian std are conditional on the fitted model and fixed calibration/source inputs; their statistical coverage has not been established for all workflows.
+
+Packaged GUI workflows have been exercised on macOS. Windows and Linux build/native-command checks do not replace installation and GUI runtime testing, which remains open. The rc.1 qualification record and platform checklist accompany the source and release notes. Save portable `.mossa` backups before testing a new version.
+
 ## Relationship to the MATLAB application
 
 The retained MATLAB source corresponds to commit `d201482b7990afbd0e2dcc23e306bfc8d60a5049`, apart from its license update. The browser app preserves selected line-shape, folding, calibration, and transmission conventions.
