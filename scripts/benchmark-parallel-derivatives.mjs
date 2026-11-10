@@ -14,7 +14,7 @@ const pw = option('--playwright-module', null);
 const browsers = await import(pw ? pathToFileURL(resolve(pw)) : 'playwright');
 const counts = option('--workers', '1,2,4,8').split(',').map(x => x === 'auto' ? null : Number(x));
 const repetitions = Number(option('--repetitions', '5'));
-const client = 'validation-data/performance/runtime/parallel-client';
+const client = args.includes('--shared') ? 'validation-data/performance/runtime/parallel-client-shared' : 'validation-data/performance/runtime/parallel-client';
 await mkdir(client, { recursive: true });
 const entry = resolve(client, 'entry.ts');
 await writeFile(entry, `export { Engine } from ${JSON.stringify(resolve('src/engine.ts'))};\n`);
@@ -25,6 +25,21 @@ const files = ['tests/fixtures/transmission-performance.json', 'tests/fixtures/t
 let cases = (await Promise.all(files.map(async file => JSON.parse(await readFile(file, 'utf8')).cases))).flat();
 const filter = option('--cases', '').split(',').filter(Boolean);
 if (filter.length) cases = cases.filter(c => filter.includes(c.id));
+const searchStarts = Number(option('--search-starts', '1'));
+assert.ok(Number.isInteger(searchStarts) && searchStarts >= 1 && searchStarts <= 32);
+if (searchStarts > 1) {
+  // Compare the complete production-worker search with the frozen pre-change
+  // WASM fitter, not with another execution of the optimized search itself.
+  const archive = resolve('validation-data/performance/runtime/remaining-work/baseline');
+  const core = await import(pathToFileURL(resolve(archive, 'mossa_core.js')));
+  const { fitMultiStart } = await import(pathToFileURL(resolve(archive, 'multistart.mjs')));
+  await core.default({ module_or_path: await readFile(resolve(archive, 'mossa_core_bg.wasm')) });
+  cases = cases.filter(c => !c.calibration).map(c => {
+    const project = { ...c.project, search_starts: searchStarts };
+    const result = fitMultiStart(project, p => JSON.parse(core.fit_json(JSON.stringify(p))), p => JSON.parse(core.evaluate_json(JSON.stringify(p))));
+    return { ...c, project, result };
+  });
+}
 const headers = args.includes('--shared') ? { 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'require-corp', 'Cross-Origin-Resource-Policy': 'same-origin' } : {};
 const root = resolve('.');
 const server = createServer(async (req, res) => {
@@ -40,7 +55,7 @@ const server = createServer(async (req, res) => {
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
 const base = `http://127.0.0.1:${server.address().port}`;
-const output = { date: '2026-11-07', cpu: os.cpus()[0].model, node: process.version, repetitions, paired: args.includes('--paired'), wasm_sha256: createHash('sha256').update(await readFile('src/wasm/mossa_core_bg.wasm')).digest('hex'), results: [] };
+const output = { date: new Date().toISOString(), cpu: os.cpus()[0].model, node: process.version, repetitions, search_starts: searchStarts, paired: args.includes('--paired'), wasm_sha256: createHash('sha256').update(await readFile('src/wasm/mossa_core_bg.wasm')).digest('hex'), results: [] };
 try {
   for (const browserName of option('--browsers', 'webkit,chromium').split(',')) {
     const browser = await browsers[browserName].launch({ headless: true });
@@ -50,8 +65,8 @@ try {
       page.on('pageerror', error => console.error(browserName, error));
       await page.goto(base + '/__parallel-benchmark.html');
       for (const count of counts) {
-        const rows = await page.evaluate(async ({ cases, count, repetitions, argsPaired }) => {
-          const { Engine } = await import('/validation-data/performance/runtime/parallel-client/engine.js');
+        const rows = await page.evaluate(async ({ cases, count, repetitions, argsPaired, clientUrl }) => {
+          const { Engine } = await import(clientUrl);
           const resultKey = value => JSON.stringify(value, (_key, item) => item && typeof item === 'object' && !Array.isArray(item) ? Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b))) : item);
           let engine;
           await new Promise((resolve, reject) => { engine = new Engine(resolve, reject); });
@@ -76,7 +91,7 @@ try {
             }
           } finally { engine.stop(); }
           return { rows, hardwareConcurrency: navigator.hardwareConcurrency, crossOriginIsolated: self.crossOriginIsolated };
-        }, { cases, count, repetitions, argsPaired: args.includes('--paired') });
+        }, { cases, count, repetitions, argsPaired: args.includes('--paired'), clientUrl: `/${client}/engine.js` });
         for (const row of rows.rows) {
           const reference = cases.find(c => c.id === row.id);
           row.comparison = compare(reference, row.result);

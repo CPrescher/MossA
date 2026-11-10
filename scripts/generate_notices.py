@@ -12,7 +12,7 @@ metadata = json.loads(subprocess.check_output(
 packages = []
 resolved = {node['id'] for node in metadata['resolve']['nodes']}
 for package in metadata['packages']:
-    if package['source'] and package['id'] in resolved:
+    if (package['source'] or package['name'] == 'basin') and package['id'] in resolved:
         packages.append((package['name'], package['version'], package['license'], Path(package['manifest_path']).parent))
 for name in ['react', 'react-dom', 'scheduler', '@mathjax/src', '@mathjax/mathjax-tex-font', 'jspdf', 'svg2pdf.js', 'opentype.js', 'fflate', 'fast-png', 'iobuffer', 'pako', 'rgbcolor', 'specificity', 'cssesc', 'svgpath', 'font-family-papandreou', '@babel/runtime', 'canvg', 'core-js', 'dompurify', 'html2canvas', 'raf', 'stackblur-canvas', 'text-segmentation', 'utrie', 'base64-arraybuffer', 'performance-now']:
     folder = root / 'node_modules' / name

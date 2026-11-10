@@ -1,0 +1,147 @@
+#![cfg(all(feature = "serde", not(target_arch = "wasm32")))]
+
+use std::convert::Infallible;
+use std::path::PathBuf;
+
+use basin::{
+    CostFunction, ExactCheckpoint, ExactCheckpointWriter, Executor,
+    GlobalBestPso, ObserverMode, PopulationProgress, State,
+    read_exact_checkpoint,
+};
+
+#[derive(Clone)]
+struct Landscape {
+    lower: Vec<f64>,
+    upper: Vec<f64>,
+}
+
+impl basin::Constraints for Landscape {
+    type Set = basin::ConstraintSet<basin::BoxBounds<Vec<f64>>>;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new().with_bounds(basin::BoxBounds::new(
+            Some(&self.lower),
+            Some(&self.upper),
+        ))
+    }
+}
+impl CostFunction for Landscape {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = Infallible;
+
+    fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+        Ok(x.iter()
+            .map(|xi| xi * xi - 10.0 * (std::f64::consts::TAU * xi).cos())
+            .sum::<f64>()
+            + 10.0 * x.len() as f64)
+    }
+}
+
+type TestSolver = GlobalBestPso<Vec<f64>>;
+type TestState = PopulationProgress<Vec<f64>>;
+
+fn problem() -> Landscape {
+    Landscape {
+        lower: vec![-5.12; 3],
+        upper: vec![5.12; 3],
+    }
+}
+
+fn solver() -> TestSolver {
+    GlobalBestPso::new(0x5eed).with_swarm_size(14)
+}
+
+fn encoded<T: serde::Serialize>(value: &T) -> Vec<u8> {
+    postcard::to_allocvec(value).unwrap()
+}
+
+fn checkpoint_path(name: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "basin-exact-global-best-pso-{}-{name}.ckpt",
+        std::process::id()
+    ))
+}
+
+fn remove_checkpoint(path: &PathBuf) {
+    let _ = std::fs::remove_file(path);
+    let mut temporary = path.as_os_str().to_owned();
+    temporary.push(".tmp");
+    let _ = std::fs::remove_file(PathBuf::from(temporary));
+}
+
+#[test]
+fn serialized_progress_only_restarts_with_reevaluation() {
+    let prior = Executor::new(problem(), solver(), TestState::empty())
+        .max_iter(19)
+        .run()
+        .unwrap()
+        .into_state();
+    let bytes = encoded(&prior);
+    let (restored, remaining): (TestState, &[u8]) =
+        postcard::take_from_bytes(&bytes).unwrap();
+    assert!(remaining.is_empty());
+    let fresh = Executor::new(problem(), solver(), restored)
+        .require_evaluated_state()
+        .max_iter(0)
+        .run_with_solver()
+        .unwrap();
+    assert_eq!(fresh.iter(), 0);
+    assert_eq!(fresh.cost_evals(), 14);
+    assert_eq!(fresh.state.candidates(), prior.candidates());
+    assert_eq!(
+        fresh.solver.personal_best_positions(),
+        fresh.state.candidates()
+    );
+    assert_eq!(fresh.solver.personal_best_costs(), fresh.state.costs());
+}
+
+#[test]
+fn solver_aware_checkpoint_resume_is_bit_identical() {
+    let reference_path = checkpoint_path("reference");
+    let split_path = checkpoint_path("split");
+    let resumed_path = checkpoint_path("resumed");
+    for path in [&reference_path, &split_path, &resumed_path] {
+        remove_checkpoint(path);
+    }
+
+    let reference = Executor::new(problem(), solver(), TestState::empty())
+        .max_iter(55)
+        .checkpoint_with(
+            ExactCheckpointWriter::new(&reference_path),
+            ObserverMode::Never,
+        )
+        .run()
+        .unwrap();
+    Executor::new(problem(), solver(), TestState::empty())
+        .max_iter(19)
+        .checkpoint_with(
+            ExactCheckpointWriter::new(&split_path),
+            ObserverMode::Never,
+        )
+        .run()
+        .unwrap();
+
+    let checkpoint: ExactCheckpoint<TestSolver, TestState> =
+        read_exact_checkpoint(&split_path).unwrap();
+    assert_eq!(checkpoint.state().iter(), 19);
+    let resumed = Executor::resume_from_checkpoint(problem(), checkpoint)
+        .max_iter(55)
+        .checkpoint_with(
+            ExactCheckpointWriter::new(&resumed_path),
+            ObserverMode::Never,
+        )
+        .run()
+        .unwrap();
+
+    assert_eq!(encoded(&resumed.state), encoded(&reference.state));
+    assert_eq!(
+        std::fs::read(&resumed_path).unwrap(),
+        std::fs::read(&reference_path).unwrap()
+    );
+
+    for path in [&reference_path, &split_path, &resumed_path] {
+        remove_checkpoint(path);
+    }
+}

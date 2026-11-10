@@ -36,11 +36,11 @@ def version_tag(version):
     return "v" + version
 
 
-def validate_identity(info, version, sha):
+def validate_identity(info, version, sha, channel="desktop"):
     if info.get("version") != version or info.get("commit") != sha or info.get("dirty"):
         raise RuntimeError("An artifact does not match the clean tagged release source")
-    if info.get("channel") != "desktop":
-        raise RuntimeError("Expected a desktop build")
+    if info.get("channel") != channel:
+        raise RuntimeError(f"Expected a {channel} build")
 
 
 def find_run(repo, branch, name, sha=None, timeout=180):
@@ -79,7 +79,7 @@ def wait_run(repo, run_id):
 
 
 def signing_branch(version, sha):
-    branch = "codex/mossa-release-" + version
+    branch = "codex/mossa-release-" + version + "-" + sha[:12]
     workflow = (ROOT / ".github/release-templates/macos-signing.yml").read_text()
     for key, value in {"@VERSION@": version, "@SOURCE_SHA@": sha, "@SIGNING_BRANCH@": branch}.items():
         workflow = workflow.replace(key, value)
@@ -119,17 +119,17 @@ def collect_artifacts(work, version, sha):
     output = work / "assets"
     output.mkdir(exist_ok=True)
     identities = {}
-    for platform in ("windows", "linux", "macos"):
+    for platform in ("windows", "linux", "macos", "browser"):
         folder = work / platform
         info = json.loads(next(folder.rglob("build-info.json")).read_text())
-        validate_identity(info, version, sha)
+        validate_identity(info, version, sha, "github-pages" if platform == "browser" else "desktop")
         identities[platform] = info
         for file in folder.rglob("*"):
-            if file.is_file() and (file.suffix in (".exe", ".msi", ".deb", ".AppImage", ".dmg") or file.name.endswith(".app.tar.gz")):
+            if file.is_file() and (file.suffix in (".exe", ".msi", ".deb", ".AppImage", ".dmg", ".zip") or file.name.endswith(".app.tar.gz")):
                 shutil.copy2(file, output / file.name)
     expected = {f"MossA_{version}_x64-setup.exe", f"MossA_{version}_x64_en-US.msi",
                 f"MossA_{version}_amd64.deb", f"MossA_{version}_amd64.AppImage",
-                f"MossA_{version}_universal.dmg", f"MossA_{version}_universal.app.tar.gz"}
+                f"MossA_{version}_universal.dmg", f"MossA_{version}_universal.app.tar.gz", f"MossA_{version}_web.zip"}
     if {p.name for p in output.iterdir()} - {"SHA256SUMS.txt", "build-provenance.json"} != expected:
         raise RuntimeError("The release installer set is incomplete or contains unexpected files")
     receipts = {}
@@ -155,8 +155,12 @@ def main():
     parser.add_argument("version")
     parser.add_argument("--ref", default="main")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--notes-file", type=Path, help="Use reviewed Markdown release notes instead of the generic preview notes")
     args = parser.parse_args()
     tag = version_tag(args.version)
+    reviewed_notes = args.notes_file.read_text() if args.notes_file else None
+    if reviewed_notes is not None and not reviewed_notes.strip():
+        raise ValueError("Release notes must not be empty")
     origin = command("git", "remote", "get-url", "origin").rstrip("/")
     if not re.fullmatch(r"(?:https://github\.com/|git@github\.com:|ssh://git@github\.com/)CPrescher/MossA(?:\.git)?", origin, re.I):
         raise RuntimeError("Run from the CPrescher/MossA checkout; origin points elsewhere")
@@ -189,6 +193,7 @@ def main():
     wait_run(SIGNING_REPO, signing_run)
     for platform, artifact in (("windows", "MossA-x86_64-pc-windows-msvc"), ("linux", "MossA-x86_64-unknown-linux-gnu")):
         download(REPO, desktop_run, artifact, work / platform)
+    download(REPO, desktop_run, "MossA-browser", work / "browser")
     download(SIGNING_REPO, signing_run, "MossA-macOS-universal-notarized", work / "macos")
     download(SIGNING_REPO, signing_run, "MossA-notarization-recovery", work / "receipts")
     assets, identities, receipts = collect_artifacts(work, args.version, sha)
@@ -208,7 +213,7 @@ This is a scientific preview. Review model assumptions, calibration, residuals, 
 Source: `{sha}`. SHA256SUMS.txt and build-provenance.json identify the downloads and accepted Apple submissions.
 """
     notes_file = work / "release-notes.md"
-    notes_file.write_text(notes)
+    notes_file.write_text(reviewed_notes if reviewed_notes is not None else notes)
     # Recheck after CI; never clobber a release somebody published meanwhile.
     existing = subprocess.run(["gh", "release", "view", tag, "--repo", REPO, "--json", "isDraft"], text=True, capture_output=True)
     if existing.returncode == 0 and not json.loads(existing.stdout)["isDraft"]:

@@ -1,0 +1,2046 @@
+use crate::EvaluationBuffers;
+use crate::core::convergence::{
+    NativeConvergenceDiagnostics, NativeConvergenceTest,
+};
+use crate::core::least_squares::evaluation::Evaluation;
+use crate::core::math::{
+    AddDiagonalVectorInPlace, ComponentDivAssign, ComponentMaxAssign,
+    ComponentMulAssign, ComponentZip, Dot, FactorizePivotedQr,
+    FloorZerosInPlace, GramMatrix, LinearSolveSpd, MatDiagonal,
+    MatTransposeVec, NegInPlace, NormInfinity, NormSquared, QrSolveError,
+    RegularizedQrSolve, Scalar, ScaleInPlace, ScaledAdd,
+};
+use crate::core::problem::Problem;
+use crate::core::problem::buffers::BufferStorage;
+#[cfg(test)]
+use crate::core::problem::{Jacobian, Residual};
+use crate::core::solver::Solver;
+use crate::core::state::{PointState, State};
+use crate::core::termination::Termination;
+
+use super::least_squares_diagnostics::{
+    LeastSquaresCheck, LeastSquaresDiagnostics, LeastSquaresObservation, Trace,
+    vector,
+};
+
+#[cfg(test)]
+mod accounting;
+mod damping;
+mod stopping;
+use damping::{
+    rescale_robust_damping, scaled_norm, trust_region_step, update_radius,
+};
+use stopping::{
+    all_finite, finite_unchanged_trial, orthogonality_converged,
+    relative_step_converged, relative_trust_radius_converged,
+};
+
+/// Damping-parameter selection for both Levenberg-Marquardt factorizations.
+///
+/// Both strategies use the same monotone Marquardt scaling matrix `D`, gain
+/// ratio, and shared convergence tests. The optional scaled-radius test applies
+/// only to trust-region damping. Configure with
+/// [`LevenbergMarquardt::with_damping`] or
+/// [`LevenbergMarquardtQr::with_damping`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[non_exhaustive]
+pub enum LmDamping {
+    /// Nielsen's smooth gain-ratio update, starting at
+    /// [`LevenbergMarquardt::with_tau`].
+    Nielsen,
+    /// Select damping to fit a scaled trust radius: `sqrt(hᵀDh) ≈ δ`.
+    /// This is the default for both `f32` and `f64`.
+    ///
+    /// An undamped Gauss-Newton step is used when it fits. Otherwise, a
+    /// safeguarded scalar search selects positive damping, reusing the linear
+    /// model without extra residual or Jacobian callbacks. Radius initialization
+    /// and updates follow MINPACK's [`lmder`](https://netlib.org/minpack/lmder.f).
+    /// Configure the initial radius with
+    /// [`LevenbergMarquardt::with_initial_step_bound`].
+    ///
+    /// This is not an exact MINPACK port: parameter selection uses bracketed
+    /// solves instead of `lmpar`'s Newton corrections, rank-deficient undamped
+    /// systems are regularized rather than truncated, and Basin's acceptance
+    /// and stopping tests retain their documented meanings.
+    #[default]
+    TrustRegion,
+}
+
+/// Levenberg-Marquardt solver for nonlinear least-squares problems
+/// `min ½‖r(x)‖²`, with Marquardt diagonal scaling and configurable damping.
+/// The default is scaled trust-region damping for both `f32` and `f64`.
+/// Select [`LmDamping::Nielsen`] with [`Self::with_damping`] for Nielsen's
+/// 1999 smooth μ-update.
+///
+/// Both strategies solve the damped normal equations
+/// `(JᵀJ + μ·D) h = −Jᵀr` via Cholesky and accept steps with positive
+/// gain ratio `ρ = (F(x) − F(x+h)) / (L(0) − L(h))`.
+///
+/// **Marquardt scaling (`μ·D`, not `μI`).** The damping matrix is the
+/// diagonal of the Gram, `D = diag(JᵀJ)` (the per-parameter curvature),
+/// rather than the identity. This makes the trust region ellipsoidal
+/// in the metric of the columns of `J`, so the algorithm is invariant
+/// to diagonal rescaling of the parameters (Marquardt 1963; Moré 1978,
+/// *The Levenberg-Marquardt Algorithm: Implementation and Theory*).
+/// Isotropic `μI` damping over-damps well-scaled directions and
+/// under-damps poorly-scaled ones when the columns of `J` have very
+/// different norms (e.g. parameters in a mixed log/linear/angle
+/// encoding), which biases the step and can pull the iterate into a
+/// worse basin. `D` is maintained as a **monotone running max**
+/// `D_k = max(D_{k−1}, diag(J(x_k)ᵀJ(x_k)))` so a column whose
+/// curvature momentarily drops keeps the damping floor it earned
+/// earlier (Moré 1978; the same safeguard MINPACK applies to its
+/// column-norm scaling). Columns that are exactly zero at `x₀` (a
+/// parameter with no first-order effect on any residual) would make
+/// `μ·D` vanish there and the Gram singular; following MINPACK, their
+/// scale is floored to `1` at `init` (see `FloorZerosInPlace`), so a
+/// fully-insensitive parameter stays put rather than failing Cholesky.
+///
+/// **Trust-region damping (default).** [`LmDamping::TrustRegion`] tries the
+/// undamped Gauss-Newton step first, then searches for damping with
+/// `sqrt(hᵀDh)` within 10% of the current radius. Rank safeguards or the
+/// inner attempt limit may yield a shorter
+/// feasible regularized step. [`Self::with_initial_step_bound`] sets the initial
+/// radius factor (default `100`); `tau` has no effect on this strategy.
+/// Initialization and radius updates follow MINPACK's
+/// [`lmder`](https://netlib.org/minpack/lmder.f), while a bracketed scalar
+/// search replaces [`lmpar`](https://netlib.org/minpack/lmpar.f)'s Newton
+/// corrections. Inner solves reuse the current model and require no additional
+/// residual or Jacobian callbacks. Acceptance remains `ρ > 0`, and all
+/// convergence settings below keep the same meaning, including the unscaled
+/// relative step test. [`Self::with_relative_trust_radius_tolerance`] adds an
+/// optional scaled-radius check at the current iterate. This option does not
+/// reproduce MINPACK's complete algorithm or stopping behavior.
+///
+/// **Nielsen damping (opt-in).** [`LmDamping::Nielsen`] adapts μ directly
+/// from the gain ratio (Nielsen eq. 2.2). On a successful step (ρ > 0),
+/// `μ ← μ · max(1/3, 1 − (2ρ−1)³)`; on a failed step (ρ ≤ 0),
+/// `μ ← μ·ν, ν ← 2ν`, with ν initialized to 2. The initial `μ₀ = τ`
+/// is dimensionless because the per-parameter magnitude lives in `D`.
+/// [`Self::with_tau`] sets τ (default `1e-3`); use a smaller value when
+/// `x₀` is believed close to the optimum and a larger value when far.
+/// See Nielsen, *Damping Parameter in Marquardt's Method*
+/// (IMM-REP-1999-05), and Madsen, Nielsen, Tingleff (2004),
+/// *Methods for Non-Linear Least Squares Problems*, §3.2.
+///
+/// **Linear solve.** Cholesky is the default and retains dense and sparse
+/// backend coverage. [`Self::with_pivoted_qr`] selects
+/// [`LevenbergMarquardtQr`], which solves the stacked least-squares system
+/// `[J; √(μD)]` without forming `JᵀJ`. QR avoids normal-equation roundoff
+/// near rank deficiency, but damping and stopping remain independent choices.
+/// Bounded LM also uses normal equations; its availability does not imply QR support.
+///
+/// # Failure modes
+///
+/// - **Cholesky failure under bumped μ.** Roundoff can defeat positive
+///   definiteness when damping is small relative to the Jacobian's
+///   conditioning. If no usable step is available, the inner loop increases
+///   μ and retries, returning [`crate::TerminationCode::SolverFailed`] if the attempt
+///   cap is reached or damping overflows. Positive damping does not guarantee
+///   accurate steps from normal equations. Initially zero columns have a unit scaling floor.
+/// - **Divergence on highly nonlinear or poorly initialized problems.**
+///   The damping itself prevents divergent steps (failed steps are
+///   rejected via the gain-ratio test), so divergence manifests as
+///   μ growing without bound. Catch this with
+///   [`max_iter`](crate::Executor::max_iter) on the executor.
+/// - **Unchanged finite trial.** By default, a rejected trial whose computed
+///   step leaves every parameter unchanged reports
+///   [`crate::TerminationCode::NumericalNoProgress`]. This can occur at an accurate
+///   rounded solution or an inaccurate, heavily damped point. An outer solver
+///   may consume the result and continue. Configure this independently with
+///   [`Self::with_no_progress_check`].
+///
+/// # Convergence
+///
+/// Only the absolute gradient test is enabled by default. Its threshold
+/// depends on residual and parameter units: multiplying all residuals by
+/// a constant multiplies `Jᵀr` by that constant squared. Choose tolerances
+/// for the problem's scale and required accuracy; enabling an additional
+/// test does not disable the absolute gradient test.
+///
+/// Five native tests combine with OR and report
+/// [`crate::TerminationCode::SolverConverged`]:
+///
+/// - [`with_absolute_gradient_tolerance`](Self::with_absolute_gradient_tolerance):
+///   `‖Jᵀr‖_∞ ≤ tolerance`, default `1e-8`.
+/// - [`with_gradient_orthogonality_tolerance`](Self::with_gradient_orthogonality_tolerance):
+///   `max_j |(Jᵀr)_j| / (‖J[:,j]‖ · ‖r‖) ≤ tolerance`, disabled by default.
+///   This dimensionless cosine test is invariant to residual scaling.
+/// - [`with_relative_model_reduction_tolerance`](Self::with_relative_model_reduction_tolerance):
+///   `|actred| ≤ tolerance · f`, `prered ≤ tolerance · f`, and `gain_ratio ≤ 2`,
+///   disabled by default. Predicted reduction comes from the LM model, so this
+///   differs from an observed cost-change test.
+/// - [`with_relative_step_tolerance`](Self::with_relative_step_tolerance):
+///   `‖h‖ ≤ tolerance · ‖x‖` for the internal trial step, disabled by default.
+/// - [`with_relative_trust_radius_tolerance`](Self::with_relative_trust_radius_tolerance):
+///   `δ ≤ tolerance · sqrt(xᵀ D x)` for the updated trust radius, disabled by
+///   default and inactive under Nielsen damping. A small radius does not
+///   establish fit accuracy or parameter recovery.
+///
+/// Each accepts a finite nonnegative scalar or `None`. Zero requests an
+/// exact-zero threshold. Gradient tests run before computing a step; model
+/// reduction, relative step, and trust-radius tests run where the trial
+/// diagnostics are valid.
+/// Use [`Executor::run_with_solver`](crate::Executor::run_with_solver) and
+/// [`OptimizationResultWithSolver::native_convergence_tests`](crate::OptimizationResultWithSolver::native_convergence_tests)
+/// to identify all passing native tests at the stopping stage.
+/// Observed absolute-step and cost-change checks are also opt-in and combine
+/// with native checks using OR. Execution budgets belong on the executor.
+/// The least-squares gradient `Jᵀr` is computed internally; [`PointState`] does
+/// not expose a [`GradientState`](crate::GradientState).
+/// The numerical no-progress safeguard runs after native convergence tests.
+/// Disabling convergence tests does not disable this safeguard; set
+/// [`with_no_progress_check(false)`](Self::with_no_progress_check)
+/// to retain the previous budget-stop behavior at an unchanged trial.
+///
+/// For example, to replace the absolute gradient test with orthogonality
+/// and relative model-reduction tests for an `f64` problem:
+///
+/// ```
+/// use basin::{DenseMatrix, LevenbergMarquardt};
+///
+/// let solver: LevenbergMarquardt<Vec<f64>, DenseMatrix> =
+///     LevenbergMarquardt::new()
+///         .with_absolute_gradient_tolerance(None)
+///         .with_gradient_orthogonality_tolerance(1e-8)
+///         .with_relative_model_reduction_tolerance(1e-8);
+/// ```
+///
+/// These values illustrate a configuration, not a guarantee of parameter
+/// accuracy. Relative stopping tests do not correct poor conditioning, and
+/// a small change can indicate stagnation. Inspect the termination reason
+/// and the returned solution, and retain an executor budget.
+///
+/// # Backends
+///
+/// LA-heavy: the default `Vec<f64>` backend (over the hand-rolled
+/// [`DenseMatrix<f64>`](crate::DenseMatrix), via a pure-Rust Cholesky),
+/// nalgebra (`DVector<f64>`/`DMatrix<f64>`), faer (`Col<f64>` /
+/// `Mat<f64>`), and ndarray (`Array1<f64>`/`Array2<f64>`, the latter over
+/// the same pure-Rust Cholesky) at the dense tier; nalgebra-sparse
+/// (`DVector<f64>`/`CscMatrix<f64>`) and faer-sparse (`Col<f64>` /
+/// `SparseColMat<usize, f64>`) at the sparse tier.
+/// The sparse damping path requires the diagonal of `JᵀJ` to be in the
+/// CSC pattern (always true when `J` has no zero columns); see
+/// `AddDiagonalVectorInPlace` and `MatDiagonal`.
+/// All support `f32` and `f64`; use `LevenbergMarquardt::default()` for `f32`.
+/// Robust objectives additionally require
+/// [`ScaleRowsInPlace`](crate::ScaleRowsInPlace) on custom Jacobian types.
+///
+/// # State convention
+///
+/// Wrap the raw problem in [`RobustLeastSquares`](crate::RobustLeastSquares)
+/// to minimize a robust loss
+/// with either damping strategy. The adapter supplies the safeguarded
+/// Gauss–Newton model. Reported costs, actual reductions, and convergence
+/// use the robust objective and its gradient.
+///
+/// With Nielsen damping, growth of the robust model's diagonal scaling `D`
+/// rescales `μ` by `max_j(D_old[j] / D_new[j])`, where
+/// `D_new[j] = max(D_old[j], diag(J_modelᵀ J_model)[j])`. This prevents a
+/// common curvature increase from abruptly amplifying the effective damping
+/// `μD`, while retaining at least the previous damping in every coordinate.
+/// If any diagonal entry stays unchanged, `μ` stays unchanged as well.
+/// The adjustment is a Basin safeguard for the varying robust model; the
+/// usual gain-ratio update and trial acceptance still apply.
+///
+/// Heavy damping can produce a tiny accepted step and tiny model reduction
+/// while the robust gradient remains large. Enabling both progress tests does
+/// not require stationarity: they combine with OR, and even their conjunction
+/// can pass far from a minimum. A positive gain ratio does not resolve this.
+/// When stationarity is required, use gradient tests alone and leave native
+/// step, model-reduction, trust-radius, and observed progress checks disabled.
+/// Alternatively, guard native relative progress tests with
+/// [`Self::with_absolute_progress_gradient_tolerance`]. The guard checks the
+/// retained point, charging and caching a new Jacobian after acceptance.
+/// The default absolute gradient test follows this configuration; choose its
+/// threshold for the objective and parameter scales. The robust normalized
+/// gradient test is an alternative, not an accuracy certificate, and can require
+/// an exact zero near a zero-residual minimum.
+///
+/// For an ordinary residual problem, `state.cost` carries the LM convention
+/// `½‖r‖²`, derived from the
+/// residual the solver evaluates itself. The bound on `P` is
+/// [`Residual`](crate::Residual) + [`Jacobian`](crate::Jacobian), not
+/// [`CostFunction`](crate::core::problem::CostFunction); problems
+/// whose user-facing `cost()` uses an unscaled `Σ rᵢ²` form will see
+/// `state.cost()` differ from `problem.cost(state.param())` by a
+/// factor of two. Both go to zero at the optimum, so cost-based
+/// termination criteria are unaffected.
+///
+/// # Examples
+///
+/// Least-squares fit of an affine residual `r(x) = (x₀ − 1, x₁ − 2)` whose
+/// minimum is `(1, 2)`. Levenberg–Marquardt binds on
+/// [`Residual`](crate::Residual) +
+/// [`Jacobian`](crate::Jacobian) (not [`CostFunction`](crate::core::problem::CostFunction))
+/// and runs on the matrix-capable backends:
+///
+/// ```
+/// # #[cfg(feature = "nalgebra_v0_35")] {
+/// use basin::{PointState, Executor, Jacobian, LevenbergMarquardt, Residual};
+/// use nalgebra::{DMatrix, DVector};
+///
+/// struct Affine;
+/// impl Residual for Affine {
+///     type Param = DVector<f64>;
+///     type Output = DVector<f64>;
+///     type Error = std::convert::Infallible;
+///     fn residual(&self, x: &DVector<f64>) -> Result<DVector<f64>, Self::Error> {
+///         Ok(DVector::from_vec(vec![x[0] - 1.0, x[1] - 2.0]))
+///     }
+/// }
+/// impl Jacobian for Affine {
+///     type Jacobian = DMatrix<f64>;
+///     fn jacobian(&self, _x: &DVector<f64>) -> Result<DMatrix<f64>, Self::Error> {
+///         Ok(DMatrix::identity(2, 2))
+///     }
+/// }
+///
+/// let result = Executor::new(
+///     Affine,
+///     LevenbergMarquardt::new(),
+///     PointState::new(DVector::from_vec(vec![0.0, 0.0])),
+/// )
+/// .max_iter(50)
+/// .run()
+/// .unwrap();
+/// assert!((result.param()[0] - 1.0).abs() < 1e-6);
+/// assert!((result.param()[1] - 2.0).abs() < 1e-6);
+/// # }
+/// ```
+pub struct LevenbergMarquardt<V, M, F: Scalar = f64> {
+    tol_grad: Option<F>,
+    tol_grad_rel: Option<F>,
+    tol_cost_rel: Option<F>,
+    tol_step_rel: Option<F>,
+    tol_radius_rel: Option<F>,
+    tol_progress_grad: Option<F>,
+    numerical_no_progress: bool,
+    tau: F,
+    damping: LmDamping,
+    initial_step_bound: F,
+    radius: Option<F>,
+    first_trust_step: bool,
+    max_inner_attempts: u32,
+
+    mu: Option<F>,
+    nu: F,
+    rejected_step: bool,
+
+    // Monotone Marquardt scaling diagonal D = max diag(JᵀJ). Zero
+    // columns are floored to one so damping keeps the system nonsingular.
+    diag: Option<V>,
+
+    // Rejected steps leave these quantities valid. Accepted steps retain
+    // the trial residual but invalidate the linear model and gradient.
+    r_cache: Option<V>,
+    trial_residual: Option<V>,
+    model_cache: Option<Result<M, QrSolveError>>,
+    jtr_cache: Option<V>,
+    jacobian_buffer: Option<M>,
+    failed: bool,
+    native_convergence: Vec<NativeConvergenceTest>,
+    trace: Option<Trace<F>>,
+}
+
+impl<V, M, F: Scalar> NativeConvergenceDiagnostics
+    for LevenbergMarquardt<V, M, F>
+{
+    fn native_convergence_tests(&self) -> &[NativeConvergenceTest] {
+        &self.native_convergence
+    }
+}
+
+impl<V, M, F: Scalar> LeastSquaresDiagnostics<F>
+    for LevenbergMarquardt<V, M, F>
+{
+    fn least_squares_observations(&self) -> &[LeastSquaresObservation<F>] {
+        self.trace.as_ref().map_or(&[], |trace| &trace.observations)
+    }
+}
+
+impl<V, M, F: Scalar> Default for LevenbergMarquardt<V, M, F> {
+    fn default() -> Self {
+        Self::defaults()
+    }
+}
+
+impl<V, M> LevenbergMarquardt<V, M> {
+    /// Levenberg-Marquardt with trust-region damping: absolute gradient
+    /// tolerance `1e-8`, orthogonality and all relative convergence tests
+    /// disabled, initial step-bound factor `100`, `max_inner_attempts = 50`,
+    /// and numerical no-progress handling enabled.
+    pub fn new() -> Self {
+        Self::defaults()
+    }
+}
+
+impl<V, M, F: Scalar> LevenbergMarquardt<V, M, F> {
+    fn defaults() -> Self {
+        Self {
+            tol_grad: Some(F::from_f64(1e-8).unwrap()),
+            tol_grad_rel: None,
+            tol_cost_rel: None,
+            tol_step_rel: None,
+            tol_radius_rel: None,
+            tol_progress_grad: None,
+            numerical_no_progress: true,
+            tau: F::from_f64(1e-3).unwrap(),
+            damping: LmDamping::default(),
+            initial_step_bound: F::from_f64(100.0).unwrap(),
+            radius: None,
+            first_trust_step: true,
+            max_inner_attempts: 50,
+            mu: None,
+            nu: F::from_f64(2.0).unwrap(),
+            rejected_step: false,
+            diag: None,
+            r_cache: None,
+            trial_residual: None,
+            model_cache: None,
+            jtr_cache: None,
+            jacobian_buffer: None,
+            failed: false,
+            native_convergence: Vec::new(),
+            trace: None,
+        }
+    }
+
+    /// Enable native model and trial observations (disabled by default).
+    ///
+    /// Recording adds allocations and arithmetic but no problem evaluations.
+    /// Fresh runs reset observations; exact continuation preserves the sequence.
+    /// Read each batch with [`LeastSquaresDiagnostics::least_squares_observations`].
+    pub fn with_trial_diagnostics(mut self, enabled: bool) -> Self {
+        self.trace = enabled.then(Trace::default);
+        self
+    }
+
+    /// Configure the infinity norm of J-transpose times residual.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_absolute_gradient_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_grad = crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Require stationarity before a model-reduction, trial-step, or radius stop.
+    ///
+    /// When a relative progress test passes, also require the objective gradient
+    /// infinity norm at the retained point to be at most this tolerance. For
+    /// robust objectives, this is the actual loss gradient, not the gradient of
+    /// an unweighted residual sum. The progress tests still combine with OR,
+    /// and each passing test combines with this guard using AND. Independent
+    /// absolute-gradient and orthogonality stops remain sufficient on their own.
+    ///
+    /// Disabled by default. `None` disables the guard; zero requires an exactly
+    /// zero gradient. Values must be finite and nonnegative. Repeated calls
+    /// replace the setting. Configure before starting a solve.
+    ///
+    /// A rejected trial reuses its base gradient. An accepted trial needs one
+    /// counted Jacobian callback at the new point; its residual and resulting
+    /// model are cached for continuation if the guard fails. Callback errors,
+    /// invalid models, and numerical no-progress stops retain their failure or
+    /// stall classifications. Diagnostics retain the unguarded progress checks
+    /// and add `progress_gradient`; successful reports contain compound custom
+    /// criteria with both progress and gradient measurements.
+    ///
+    /// This absolute guard depends on objective and parameter units. It does
+    /// not certify parameter recovery or a global minimum. Choose its threshold
+    /// using derivative accuracy and problem scales rather than copying a
+    /// progress tolerance.
+    pub fn with_absolute_progress_gradient_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_progress_grad =
+            crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Configure the maximum residual/Jacobian-column absolute cosine.
+    ///
+    /// With [`RobustLeastSquares`](crate::RobustLeastSquares), the test is instead
+    /// `max_j |g_j| / (sqrt(2C) · ‖J̃_j‖) ≤ tolerance`, where `C` is the
+    /// robust cost, `g` its gradient, and `J̃` the safeguarded model Jacobian.
+    /// The model residual norm can grow under curvature clipping and must
+    /// not be used to infer stationarity.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_gradient_orthogonality_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_grad_rel = crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Configure both actual and predicted reduction relative to the current cost, with gain ratio at most two.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_relative_model_reduction_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_cost_rel = crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Configure the attempted step norm relative to the current iterate norm.
+    ///
+    /// This uses the unscaled internal step under either damping strategy.
+    /// [`Self::with_relative_trust_radius_tolerance`] configures the separate
+    /// scaled-radius test for trust-region damping.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_relative_step_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_step_rel = crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Configure the scaled trust radius relative to the scaled iterate norm.
+    ///
+    /// With [`LmDamping::TrustRegion`], reports
+    /// [`crate::TerminationCode::SolverConverged`] when
+    /// `δ ≤ tolerance * sqrt(xᵀ D x)`, using the updated radius and the
+    /// current monotone Marquardt diagonal. The check runs after acceptance:
+    /// `x` is the accepted iterate, or the base iterate after rejection.
+    /// Parameters, step, residuals, gradient, costs, and reduction diagnostics
+    /// must be finite. It combines with other native tests using OR and takes
+    /// precedence over the numerical no-progress safeguard.
+    ///
+    /// Disabled by default. `None` disables the test; zero requires an exactly
+    /// zero radius, not just a zero step. The existing positive radius safeguards
+    /// remain in effect. Values must be finite and nonnegative. Repeated calls
+    /// replace this setting. Configure before starting a solve.
+    ///
+    /// This setting is retained but inactive with [`LmDamping::Nielsen`], so
+    /// damping and tolerance can be configured in either order. It does not
+    /// change [`Self::with_relative_step_tolerance`], which tests the unscaled
+    /// attempted step. A small radius can occur far from a solution and does
+    /// not establish fit accuracy or parameter recovery.
+    ///
+    /// ```
+    /// use basin::{DenseMatrix, LevenbergMarquardt, LmDamping};
+    /// let solver: LevenbergMarquardt<Vec<f64>, DenseMatrix> =
+    ///     LevenbergMarquardt::new()
+    ///         .with_damping(LmDamping::TrustRegion)
+    ///         .with_relative_trust_radius_tolerance(1e-12);
+    /// ```
+    pub fn with_relative_trust_radius_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.tol_radius_rel =
+            crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// Stop after one rejected finite trial whose computed `x + h` equals
+    /// the base `x` componentwise. Enabled by default.
+    ///
+    /// Reports [`crate::TerminationCode::NumericalNoProgress`], which permits an
+    /// outer solver to consume the result but makes no convergence, fit, or
+    /// parameter-recovery claim. Excessive damping can trigger this safeguard
+    /// at an inaccurate point. A rejected trial with different coordinates
+    /// does not qualify, even though the stored iterate remains unchanged.
+    ///
+    /// The usual trial residual callback and damping updates still run. The
+    /// parameters, step, residuals, gradient, costs, and reduction diagnostics
+    /// must be finite. Native convergence tests take precedence; callback
+    /// errors and model-solve failures retain their existing routing.
+    /// As a mid-iteration stop, it precedes observed-step and cost-change
+    /// checks that would run at the next iteration boundary.
+    ///
+    /// This safeguard is independent of convergence tolerances: `None` still
+    /// disables its particular test, and zero still requests exact zero.
+    /// Set this to `false` to recover the previous behavior when all
+    /// convergence tests are disabled, including budget stops at zero residual.
+    /// Repeated calls replace the setting. Configure before starting a solve.
+    pub fn with_no_progress_check(mut self, enabled: bool) -> Self {
+        self.numerical_no_progress = enabled;
+        self
+    }
+
+    /// Select how damping is adapted, independently of the factorization.
+    ///
+    /// Default: [`LmDamping::TrustRegion`] for both scalar types. Both
+    /// strategies preserve the same scaling, acceptance (`gain_ratio > 0`),
+    /// and shared stopping tests.
+    /// [`Self::with_relative_trust_radius_tolerance`] is active only with
+    /// trust-region damping. Configure this before starting a solve.
+    pub fn with_damping(mut self, damping: LmDamping) -> Self {
+        self.damping = damping;
+        self
+    }
+
+    /// Initial scaled trust-radius factor, used by [`LmDamping::TrustRegion`].
+    ///
+    /// Sets `δ₀ = factor * sqrt(x₀ᵀ D₀ x₀)`, or `factor` when the scaled
+    /// starting point is zero. `D₀` is the Marquardt diagonal, including its
+    /// unit floor for zero columns. Default: `100`, as in MINPACK. Smaller
+    /// values restrict the first step. Has no effect on Nielsen damping.
+    ///
+    /// # Panics
+    ///
+    /// Panics unless `factor` is finite and strictly positive.
+    pub fn with_initial_step_bound(mut self, factor: F) -> Self {
+        assert!(
+            factor.is_finite() && factor > F::zero(),
+            "initial step bound must be finite and > 0"
+        );
+        self.initial_step_bound = factor;
+        self
+    }
+
+    /// Relative initial damping `τ`: `μ₀ = τ`, giving an initial
+    /// per-column damping of `τ·diag(J(x₀)ᵀJ(x₀))` under Marquardt
+    /// scaling. Use a smaller value (e.g. `1e-6`) when `x₀` is believed
+    /// close to the optimum; a larger value (e.g. `1.0`) when far from
+    /// it. Default `1e-3` (Nielsen's "moderate trust"). Requires explicitly
+    /// selecting [`LmDamping::Nielsen`] with [`Self::with_damping`]; it has
+    /// no effect on the default [`LmDamping::TrustRegion`] strategy.
+    pub fn with_tau(mut self, tau: F) -> Self {
+        assert!(tau > F::zero(), "tau must be > 0");
+        self.tau = tau;
+        self
+    }
+
+    /// Maximum number of damping bumps inside a single outer iteration
+    /// before giving up with [`crate::TerminationCode::SolverFailed`]. With Nielsen
+    /// damping, each bump multiplies μ by ν (initially 2) and doubles ν;
+    /// overflow can end retries before the cap. Default `50`.
+    ///
+    /// With trust-region damping, this caps all model solves per iteration,
+    /// including the undamped attempt and the radius search. At the limit,
+    /// the smallest-damping feasible step found is used; if none was found,
+    /// the solver reports `SolverFailed` without a trial residual callback.
+    pub fn with_max_inner_attempts(mut self, n: u32) -> Self {
+        assert!(n > 0, "max_inner_attempts must be > 0");
+        self.max_inner_attempts = n;
+        self
+    }
+}
+
+impl<P, V, M, F, E> Solver<P, PointState<V, F>> for LevenbergMarquardt<V, M, F>
+where
+    F: Scalar,
+    Problem<P>: Evaluation<V, M, F, Error = E>,
+    V: ScaledAdd<F>
+        + NormSquared<F>
+        + NormInfinity<F>
+        + NegInPlace
+        + Dot<F>
+        + ScaleInPlace<F>
+        + ComponentMulAssign
+        + ComponentDivAssign
+        + ComponentZip<F>
+        + ComponentMaxAssign
+        + FloorZerosInPlace<F>
+        + Clone,
+    M: GramMatrix
+        + MatTransposeVec<V>
+        + LinearSolveSpd<V>
+        + AddDiagonalVectorInPlace<V>
+        + MatDiagonal<V>
+        + Clone,
+{
+    type Error = E;
+    fn should_check_iterate_change(&self) -> bool {
+        !self.rejected_step
+    }
+    fn reset_convergence(&mut self) {
+        self.native_convergence.clear();
+        if let Some(trace) = &mut self.trace {
+            trace.reset();
+        }
+    }
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, Self::Error> {
+        let mut buffer = self.jacobian_buffer.take();
+        let result = self.init_model::<_, M, NormalEquations>(
+            problem,
+            state,
+            &mut buffer,
+        );
+        self.jacobian_buffer = buffer;
+        result
+    }
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<crate::SolverStep<PointState<V, F>>, Self::Error> {
+        let mut buffer = self.jacobian_buffer.take();
+        let result = self.next_iter_model::<_, M, NormalEquations>(
+            problem,
+            state,
+            None,
+            &mut buffer,
+        );
+        self.jacobian_buffer = buffer;
+        result
+    }
+}
+
+impl<V, C, F: Scalar> LevenbergMarquardt<V, C, F> {
+    fn init_model<E, M, Model>(
+        &mut self,
+        problem: &mut E,
+        mut state: PointState<V, F>,
+        jacobian_buffer: &mut Option<M>,
+    ) -> Result<PointState<V, F>, E::Error>
+    where
+        E: Evaluation<V, M, F>,
+        M: MatTransposeVec<V>,
+        Model: LinearModel<M, V, F, Cache = C>,
+        V: ScaledAdd<F>
+            + NormSquared<F>
+            + NormInfinity<F>
+            + NegInPlace
+            + Dot<F>
+            + ScaleInPlace<F>
+            + ComponentMulAssign
+            + ComponentDivAssign
+            + ComponentZip<F>
+            + ComponentMaxAssign
+            + FloorZerosInPlace<F>
+            + Clone,
+    {
+        state.reset();
+        // Seed both the state and the cross-iteration caches from one
+        // residual/Jacobian evaluation.
+        self.failed = false;
+        self.rejected_step = false;
+        self.native_convergence.clear();
+        if let Some(trace) = &mut self.trace {
+            trace.reset();
+        }
+        let residual =
+            self.r_cache.take().unwrap_or_else(|| state.param().clone());
+        self.trial_residual = None;
+        self.model_cache = None;
+        self.jtr_cache = None;
+        let jacobian = jacobian_buffer.take();
+        self.diag = None;
+        self.radius = None;
+        self.mu = None;
+        self.nu = F::from_f64(2.0).unwrap();
+        self.first_trust_step = true;
+        let (r, j) = problem.residual_and_jacobian_reusing(
+            state.param(),
+            residual,
+            jacobian,
+        )?;
+        state.replace(
+            state.param().clone(),
+            problem.cost(&r, |r| F::from_f64(0.5).unwrap() * r.norm_squared()),
+        );
+        let Some((model_r, j)) = problem.model(&r, j) else {
+            self.failed = true;
+            return Ok(state);
+        };
+
+        let a = Model::prepare(&j, model_r.as_ref().unwrap_or(&r));
+        self.diag = a.as_ref().ok().map(|a| {
+            let mut d = Model::diagonal(a);
+            d.floor_zeros_in_place(F::one());
+            d
+        });
+
+        self.radius = if self.damping == LmDamping::TrustRegion {
+            self.diag.as_ref().map(|d| {
+                let xnorm = scaled_norm(state.param(), d);
+                self.initial_step_bound
+                    * if xnorm == F::zero() { F::one() } else { xnorm }
+            })
+        } else {
+            None
+        };
+        self.first_trust_step = true;
+        self.mu = Some(if self.damping == LmDamping::Nielsen {
+            self.tau
+        } else {
+            F::zero()
+        });
+        self.nu = F::from_f64(2.0).unwrap();
+        let gradient = j.mat_transpose_vec(model_r.as_ref().unwrap_or(&r));
+        self.failed = !problem.valid_vector(&gradient);
+        self.jtr_cache = Some(gradient);
+        self.model_cache = Some(a);
+        self.r_cache = Some(r);
+        *jacobian_buffer = Some(j);
+        Ok(state)
+    }
+
+    fn next_iter_model<E, M, Model>(
+        &mut self,
+        problem: &mut E,
+        mut state: PointState<V, F>,
+        rank_tolerance: Option<F>,
+        jacobian_buffer: &mut Option<M>,
+    ) -> LmStep<V, F, E::Error>
+    where
+        E: Evaluation<V, M, F>,
+        M: MatTransposeVec<V>,
+        Model: LinearModel<M, V, F, Cache = C>,
+        V: ScaledAdd<F>
+            + NormSquared<F>
+            + NormInfinity<F>
+            + NegInPlace
+            + Dot<F>
+            + ScaleInPlace<F>
+            + ComponentMulAssign
+            + ComponentDivAssign
+            + ComponentZip<F>
+            + ComponentMaxAssign
+            + FloorZerosInPlace<F>
+            + Clone,
+    {
+        self.native_convergence.clear();
+        if let Some(trace) = &mut self.trace {
+            trace.clear();
+        }
+        if self.failed {
+            if let Some(trace) = &mut self.trace {
+                trace.event(
+                    state.cost(),
+                    "construction",
+                    "invalid_initial_model",
+                );
+            }
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::numerical_failure(
+                    "LM initialization produced an invalid residual model.",
+                )),
+            )));
+        }
+        let r = match self.r_cache.take() {
+            Some(r) => r,
+            None => problem.residual(state.param())?,
+        };
+
+        let (a, g) = match (self.model_cache.take(), self.jtr_cache.take()) {
+            (Some(a), Some(g)) => (a, g),
+            _ => {
+                let j = problem
+                    .jacobian_reusing(state.param(), jacobian_buffer.take())?;
+                let Some((model_r, j)) = problem.model(&r, j) else {
+                    self.failed = true;
+                    if let Some(trace) = &mut self.trace {
+                        trace.event(
+                            state.cost(),
+                            "construction",
+                            "invalid_residual_model",
+                        );
+                    }
+                    return Ok(crate::SolverStep::from((
+                        state,
+                        Some(Termination::numerical_failure(
+                            "The least-squares objective cannot produce a valid local model.",
+                        )),
+                    )));
+                };
+                let model = (
+                    Model::prepare(&j, model_r.as_ref().unwrap_or(&r)),
+                    j.mat_transpose_vec(model_r.as_ref().unwrap_or(&r)),
+                );
+                *jacobian_buffer = Some(j);
+                model
+            }
+        };
+        let a = match a {
+            Ok(a) => a,
+            Err(error) => {
+                if let Some(trace) = &mut self.trace {
+                    let index = trace.event(
+                        state.cost(),
+                        "construction",
+                        "factorization_failed",
+                    );
+                    trace.observations[index].gradient = vector(&g);
+                }
+                self.model_cache = Some(Err(error));
+                self.r_cache = Some(r);
+                self.jtr_cache = Some(g);
+                return Ok(crate::SolverStep::from((
+                    state,
+                    Some(Termination::numerical_failure(
+                        "LM model factorization failed.",
+                    )),
+                )));
+            }
+        };
+        // Squaring a finite gradient can overflow even when the QR step is valid.
+        if (Model::CHECK_FINITE
+            || self.damping == LmDamping::TrustRegion
+            || E::ROBUST)
+            && ((!E::ROBUST && !r.norm_squared().is_finite())
+                || !state.cost().is_finite()
+                || !g.norm_infinity().is_finite()
+                || !problem.valid_vector(&g))
+        {
+            if let Some(trace) = &mut self.trace {
+                let index = trace.event(
+                    state.cost(),
+                    "construction",
+                    "nonfinite_model",
+                );
+                trace.observations[index].gradient = vector(&g);
+                trace.observations[index].arithmetic = vec![
+                    ("residual_square", r.norm_squared()),
+                    ("gradient_infinity", g.norm_infinity()),
+                ];
+            }
+            self.model_cache = Some(Ok(a));
+            self.r_cache = Some(r);
+            self.jtr_cache = Some(g);
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::numerical_failure(
+                    "The residual, objective, or gradient is non-finite.",
+                )),
+            )));
+        }
+        let diag_cur = Model::diagonal(&a);
+
+        // MINPACK's absolute and relative first-order tests:
+        //   * absolute   ‖Jᵀr‖_∞ ≤ tol_grad           (Madsen et al. 3.3a)
+        //   * relative   max_j |gⱼ|/(‖J·,ⱼ‖·‖r‖) ≤ tol_grad_rel  (MINPACK gtol)
+        let abs_converged =
+            self.tol_grad.is_some_and(|tol| g.norm_infinity() <= tol);
+        let rel_converged = self.tol_grad_rel.is_some_and(|tol| {
+            if E::ROBUST {
+                stopping::robust_gradient_converged(
+                    &g,
+                    &diag_cur,
+                    state.cost(),
+                    tol,
+                )
+            } else {
+                orthogonality_converged(&g, &diag_cur, &r, tol)
+            }
+        });
+        if let Some(trace) = &mut self.trace {
+            let mut row = LeastSquaresObservation::model(state.cost());
+            row.gradient = vector(&g);
+            row.diagonal = vector(&diag_cur);
+            row.checks.push(LeastSquaresCheck {
+                name: "absolute_gradient",
+                tolerance: self.tol_grad,
+                passed: self.tol_grad.map(|_| abs_converged),
+                evidence: self.tol_grad.map(|tolerance| {
+                    crate::ConvergenceEvidence::UpperBound {
+                        value: g.norm_infinity(),
+                        bound: tolerance,
+                        tolerance,
+                        reference: None,
+                    }
+                }),
+            });
+            row.checks.push(LeastSquaresCheck {
+                name: "orthogonality",
+                tolerance: self.tol_grad_rel,
+                passed: self.tol_grad_rel.map(|_| rel_converged),
+                evidence: self.tol_grad_rel.and_then(|tolerance| {
+                    stopping::try_orthogonality_evidence(
+                        &g,
+                        &diag_cur,
+                        &r,
+                        E::ROBUST.then_some(state.cost()),
+                        tolerance,
+                    )
+                }),
+            });
+            trace.push(row);
+        }
+        if abs_converged || rel_converged {
+            let absolute = abs_converged.then(|| {
+                Termination::upper_bound(
+                    crate::ConvergenceTest::AbsoluteGradientInfinity,
+                    g.norm_infinity(),
+                    self.tol_grad.unwrap(),
+                    self.tol_grad.unwrap(),
+                    None,
+                )
+            });
+            let relative = rel_converged.then(|| {
+                Termination::converged(crate::ConvergenceCriterion {
+                    test: if E::ROBUST {
+                        crate::ConvergenceTest::RobustGradientOrthogonality
+                    } else {
+                        crate::ConvergenceTest::GradientOrthogonality
+                    },
+                    evidence: stopping::orthogonality_evidence(
+                        &g,
+                        &diag_cur,
+                        &r,
+                        E::ROBUST.then_some(state.cost()),
+                        self.tol_grad_rel.unwrap(),
+                    ),
+                })
+            });
+            let termination = absolute
+                .into_iter()
+                .chain(relative)
+                .reduce(Termination::merge)
+                .unwrap();
+            if abs_converged {
+                self.native_convergence
+                    .push(NativeConvergenceTest::AbsoluteGradient);
+            }
+            if rel_converged {
+                self.native_convergence.push(if E::ROBUST {
+                    NativeConvergenceTest::RobustGradientOrthogonality
+                } else {
+                    NativeConvergenceTest::GradientOrthogonality
+                });
+            }
+            // Termination does not move the iterate, so the caches remain valid.
+            self.r_cache = Some(r);
+            self.model_cache = Some(Ok(a));
+            self.jtr_cache = Some(g);
+            return Ok(crate::SolverStep::from((state, Some(termination))));
+        }
+
+        // Moré's monotone scaling keeps the damped Gram positive definite.
+        let mut d = self
+            .diag
+            .take()
+            .expect("diag not set: Solver::init must run before next_iter");
+        let mut mu = self
+            .mu
+            .expect("mu not set: Solver::init must run before next_iter");
+        let mut nu = self.nu;
+        if E::ROBUST && self.damping == LmDamping::Nielsen {
+            mu = rescale_robust_damping(mu, &d, &diag_cur);
+        }
+        d.component_max_assign(&diag_cur);
+
+        // Increase damping when the model solve reports recoverable rank loss.
+        let two = F::from_f64(2.0).unwrap();
+        let half = F::from_f64(0.5).unwrap();
+        let one_third = F::from_f64(1.0 / 3.0).unwrap();
+        let mut model_solves = 0;
+        let mut last_solve: Option<usize> = None;
+        let mut search_gradient = None;
+        let step = if self.damping == LmDamping::TrustRegion {
+            let radius = self.radius.expect("trust radius not initialized");
+            let mut scaled_gradient = g.clone();
+            scaled_gradient.component_div_assign(&d);
+            let gradient_norm = g.dot(&scaled_gradient).sqrt();
+            search_gradient = Some(gradient_norm);
+            trust_region_step(
+                radius,
+                &mut mu,
+                self.max_inner_attempts,
+                gradient_norm,
+                |mu| {
+                    model_solves += 1;
+                    let result = Model::solve(&a, &g, &d, mu, rank_tolerance);
+                    if let Some(trace) = &mut self.trace {
+                        if let Some(index) = last_solve {
+                            trace.observations[index].damping_after = Some(mu);
+                        }
+                        let mut row =
+                            LeastSquaresObservation::model(state.cost());
+                        row.event = "subproblem";
+                        row.outcome = Some(match &result {
+                            Ok(_) => "solved",
+                            Err(ModelSolveError::Retry) => "retry",
+                            Err(ModelSolveError::Failed) => "failed",
+                        });
+                        row.damping = Some(mu);
+                        row.radius_before = self.radius;
+                        row.model_solves = 1;
+                        row.gradient = vector(&g);
+                        row.diagonal = vector(&d);
+                        if let Ok(h) = &result {
+                            row.step = vector(h);
+                            row.step_norm = Some(scaled_norm(h, &d));
+                        }
+                        last_solve = Some(trace.push(row));
+                    }
+                    result
+                },
+                |h| scaled_norm(h, &d),
+            )
+        } else {
+            let mut attempts = 0;
+            loop {
+                model_solves += 1;
+                let result = Model::solve(&a, &g, &d, mu, rank_tolerance);
+                if let Some(trace) = &mut self.trace {
+                    let mut row = LeastSquaresObservation::model(state.cost());
+                    row.event = "subproblem";
+                    row.outcome = Some(match &result {
+                        Ok(_) => "solved",
+                        Err(ModelSolveError::Retry) => "retry",
+                        Err(ModelSolveError::Failed) => "failed",
+                    });
+                    row.damping = Some(mu);
+                    row.damping_after = Some(mu);
+                    row.model_solves = 1;
+                    row.gradient = vector(&g);
+                    row.diagonal = vector(&d);
+                    row.arithmetic.push(("retry_multiplier", nu));
+                    if let Ok(h) = &result {
+                        row.step = vector(h);
+                        row.step_norm = Some(scaled_norm(h, &d));
+                    }
+                    last_solve = Some(trace.push(row));
+                }
+                match result {
+                    Ok(step) => break Ok(step),
+                    Err(failure) => {
+                        attempts += 1;
+                        if failure == ModelSolveError::Failed
+                            || attempts >= self.max_inner_attempts
+                            || !mu.is_finite()
+                        {
+                            break Err(failure);
+                        }
+                        mu = mu * nu;
+                        nu = nu * two;
+                        if let (Some(trace), Some(index)) =
+                            (&mut self.trace, last_solve)
+                        {
+                            trace.observations[index].damping_after = Some(mu);
+                        }
+                    }
+                }
+            }
+        };
+        if self.damping == LmDamping::TrustRegion {
+            if let Some(trace) = &mut self.trace {
+                let index = trace.event(
+                    state.cost(),
+                    "damping_search",
+                    if step.is_ok() { "selected" } else { "failed" },
+                );
+                let row = &mut trace.observations[index];
+                row.damping_after = Some(mu);
+                row.arithmetic
+                    .push(("scaled_gradient_norm", search_gradient.unwrap()));
+                row.radius_before = self.radius;
+                row.radius_after = self.radius;
+                if let Some(previous) = last_solve {
+                    trace.observations[previous].damping_after = Some(mu);
+                }
+            }
+        }
+        let h = match step {
+            Ok(h) => h,
+            Err(_) => {
+                if let (Some(trace), Some(index)) =
+                    (&mut self.trace, last_solve)
+                {
+                    if trace.observations[index].outcome == Some("retry") {
+                        trace.observations[index].outcome = Some("exhausted");
+                    }
+                }
+                self.mu = Some(mu);
+                self.nu = nu;
+                self.diag = Some(d);
+                self.r_cache = Some(r);
+                self.model_cache = Some(Ok(a));
+                self.jtr_cache = Some(g);
+                return Ok(crate::SolverStep::from((
+                    state,
+                    Some(Termination::numerical_failure(
+                        "LM could not solve the damped model within its retry limit.",
+                    )),
+                )));
+            }
+        };
+
+        // Predicted reduction, Nielsen eq. 2.3, with diagonal scaling.
+        // Form hᵀDh as h·(D ⊙ h) without materializing μDh − g.
+        let mut dh = d.clone();
+        dh.component_mul_assign(&h);
+        let l_diff = half * (mu * h.dot(&dh) - h.dot(&g));
+
+        let mut x_trial = state.param().clone();
+        x_trial.scaled_add(F::one(), &h);
+        let trial_record = self.trace.as_mut().map(|trace| {
+            let mut row = LeastSquaresObservation::model(state.cost());
+            row.event = "trial";
+            row.trial = true;
+            row.step = vector(&h);
+            row.gradient = vector(&g);
+            row.diagonal = vector(&d);
+            row.damping = Some(mu);
+            row.radius_before = self.radius;
+            row.step_norm = Some(scaled_norm(&h, &d));
+            row.model_solves = model_solves;
+            row.predicted_reduction = Some(l_diff);
+            trace.push(row)
+        });
+        let mut r_trial =
+            self.trial_residual.take().unwrap_or_else(|| r.clone());
+        if let Err(error) = problem.residual_into(&x_trial, &mut r_trial) {
+            if let Some(index) = trial_record {
+                self.trace.as_mut().unwrap().observations[index].outcome =
+                    Some("callback_failed");
+            }
+            return Err(error);
+        }
+        let f_trial = problem.cost(&r_trial, |r| half * r.norm_squared());
+
+        let prev_cost = state.cost();
+        let actual_diff = prev_cost - f_trial;
+        let rho = if l_diff > F::zero() {
+            actual_diff / l_diff
+        } else {
+            F::zero()
+        };
+
+        // Compare trial coordinates before acceptance can replace the base.
+        // Rejection alone leaves the iterate unchanged without proving that
+        // the computed step was lost to rounding.
+        let numerical_no_progress = self.numerical_no_progress
+            && rho <= F::zero()
+            && finite_unchanged_trial(state.param(), &x_trial)
+            && [prev_cost, f_trial, actual_diff, l_diff, rho]
+                .iter()
+                .all(|value| value.is_finite())
+            && [&h, &r, &r_trial, &g].into_iter().all(all_finite);
+
+        let radius_tolerance = self.tol_radius_rel.filter(|_| {
+            self.damping == LmDamping::TrustRegion
+                && [prev_cost, f_trial, actual_diff, l_diff, rho]
+                    .into_iter()
+                    .all(|value| value.is_finite())
+                && [state.param(), &x_trial, &h, &r, &r_trial, &g]
+                    .into_iter()
+                    .all(all_finite)
+        });
+
+        if self.damping == LmDamping::TrustRegion {
+            let pnorm = h.dot(&dh).sqrt();
+            let radius =
+                self.radius.as_mut().expect("trust radius not initialized");
+            if self.first_trust_step && pnorm > F::zero() {
+                *radius = radius.min(pnorm);
+            }
+            update_radius(radius, &mut mu, pnorm, rho, actual_diff, h.dot(&g));
+        }
+
+        if rho > F::zero() {
+            self.rejected_step = false;
+            // Nielsen eq. 2.5 with β=2, γ=3, p=3.
+            state.replace(x_trial, f_trial);
+            if self.damping == LmDamping::Nielsen {
+                let factor = F::one() - (two * rho - F::one()).powi(3);
+                mu = mu * factor.max(one_third);
+                nu = two;
+            }
+            self.first_trust_step = false;
+            self.r_cache = Some(r_trial);
+            self.trial_residual = Some(r);
+            self.model_cache = None;
+            self.jtr_cache = None;
+        } else {
+            // Preserve iterate-dependent caches and increase damping.
+            self.rejected_step = true;
+            if self.damping == LmDamping::Nielsen {
+                mu = mu * nu;
+                nu = nu * two;
+            }
+            self.r_cache = Some(r);
+            self.trial_residual = Some(r_trial);
+            self.model_cache = Some(Ok(a));
+            self.jtr_cache = Some(g);
+        }
+
+        let radius_rel_converged = radius_tolerance.is_some_and(|tol| {
+            relative_trust_radius_converged(
+                self.radius.expect("trust radius not initialized"),
+                state.param(),
+                &d,
+                tol,
+            )
+        });
+        self.mu = Some(mu);
+        self.nu = nu;
+        self.diag = Some(d);
+
+        // Progress tests also run after rejection, when the base is retained.
+        //
+        //   * tol_cost_rel  |actred| ≤ tol·F  AND  prered ≤ tol·F  AND  ρ ≤ 2.
+        //     `|actred|` mirrors MINPACK's `dabs(actred)`.
+        //   * tol_step_rel  ‖h‖ ≤ tol_step_rel·‖x‖, the step is negligible
+        //     relative to the iterate, including after a rejected trial.
+        let cost_rel_converged = self.tol_cost_rel.is_some_and(|tol| {
+            actual_diff.abs() <= tol * prev_cost
+                && l_diff <= tol * prev_cost
+                && rho <= two
+        });
+        let step_rel_converged = self
+            .tol_step_rel
+            .is_some_and(|tol| relative_step_converged(&h, state.param(), tol));
+        if let Some(index) = trial_record {
+            let row = &mut self.trace.as_mut().unwrap().observations[index];
+            row.trial_cost = Some(f_trial);
+            row.actual_reduction = Some(actual_diff);
+            row.gain_ratio = Some(rho);
+            row.accepted = Some(rho > F::zero());
+            row.radius_after = self.radius;
+            row.damping_after = Some(mu);
+            row.outcome = Some(if rho > F::zero() {
+                "accepted"
+            } else {
+                "rejected"
+            });
+            row.checks.push(LeastSquaresCheck {
+                name: "model_reduction",
+                tolerance: self.tol_cost_rel,
+                passed: self.tol_cost_rel.map(|_| cost_rel_converged),
+                evidence: self.tol_cost_rel.map(|tolerance| {
+                    crate::ConvergenceEvidence::ModelReduction {
+                        actual: actual_diff,
+                        predicted: l_diff,
+                        reference_cost: prev_cost,
+                        gain_ratio: rho,
+                        tolerance,
+                    }
+                }),
+            });
+            row.checks.push(LeastSquaresCheck {
+                name: "trial_step",
+                tolerance: self.tol_step_rel,
+                passed: self.tol_step_rel.map(|_| step_rel_converged),
+                evidence: self.tol_step_rel.and_then(|tolerance| {
+                    stopping::try_step_evidence(&h, state.param(), tolerance)
+                }),
+            });
+            row.checks.push(LeastSquaresCheck {
+                name: "trust_radius",
+                tolerance: radius_tolerance,
+                passed: radius_tolerance.map(|_| radius_rel_converged),
+                evidence: radius_tolerance.and_then(|tolerance| {
+                    stopping::try_radius_evidence(
+                        self.radius.unwrap(),
+                        state.param(),
+                        self.diag.as_ref().unwrap(),
+                        tolerance,
+                    )
+                }),
+            });
+        }
+        let progress_converged =
+            cost_rel_converged || step_rel_converged || radius_rel_converged;
+        let mut progress_gradient = None;
+        if progress_converged {
+            if let Some(tolerance) = self.tol_progress_grad {
+                if rho > F::zero() {
+                    // Acceptance invalidated the base gradient. Cache the same
+                    // model the next iteration would construct at this point.
+                    let j = match problem
+                        .jacobian_reusing(state.param(), jacobian_buffer.take())
+                    {
+                        Ok(j) => j,
+                        Err(error) => {
+                            if let Some(index) = trial_record {
+                                self.trace.as_mut().unwrap().observations
+                                    [index]
+                                    .outcome = Some("accepted_jacobian_failed");
+                            }
+                            return Err(error);
+                        }
+                    };
+                    let retained_r = self.r_cache.as_ref().unwrap();
+                    let Some((model_r, j)) = problem.model(retained_r, j)
+                    else {
+                        self.failed = true;
+                        if let Some(trace) = &mut self.trace {
+                            trace.event(
+                                state.cost(),
+                                "construction",
+                                "invalid_retained_model",
+                            );
+                        }
+                        return Ok(
+                            crate::SolverStep::completed_with_termination(
+                                state,
+                                Termination::numerical_failure(
+                                    "The retained least-squares point has an invalid local model.",
+                                ),
+                            ),
+                        );
+                    };
+                    self.jtr_cache = Some(j.mat_transpose_vec(
+                        model_r.as_ref().unwrap_or(retained_r),
+                    ));
+                    self.model_cache = Some(Model::prepare(
+                        &j,
+                        model_r.as_ref().unwrap_or(retained_r),
+                    ));
+                    *jacobian_buffer = Some(j);
+                }
+                let gradient = self.jtr_cache.as_ref().unwrap();
+                let valid = all_finite(gradient)
+                    && problem.valid_vector(gradient)
+                    && state.cost().is_finite()
+                    && (!E::ROBUST
+                        || all_finite(self.r_cache.as_ref().unwrap()));
+                if !valid || self.model_cache.as_ref().unwrap().is_err() {
+                    if let Some(trace) = &mut self.trace {
+                        trace.event(
+                            state.cost(),
+                            "construction",
+                            "invalid_retained_model",
+                        );
+                    }
+                    return Ok(crate::SolverStep::completed_with_termination(
+                        state,
+                        Termination::numerical_failure(
+                            "The retained least-squares point has an invalid gradient or model.",
+                        ),
+                    ));
+                }
+                let value = gradient.norm_infinity();
+                progress_gradient = Some((value, tolerance));
+                if let Some(index) = trial_record {
+                    self.trace.as_mut().unwrap().observations[index]
+                        .checks
+                        .push(LeastSquaresCheck {
+                            name: "progress_gradient",
+                            tolerance: Some(tolerance),
+                            passed: Some(value <= tolerance),
+                            evidence: Some(
+                                crate::ConvergenceEvidence::UpperBound {
+                                    value,
+                                    bound: tolerance,
+                                    tolerance,
+                                    reference: None,
+                                },
+                            ),
+                        });
+                }
+            }
+        }
+        if progress_converged
+            && progress_gradient
+                .is_none_or(|(value, tolerance)| value <= tolerance)
+        {
+            let model = cost_rel_converged.then(|| {
+                Termination::converged(crate::ConvergenceCriterion {
+                    test: crate::ConvergenceTest::RelativeModelReduction,
+                    evidence: crate::ConvergenceEvidence::ModelReduction {
+                        actual: actual_diff,
+                        predicted: l_diff,
+                        reference_cost: prev_cost,
+                        gain_ratio: rho,
+                        tolerance: self.tol_cost_rel.unwrap(),
+                    },
+                })
+            });
+            let step = step_rel_converged.then(|| {
+                Termination::converged(crate::ConvergenceCriterion {
+                    test: crate::ConvergenceTest::RelativeTrialStep,
+                    evidence: stopping::step_evidence(
+                        &h,
+                        state.param(),
+                        self.tol_step_rel.unwrap(),
+                    ),
+                })
+            });
+            let radius = radius_rel_converged.then(|| {
+                Termination::converged(crate::ConvergenceCriterion {
+                    test: crate::ConvergenceTest::RelativeTrustRadius,
+                    evidence: stopping::radius_evidence(
+                        self.radius.unwrap(),
+                        state.param(),
+                        self.diag.as_ref().unwrap(),
+                        self.tol_radius_rel.unwrap(),
+                    ),
+                })
+            });
+            let termination = model
+                .into_iter()
+                .chain(step)
+                .chain(radius)
+                .map(|termination| match progress_gradient {
+                    Some((value, tolerance)) => stopping::guarded_progress(
+                        termination,
+                        value,
+                        tolerance,
+                    ),
+                    None => termination,
+                })
+                .reduce(Termination::merge)
+                .unwrap();
+            if cost_rel_converged {
+                self.native_convergence
+                    .push(NativeConvergenceTest::RelativeModelReduction);
+            }
+            if step_rel_converged {
+                self.native_convergence
+                    .push(NativeConvergenceTest::RelativeTrialStep);
+            }
+            if radius_rel_converged {
+                self.native_convergence
+                    .push(NativeConvergenceTest::RelativeTrustRadius);
+            }
+            return Ok(crate::SolverStep::completed_with_termination(
+                state,
+                termination,
+            ));
+        }
+
+        if numerical_no_progress {
+            return Ok(crate::SolverStep::from((
+                state,
+                Some(Termination::numerical_stall(
+                    "A finite rejected LM trial changes no parameter in floating-point arithmetic.",
+                )),
+            )));
+        }
+
+        Ok(crate::SolverStep::from((state, None)))
+    }
+}
+
+type LmStep<V, F, E> = Result<crate::SolverStep<PointState<V, F>>, E>;
+
+#[derive(PartialEq)]
+enum ModelSolveError {
+    Retry,
+    Failed,
+}
+
+trait LinearModel<M, V, F: Scalar> {
+    type Cache;
+    const CHECK_FINITE: bool;
+    fn prepare(j: &M, r: &V) -> Result<Self::Cache, QrSolveError>;
+    fn diagonal(cache: &Self::Cache) -> V;
+    // Only rank loss can be repaired by increasing damping on the QR route.
+    fn solve(
+        cache: &Self::Cache,
+        g: &V,
+        d: &V,
+        mu: F,
+        tolerance: Option<F>,
+    ) -> Result<V, ModelSolveError>;
+}
+struct NormalEquations;
+impl<M, V, F: Scalar> LinearModel<M, V, F> for NormalEquations
+where
+    M: GramMatrix
+        + MatDiagonal<V>
+        + LinearSolveSpd<V>
+        + AddDiagonalVectorInPlace<V>
+        + Clone,
+    V: Clone + NegInPlace + ScaleInPlace<F>,
+{
+    type Cache = M;
+    const CHECK_FINITE: bool = false;
+    fn prepare(j: &M, _: &V) -> Result<M, QrSolveError> {
+        Ok(j.gram())
+    }
+    fn diagonal(cache: &M) -> V {
+        cache.diagonal()
+    }
+    fn solve(
+        cache: &M,
+        g: &V,
+        d: &V,
+        mu: F,
+        _: Option<F>,
+    ) -> Result<V, ModelSolveError> {
+        let mut a = cache.clone();
+        let mut diagonal = d.clone();
+        diagonal.scale_in_place(mu);
+        a.add_diagonal_vector_in_place(&diagonal);
+        let mut rhs = g.clone();
+        rhs.neg_in_place();
+        a.solve_spd(&rhs).map_err(|_| ModelSolveError::Retry)
+    }
+}
+struct PivotedQr;
+impl<M, V, F: Scalar> LinearModel<M, V, F> for PivotedQr
+where
+    M: FactorizePivotedQr<V, F>,
+    V: Clone + NegInPlace,
+{
+    type Cache = M::Factorization;
+    const CHECK_FINITE: bool = true;
+    fn prepare(j: &M, r: &V) -> Result<Self::Cache, QrSolveError> {
+        let mut rhs = r.clone();
+        rhs.neg_in_place();
+        j.factorize_pivoted_qr(&rhs)
+    }
+    fn diagonal(cache: &Self::Cache) -> V {
+        cache.column_norms_squared()
+    }
+    fn solve(
+        cache: &Self::Cache,
+        _: &V,
+        d: &V,
+        mu: F,
+        tolerance: Option<F>,
+    ) -> Result<V, ModelSolveError> {
+        cache.solve_regularized(mu, d, tolerance).map_err(|e| {
+            if e == QrSolveError::RankDeficient {
+                ModelSolveError::Retry
+            } else {
+                ModelSolveError::Failed
+            }
+        })
+    }
+}
+
+/// Levenberg-Marquardt with column-pivoted QR and configurable damping.
+///
+/// Construct with [`LevenbergMarquardt::with_pivoted_qr`] or [`Self::new`].
+/// This uses the same scaling, gain ratio, damping update, and stopping tests
+/// as [`LevenbergMarquardt`], solving `[J; sqrt(μD)] h ≈ [-r; 0]` without
+/// forming `JᵀJ`. Scaled trust-region damping is the default for both `f32`
+/// and `f64`; [`Self::with_damping`] can select [`LmDamping::Nielsen`].
+/// QR improves step accuracy near rank deficiency; neither strategy guarantees
+/// MINPACK's nonlinear convergence trajectory or evaluation counts.
+///
+/// [`RobustLeastSquares`](crate::RobustLeastSquares) supplies robust
+/// objectives with the same model,
+/// cost, and convergence conventions as [`LevenbergMarquardt`].
+/// Its [robust stopping guidance](LevenbergMarquardt#state-convention) also
+/// applies to this factorization.
+///
+/// # Rank and failures
+///
+/// Rank is checked after diagonal regularization and column equilibration.
+/// The default threshold is `epsilon(F) * (m+n)`; see
+/// [`Self::with_relative_rank_tolerance`]. Nielsen damping increases after rank loss,
+/// reusing the factorization, until the attempt limit yields `SolverFailed`.
+/// Trust-region damping uses rank loss to bound the parameter search, retaining
+/// a feasible regularized step if available and otherwise yielding `SolverFailed`.
+/// Non-finite factorization or solve arithmetic yields `SolverFailed`
+/// immediately. Problem callback errors propagate unchanged. No truncated
+/// solution or normal-equation fallback is used.
+/// The default numerical no-progress safeguard and its opt-out are shared
+/// with Cholesky; see [`Self::with_no_progress_check`].
+///
+/// # Backends
+///
+/// `Vec<F>` with [`DenseMatrix`](crate::DenseMatrix), nalgebra
+/// `DVector<F>`/`DMatrix<F>`, ndarray `Array1<F>`/`Array2<F>`, and faer
+/// `Col<F>`/`Mat<F>`, for `f32` and `f64`, in pure Rust. Sparse matrices
+/// deliberately lack [`FactorizePivotedQr`]: nalgebra-sparse has no QR, and
+/// faer's sparse QR does not provide numerical column pivoting.
+/// Robust objectives additionally require
+/// [`ScaleRowsInPlace`](crate::ScaleRowsInPlace) on custom Jacobian types.
+///
+/// # References
+///
+/// Madsen, Nielsen & Tingleff (2004), *Methods for Non-Linear Least Squares
+/// Problems*, §3.2; MINPACK's [`qrfac`](https://netlib.org/minpack/qrfac.f)
+/// and [`qrsolv`](https://netlib.org/minpack/qrsolv.f) (Garbow, Hillstrom &
+/// Moré, 1980). The default trust-region damping follows MINPACK's
+/// [`lmder`](https://netlib.org/minpack/lmder.f) radius updates, using bracketed
+/// parameter selection instead of [`lmpar`](https://netlib.org/minpack/lmpar.f).
+/// The rank policy differs from MINPACK's truncated solve.
+///
+/// # Example
+///
+/// ```
+/// use basin::{DenseMatrix, LevenbergMarquardt, LevenbergMarquardtQr};
+/// let solver: LevenbergMarquardtQr<Vec<f64>, DenseMatrix> =
+///     LevenbergMarquardt::new()
+///         .with_absolute_gradient_tolerance(1e-10)
+///         .with_pivoted_qr();
+/// ```
+pub struct LevenbergMarquardtQr<V, M, F: Scalar = f64, W = ()>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+    inner: LevenbergMarquardt<V, M::Factorization, F>,
+    workspace: W,
+    rank_tolerance: Option<F>,
+}
+
+impl<V, M: FactorizePivotedQr<V, F>, F: Scalar, W> NativeConvergenceDiagnostics
+    for LevenbergMarquardtQr<V, M, F, W>
+{
+    fn native_convergence_tests(&self) -> &[NativeConvergenceTest] {
+        self.inner.native_convergence_tests()
+    }
+}
+
+impl<V, M: FactorizePivotedQr<V, F>, F: Scalar, W> LeastSquaresDiagnostics<F>
+    for LevenbergMarquardtQr<V, M, F, W>
+{
+    fn least_squares_observations(&self) -> &[LeastSquaresObservation<F>] {
+        self.inner.least_squares_observations()
+    }
+}
+
+impl<V, M, F: Scalar> LevenbergMarquardt<V, M, F> {
+    /// Select pivoted QR while preserving configuration and resetting caches.
+    ///
+    /// This additive route requires [`FactorizePivotedQr`] only on the
+    /// returned solver. Existing Cholesky-only matrix implementations retain
+    /// their original solver bounds. Configure this before starting a solve.
+    pub fn with_pivoted_qr(self) -> LevenbergMarquardtQr<V, M, F>
+    where
+        M: FactorizePivotedQr<V, F>,
+    {
+        LevenbergMarquardtQr {
+            inner: LevenbergMarquardt {
+                tol_grad: self.tol_grad,
+                tol_grad_rel: self.tol_grad_rel,
+                tol_cost_rel: self.tol_cost_rel,
+                tol_step_rel: self.tol_step_rel,
+                tol_radius_rel: self.tol_radius_rel,
+                tol_progress_grad: self.tol_progress_grad,
+                numerical_no_progress: self.numerical_no_progress,
+                trace: self.trace.map(|_| Trace::default()),
+                tau: self.tau,
+                damping: self.damping,
+                initial_step_bound: self.initial_step_bound,
+                max_inner_attempts: self.max_inner_attempts,
+                ..LevenbergMarquardt::defaults()
+            },
+            rank_tolerance: None,
+            workspace: (),
+        }
+    }
+}
+
+impl<V, M, F: Scalar> Default for LevenbergMarquardtQr<V, M, F>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl<V, M, F: Scalar> LevenbergMarquardtQr<V, M, F>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+    /// QR with the same defaults as [`LevenbergMarquardt::new`].
+    pub fn new() -> Self {
+        Self {
+            inner: LevenbergMarquardt::defaults(),
+            rank_tolerance: None,
+            workspace: (),
+        }
+    }
+
+    /// Retain the raw Jacobian between model evaluations.
+    ///
+    /// The first fused evaluation seeds its storage through the owned callback;
+    /// subsequent refreshes use the in-place callbacks. Fresh initialization
+    /// reevaluates the seed and permits resizing. Exact continuation retains
+    /// the buffer along with the factorization.
+    pub fn with_evaluation_buffers(
+        self,
+    ) -> LevenbergMarquardtQr<V, M, F, EvaluationBuffers<(), M>> {
+        LevenbergMarquardtQr {
+            inner: self.inner,
+            rank_tolerance: self.rank_tolerance,
+            workspace: EvaluationBuffers::default(),
+        }
+    }
+}
+
+impl<V, M, F: Scalar, W> LevenbergMarquardtQr<V, M, F, W>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+    /// Enable [`LevenbergMarquardt::with_trial_diagnostics`] on the QR route.
+    pub fn with_trial_diagnostics(mut self, enabled: bool) -> Self {
+        self.inner = self.inner.with_trial_diagnostics(enabled);
+        self
+    }
+
+    /// Configure the relative rank tolerance.
+    /// Retains the algorithm's existing formula, validation, and default.
+    pub fn with_relative_rank_tolerance(mut self, tol: F) -> Self {
+        assert!(
+            tol.is_finite() && tol >= F::zero() && tol < F::one(),
+            "rank tolerance must be finite and in [0,1)"
+        );
+        self.rank_tolerance = Some(tol);
+        self
+    }
+
+    /// Configure the infinity norm of J-transpose times residual.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_absolute_gradient_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner = self.inner.with_absolute_gradient_tolerance(value);
+        self
+    }
+
+    /// Configure [`LevenbergMarquardt::with_absolute_progress_gradient_tolerance`]
+    /// for the QR route, including its counted retained-point Jacobian callback.
+    pub fn with_absolute_progress_gradient_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner =
+            self.inner.with_absolute_progress_gradient_tolerance(value);
+        self
+    }
+
+    /// Configure [`LevenbergMarquardt::with_gradient_orthogonality_tolerance`],
+    /// including its robust-objective normalization.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_gradient_orthogonality_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner = self.inner.with_gradient_orthogonality_tolerance(value);
+        self
+    }
+
+    /// Configure both actual and predicted reduction relative to the current cost, with gain ratio at most two.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_relative_model_reduction_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner = self.inner.with_relative_model_reduction_tolerance(value);
+        self
+    }
+
+    /// Configure the attempted step norm relative to the current iterate norm.
+    ///
+    /// `None` disables the test; zero requests an exact-zero threshold.
+    /// Values must be finite and nonnegative. Enabled tests combine with OR;
+    /// each model-based test retains its internal conjunction and observation stage.
+    /// Repeated calls replace this setting. Existing solver defaults are retained.
+    pub fn with_relative_step_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner = self.inner.with_relative_step_tolerance(value);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_relative_trust_radius_tolerance`]
+    /// for the QR route, with the same scaling, defaults, and stopping behavior.
+    pub fn with_relative_trust_radius_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.inner = self.inner.with_relative_trust_radius_tolerance(value);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_no_progress_check`] for the QR route.
+    pub fn with_no_progress_check(mut self, enabled: bool) -> Self {
+        self.inner = self.inner.with_no_progress_check(enabled);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_damping`] for the QR route.
+    pub fn with_damping(mut self, damping: LmDamping) -> Self {
+        self.inner = self.inner.with_damping(damping);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_initial_step_bound`] for the QR route.
+    pub fn with_initial_step_bound(mut self, factor: F) -> Self {
+        self.inner = self.inner.with_initial_step_bound(factor);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_tau`] for the QR route.
+    pub fn with_tau(mut self, value: F) -> Self {
+        self.inner = self.inner.with_tau(value);
+        self
+    }
+    /// Configure [`LevenbergMarquardt::with_max_inner_attempts`] for the QR route.
+    pub fn with_max_inner_attempts(mut self, value: u32) -> Self {
+        self.inner = self.inner.with_max_inner_attempts(value);
+        self
+    }
+}
+impl<P, V, M, F, E, W> Solver<P, PointState<V, F>>
+    for LevenbergMarquardtQr<V, M, F, W>
+where
+    F: Scalar,
+    W: BufferStorage<(), M>,
+    Problem<P>: Evaluation<V, M, F, Error = E>,
+    V: ScaledAdd<F>
+        + NormSquared<F>
+        + NormInfinity<F>
+        + NegInPlace
+        + Dot<F>
+        + ScaleInPlace<F>
+        + ComponentMulAssign
+        + ComponentDivAssign
+        + ComponentZip<F>
+        + ComponentMaxAssign
+        + FloorZerosInPlace<F>
+        + Clone,
+    M: FactorizePivotedQr<V, F> + MatTransposeVec<V>,
+{
+    type Error = E;
+    fn should_check_iterate_change(&self) -> bool {
+        !self.inner.rejected_step
+    }
+    fn reset_convergence(&mut self) {
+        self.inner.native_convergence.clear();
+        if let Some(trace) = &mut self.inner.trace {
+            trace.reset();
+        }
+    }
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, Self::Error> {
+        self.workspace.with_buffers(|_, buffer| {
+            self.inner
+                .init_model::<_, M, PivotedQr>(problem, state, buffer)
+        })
+    }
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PointState<V, F>,
+    ) -> Result<crate::SolverStep<PointState<V, F>>, Self::Error> {
+        self.workspace.with_buffers(|_, buffer| {
+            self.inner.next_iter_model::<_, M, PivotedQr>(
+                problem,
+                state,
+                self.rank_tolerance,
+                buffer,
+            )
+        })
+    }
+}
+
+impl<V: Clone, M, F: Scalar, W> crate::core::inner::InitialState<V>
+    for LevenbergMarquardtQr<V, M, F, W>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+    type State = PointState<V, F>;
+    fn seed(&self, x: &V) -> Self::State {
+        PointState::new(x.clone())
+    }
+}
+impl<V: Clone, M, F: Scalar, W> crate::core::inner::WarmStart<V>
+    for LevenbergMarquardtQr<V, M, F, W>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+}
+impl<V: Clone, M, F: Scalar, W> super::cma_inject::MemeticInner<V, F>
+    for LevenbergMarquardtQr<V, M, F, W>
+where
+    M: FactorizePivotedQr<V, F>,
+{
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{DenseMatrix, Executor};
+
+    #[derive(Clone)]
+    struct CholeskyOnly(DenseMatrix);
+    impl GramMatrix for CholeskyOnly {
+        fn gram(&self) -> Self {
+            Self(self.0.gram())
+        }
+    }
+    impl MatDiagonal<Vec<f64>> for CholeskyOnly {
+        fn diagonal(&self) -> Vec<f64> {
+            self.0.diagonal()
+        }
+    }
+    impl MatTransposeVec<Vec<f64>> for CholeskyOnly {
+        fn mat_transpose_vec(&self, v: &Vec<f64>) -> Vec<f64> {
+            self.0.mat_transpose_vec(v)
+        }
+    }
+    impl AddDiagonalVectorInPlace<Vec<f64>> for CholeskyOnly {
+        fn add_diagonal_vector_in_place(&mut self, d: &Vec<f64>) {
+            self.0.add_diagonal_vector_in_place(d);
+        }
+    }
+    impl LinearSolveSpd<Vec<f64>> for CholeskyOnly {
+        fn solve_spd(
+            &self,
+            b: &Vec<f64>,
+        ) -> Result<Vec<f64>, crate::LinearSolveError> {
+            self.0.solve_spd(b)
+        }
+    }
+    struct Fit;
+
+    impl crate::Constraints for Fit {
+        type Set = crate::NoConstraints;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as crate::ConstraintDescription>::Borrowed<'_> {
+            crate::ConstraintSet::new()
+        }
+    }
+    impl Residual for Fit {
+        type Param = Vec<f64>;
+        type Output = Vec<f64>;
+        type Error = std::convert::Infallible;
+        fn residual(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![x[0] - 1.])
+        }
+    }
+    impl Jacobian for Fit {
+        type Jacobian = CholeskyOnly;
+        fn jacobian(&self, _: &Vec<f64>) -> Result<CholeskyOnly, Self::Error> {
+            Ok(CholeskyOnly(DenseMatrix::from_row_slice(1, 1, &[1.])))
+        }
+    }
+    #[test]
+    fn legacy_annotations_and_cholesky_only_capabilities_still_work() {
+        let solver: LevenbergMarquardt<Vec<f64>, CholeskyOnly> =
+            LevenbergMarquardt::new();
+        let result = Executor::from_start(Fit, solver, vec![0.])
+            .max_iter(50)
+            .run()
+            .unwrap();
+        assert_eq!(
+            result.report.code(),
+            crate::TerminationCode::SolverConverged
+        );
+        assert!((result.param()[0] - 1.).abs() < 1e-8);
+    }
+}

@@ -1,0 +1,405 @@
+// Index-based loops mirror Powell's exposition (LINCOA, Powell 2015) and the
+// dense index arithmetic of the active-set QR / H-factorization algebra;
+// blanket-allowed here.
+#![allow(clippy::needless_range_loop)]
+
+//! LINCOA (Powell 2015): linearly-constrained model-based derivative-free
+//! optimization.
+//!
+//! [`Lincoa`] reuses the shared Powell quadratic-model core (the crate-internal
+//! `powell` module, shared with NEWUOA and BOBYQA) and swaps the trust-region
+//! subproblem for the linearly-constrained `trstep` (projected truncated-CG) with
+//! the active-set step `getact`/`ActiveSetQr`. It binds
+//! [`CostFunction`](crate::core::problem::CostFunction) +
+//! [`ConstraintSet`](crate::ConstraintSet) (the
+//! general linear form: box bounds, equalities, and inequalities).
+//!
+//! # Architecture
+//!
+//! Like its siblings, the model is maintained through a factored inverse-KKT
+//! matrix `H`; the driver is the Figure-1 loop with the ρ/Δ schedule, the LINCOA
+//! geometry step (`geostep`), origin shifts, and the `tryqalt` alternative-model
+//! swap. The linear feasible region enters through the active-set QR
+//! (`ActiveSetQr`) threaded across iterations and the residual vector `rescon`.
+//! Box bounds and linear equalities fold into the inequality form `A x ≤ b`
+//! exactly as PRIMA's `get_lincon` does (`fold_constraints`); the public solver
+//! binds the general-form `ConstraintSet` aggregator, which carries all
+//! three kinds at once (see [`Lincoa`]).
+//!
+//! # Backends
+//!
+//! Backend-generic over the parameter vector; the constraint matrix `A` is read
+//! through [`crate::MatTransposeVecInto`](crate::core::math::MatTransposeVec) only (each
+//! constraint normal is `Aᵀ eⱼ`), which every backend's matrix type provides
+//! (`DenseMatrix` for `Vec<F>`, `Array2`, `DMatrix`, `Mat`), with `F = f64`
+//! or `f32`. Model algebra uses pure-Rust `Vec<F>` storage; wasm-clean.
+//!
+//! # References
+//!
+//! M. J. D. Powell, *On fast trust region methods for quadratic models with
+//! linear constraints*, Math. Program. Comput. 7:237–267 (2015). Ported from
+//! [PRIMA](https://github.com/libprima/prima) v0.7.2.
+
+pub(crate) mod driver;
+pub(crate) mod geometry;
+pub(crate) mod getact;
+pub(crate) mod init;
+pub(crate) mod trstep;
+
+#[cfg(test)]
+mod parity;
+
+use crate::ConstraintSolveError;
+use crate::core::constraint::evaluation::{LincoaSet, invalid};
+use crate::core::inner::InitialState;
+use crate::core::math::{Scalar, VectorLen};
+use crate::core::problem::{CostFunction, Problem};
+use crate::core::solver::Solver;
+use crate::core::state::{PointState, State};
+use crate::core::termination::Termination;
+
+use driver::{LincoaWork, Transition};
+use init::fold_constraints;
+
+/// LINCOA (Powell 2015): linearly-constrained model-based derivative-free
+/// trust-region optimization.
+///
+/// LINCOA minimizes a smooth objective subject to linear constraints (box
+/// bounds, linear equalities, and linear inequalities, all reduced internally to
+/// `A x ≤ b`) using only objective values, no derivatives. It maintains the same
+/// least-Frobenius-norm quadratic surrogate as [`Newuoa`](crate::Newuoa) /
+/// [`Bobyqa`](crate::Bobyqa), and keeps every trust-region iterate feasible via a
+/// projected truncated-CG subproblem with an active-set QR.
+///
+/// Drive it with an [`Executor`](crate::Executor) over a [`PointState`] on a
+/// problem implementing [`CostFunction`] and
+/// declaring its bounds and linear blocks in [`ConstraintSet`](crate::ConstraintSet)
+/// (here only the inequality block is present):
+///
+/// ```
+///
+/// use basin::{CostFunction, DenseMatrix, Executor, Lincoa, PointState};
+///
+/// // min ‖x − (2, 2)‖²  s.t.  x0 + x1 ≤ 2   (optimum: the projection (1, 1)).
+/// // The pure-Rust `DenseMatrix`/`Vec<f64>` carriers need no backend feature.
+/// struct Proj {
+///     a: DenseMatrix<f64>,
+///     b: Vec<f64>,
+/// }
+/// impl basin::Constraints for Proj  {
+///     type Set = basin::ConstraintSet<basin::NoBounds, basin::LinearBlocks<basin::NoLinearBlock, basin::LinearBlock<DenseMatrix<f64>, Vec<f64>>>>;
+///     fn constraints(&self) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> { basin::ConstraintSet::new().with_linear_inequalities(basin::LinearBlock::optional({ Some((&self.a, &self.b)) })) }
+/// }
+/// impl CostFunction for Proj {
+///     type Param = Vec<f64>;
+///     type Output = f64;
+///     type Error = std::convert::Infallible;
+///     fn cost(&self, x: &Vec<f64>) -> Result<f64, std::convert::Infallible> {
+///         Ok((x[0] - 2.0).powi(2) + (x[1] - 2.0).powi(2))
+///     }
+/// }
+///
+///
+/// let problem = Proj {
+///     a: DenseMatrix::from_row_slice(1, 2, &[1.0, 1.0]),
+///     b: vec![2.0],
+/// };
+/// let solver = Lincoa::new()
+///     .with_initial_radius(0.5)
+///     .with_final_radius(1e-7);
+/// let state = PointState::new(vec![0.0, 0.0]);
+/// let result = Executor::new(problem, solver, state)
+///     .max_cost_evals(500)
+///     .run()
+///     .unwrap();
+/// assert!((result.best_param()[0] - 1.0).abs() < 1e-3);
+/// assert!((result.best_param()[1] - 1.0).abs() < 1e-3);
+/// ```
+///
+/// # Configuration
+///
+/// - [`with_initial_radius`](Self::with_initial_radius): initial trust-region radius `ρ_beg`
+///   (a reasonable initial change to the variables; default `1.0`).
+/// - [`with_final_radius`](Self::with_final_radius): final radius `ρ_end`, the required
+///   accuracy (default `1e-6`); must satisfy `ρ_beg > ρ_end > 0`.
+/// - [`with_npt`](Self::with_npt): interpolation-set size `npt`, in
+///   `[n+2, ½(n+1)(n+2)]` (default `2n+1`).
+///
+/// # ConstraintSet
+///
+/// LINCOA binds the general-form
+/// [`ConstraintSet`](crate::ConstraintSet): a problem
+/// exposes any combination of box bounds, linear equalities, and linear
+/// inequalities (each accessor is optional). All present blocks are folded into
+/// one unit-normalized `A x ≤ b` system: bounds as `±eᵢ` rows, an equality
+/// `aᵀx = β` as the pair `aᵀx ≤ β`, `−aᵀx ≤ −β`, and every iterate is kept
+/// feasible by the active-set projection. The start point should be feasible;
+/// if not, LINCOA relaxes `b` to make it feasible (Powell's behavior).
+///
+/// # Termination
+///
+/// Natural convergence is `ρ` reaching `ρ_end`, signalled as
+/// [`crate::TerminationCode::SolverConverged`]. Add
+/// [`max_cost_evals`](crate::Executor::max_cost_evals) to cap the budget or
+/// [`with_absolute_radius_tolerance`](crate::Lincoa::with_absolute_radius_tolerance) to stop at a coarser `ρ`.
+///
+/// # Progress and continuation
+///
+/// Use [`PointState::new`] or [`crate::Executor::from_start`] with an unevaluated
+/// starting point. Fresh initialization clears progress and rebuilds the
+/// interpolation model, even when reusing a populated state or solver. The
+/// shared state retains the current evaluated point, its historical objective
+/// incumbent, and all six raw evaluation categories. It supplies no gradient
+/// or radius capability. The solver owns every model buffer and the radius
+/// schedule; [`rho`](Self::rho) returns `None` before initialization. Inspect
+/// it through [`crate::Executor::run_with_solver`] or [`crate::Stepper::solver`].
+///
+/// Preserve [`crate::ExactCheckpoint`] for continuation without initialization
+/// or reevaluation. With `serde`, the solver and shared state support
+/// serialization, including the complete numerical model. A progress-only
+/// snapshot is a fresh point warm start. Legacy algorithm-specific state
+/// payloads cannot be read as `PointState` or as a new exact checkpoint.
+/// Radius-based convergence remains solver-owned; objective targets and stalls
+/// use the shared state's historical incumbent.
+///
+/// # Backends
+///
+/// `Vec<F>`/`DenseMatrix<F>`, nalgebra `DVector<F>`/`DMatrix<F>`, ndarray
+/// `Array1<F>`/`Array2<F>`, and faer `Col<F>`/`Mat<F>`, for every supported
+/// backend release and `F = f64` or `f32`. Vectors need [`Clone`], [`VectorLen`],
+/// and indexing; constraint matrices need [`crate::MatTransposeVecInto`]. Model algebra
+/// uses pure-Rust `Vec<F>` storage, with no BLAS/LAPACK dependency. Choose radii
+/// appropriate to the scalar precision.
+///
+/// # References
+///
+/// M. J. D. Powell, *On fast trust region methods for quadratic models with
+/// linear constraints*, Math. Program. Comput. 7:237–267 (2015). Cross-validated
+/// against [PRIMA](https://github.com/libprima/prima) v0.7.2, the authoritative
+/// source for the exact formulas. PRIMA is BSD 3-Clause licensed; its required
+/// notice is retained in the crate's `COPYRIGHT` file.
+///
+/// [`CostFunction`]: crate::core::problem::CostFunction
+/// [`crate::TerminationCode::SolverConverged`]: crate::TerminationCode::SolverConverged
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub struct Lincoa<F: Scalar = f64> {
+    radius_tolerance: Option<F>,
+    rho_beg: F,
+    rho_end: F,
+    npt: Option<usize>,
+    /// Built in [`Solver::init`]; the resumable model + constraints + schedule.
+    work: Option<LincoaWork<F>>,
+}
+
+impl<F: Scalar> Lincoa<F> {
+    /// Current trust-region resolution, or `None` before initialization.
+    /// Read it through `run_with_solver()` or `Stepper::solver()`.
+    pub fn rho(&self) -> Option<F> {
+        self.work.as_ref().map(|work| work.rho())
+    }
+
+    /// Copy the current interpolation geometry and native model gradient.
+    ///
+    /// Returns the trust radius, effective final resolution, absolute interpolation
+    /// points, their sampled costs, and the model gradient at its best point.
+    /// This opt-in snapshot performs no callbacks and changes no model or schedule.
+    /// The gradient belongs to the interpolation model, not the true objective.
+    /// Returns `None` before successful initialization.
+    #[allow(clippy::type_complexity)]
+    pub fn geometry_diagnostics(
+        &self,
+    ) -> Option<(F, F, Vec<Vec<F>>, Vec<F>, Vec<F>)> {
+        self.work.as_ref().map(|work| work.geometry_diagnostics())
+    }
+
+    /// Stop when the observed radius or step size is <= the tolerance.
+    ///
+    /// Disabled by default. `None` disables the test and zero requests an
+    /// exact-zero threshold. The tolerance must be finite and nonnegative.
+    /// Checked at initialized iteration boundaries. This observation does not
+    /// change the algorithm's radius or step-size update schedule.
+    pub fn with_absolute_radius_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.radius_tolerance =
+            crate::core::convergence::optional_tolerance(value);
+        self
+    }
+
+    /// A LINCOA solver with the default schedule (`ρ_beg = 1`, `ρ_end = 1e-6`,
+    /// `npt = 2n+1`). Tune with the `with_*` builders.
+    pub fn new() -> Self {
+        Self {
+            rho_beg: F::from_f64(1.0).expect("1.0 representable"),
+            radius_tolerance: None,
+            rho_end: F::from_f64(1e-6).expect("1e-6 representable"),
+            npt: None,
+            work: None,
+        }
+    }
+
+    /// Configure the initial radius.
+    /// Retains the algorithm's existing formula, validation, and default.
+    pub fn with_initial_radius(mut self, rho_beg: F) -> Self {
+        self.rho_beg = rho_beg;
+        self
+    }
+
+    /// Configure the final radius.
+    /// Retains the algorithm's existing formula, validation, and default.
+    pub fn with_final_radius(mut self, rho_end: F) -> Self {
+        self.rho_end = rho_end;
+        self
+    }
+
+    /// Set the interpolation-set size `npt`, in `[n+2, ½(n+1)(n+2)]`. Defaults to
+    /// `2n+1` when unset.
+    pub fn with_npt(mut self, npt: usize) -> Self {
+        self.npt = Some(npt);
+        self
+    }
+}
+
+impl<F: Scalar> Default for Lincoa<F> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Build a `V` from a flat `&[F]`, reusing `template` for type and length.
+fn fill_from<V, F>(template: &V, slice: &[F]) -> V
+where
+    V: Clone + std::ops::IndexMut<usize, Output = F>,
+    F: Copy,
+{
+    let mut v = template.clone();
+    for (i, &x) in slice.iter().enumerate() {
+        v[i] = x;
+    }
+    v
+}
+
+impl<V, F> InitialState<V> for Lincoa<F>
+where
+    F: Scalar,
+    V: Clone,
+{
+    type State = PointState<V, F>;
+    fn seed(&self, x: &V) -> Self::State {
+        PointState::new(x.clone())
+    }
+}
+
+impl<P, V, F> Solver<P, PointState<V, F>> for Lincoa<F>
+where
+    F: Scalar,
+    P: CostFunction<Param = V, Output = F>,
+    P: crate::Constraints,
+    P::Set: LincoaSet<V, F>,
+    V: Clone
+        + VectorLen
+        + std::ops::Index<usize, Output = F>
+        + std::ops::IndexMut<usize, Output = F>,
+{
+    type Error = ConstraintSolveError<P::Error>;
+
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        mut state: PointState<V, F>,
+    ) -> Result<PointState<V, F>, Self::Error> {
+        state.reset();
+        self.work = None;
+        let n = state.param().vec_len();
+        assert!(n >= 1, "Lincoa requires a non-empty start point");
+        let npt = self.npt.unwrap_or(2 * n + 1);
+
+        let x0: Vec<F> = (0..n).map(|i| state.param()[i]).collect();
+        let template = state.param().clone();
+
+        let data = P::Set::data(problem.inner().constraints(), state.param())
+            .map_err(invalid)?;
+        let (amat, bvec_abs) = fold_constraints(
+            n,
+            &x0,
+            data.bounds.lower.as_deref(),
+            data.bounds.upper.as_deref(),
+            &data.equalities,
+            &data.inequalities,
+        );
+
+        let (work, best_x, best_f) = {
+            let mut eval =
+                |slice: &[F]| -> Result<F, ConstraintSolveError<P::Error>> {
+                    Ok(problem.cost(&fill_from(&template, slice))?)
+                };
+            LincoaWork::try_init(
+                x0,
+                amat,
+                bvec_abs,
+                self.rho_beg,
+                self.rho_end,
+                npt,
+                &mut eval,
+            )?
+        };
+
+        state.replace(fill_from(&template, &best_x), best_f);
+        self.work = Some(work);
+        Ok(state)
+    }
+
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        mut state: PointState<V, F>,
+    ) -> Result<crate::SolverStep<PointState<V, F>>, Self::Error> {
+        let template = state.param().clone();
+        let work = self
+            .work
+            .as_mut()
+            .expect("Lincoa::init must run before next_iter");
+
+        let out = {
+            let mut eval =
+                |slice: &[F]| -> Result<F, ConstraintSolveError<P::Error>> {
+                    Ok(problem.cost(&fill_from(&template, slice))?)
+                };
+            work.step(&mut eval)?
+        };
+
+        // The reported iterate is the model's best *feasible* point (x_opt); the
+        // step also evaluates possibly-infeasible geometry points, which must not
+        // be reported. Eval counting is automatic through the `Problem` wrapper.
+        let (best_x, best_f) = work.best();
+        state.replace(fill_from(&template, &best_x), best_f);
+
+        let reason = match out.transition {
+            Transition::Converged => Some(Termination::custom(
+                "lincoa.final_radius",
+                "The algorithm completed its final trust-radius stage; this does not certify feasibility or global optimality.",
+                vec![crate::Measurement {
+                    name: "final_radius".into(),
+                    value: self.rho_end,
+                }],
+            )),
+            Transition::Continue | Transition::RhoReduced => None,
+        };
+        Ok(crate::SolverStep::from((state, reason)))
+    }
+
+    fn terminate(&self, _state: &PointState<V, F>) -> Option<Termination<F>> {
+        let tolerance = self.radius_tolerance?;
+        let metric = self.rho()?;
+        (metric.is_finite() && metric <= tolerance).then(|| {
+            Termination::upper_bound(
+                crate::ConvergenceTest::Radius,
+                metric,
+                tolerance,
+                tolerance,
+                None,
+            )
+        })
+    }
+}

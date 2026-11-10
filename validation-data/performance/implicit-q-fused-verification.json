@@ -1,0 +1,208 @@
+{
+  "date": "2026-11-09T06:02:13.548Z",
+  "passed": true,
+  "checks": {
+    "implicit_native": {
+      "passed": true,
+      "comparisons": 60,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "implicit_search": {
+      "passed": true,
+      "comparisons": 8,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "implicit_search12": {
+      "passed": true,
+      "comparisons": 4,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "fused_native": {
+      "passed": true,
+      "tests": 17,
+      "log_sha256": "9938b00af1d801c063fff14e6443736f87ac5405ada1e01820e8063309d123fd"
+    },
+    "fused_search": {
+      "passed": true,
+      "comparisons": 24,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "fused_search12": {
+      "passed": true,
+      "comparisons": 12,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "repeat_native": {
+      "passed": true,
+      "comparisons": 60,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "repeat_search12": {
+      "passed": true,
+      "comparisons": 4,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "repeat_control": {
+      "passed": true,
+      "comparisons": 2,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "browser": {
+      "passed": true,
+      "comparisons": 66,
+      "browsers": 2,
+      "full_schemas_and_quality_recomputed": true,
+      "verified_wasm": true
+    },
+    "implicit_rust": {
+      "passed": true,
+      "tests": 84,
+      "log_sha256": "968a6ebc12c614f13e91472676d17207be2bb401926e9886d783d1f1b8677282"
+    },
+    "implicit_js": {
+      "passed": true,
+      "tests": 171,
+      "log_sha256": "b7b5d62f9e29a520e1d5b2d1f7aab8717fc0ccc7f6b85d313becdf344fcb1971"
+    },
+    "fused_rust": {
+      "passed": true,
+      "tests": 90,
+      "log_sha256": "b16228c721c514dba49c0ab7f5454df8d0981cc4f0cbf2429c4781039f132802"
+    },
+    "fused_profile_feature": {
+      "passed": true,
+      "tests": 5,
+      "log_sha256": "502ad229cd15ff86d14fe2492160635a3b4a4d54ece00a3c243b14f4ebfe4fbf"
+    },
+    "fused_js": {
+      "passed": true,
+      "tests": 171,
+      "log_sha256": "c98ed3e51cc93629bad771fd0df6dfda0bef26653626d863b2a25a84b8350149"
+    },
+    "fused_typescript": {
+      "passed": true,
+      "tests": 274,
+      "log_sha256": "007a0372dac309dc6f4740dfa0346e94df1eb115bc7b424dd75ef434de62fcf8"
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "typescript_compile": true,
+      "manual_links": 1374,
+      "payload_files": 284,
+      "log_sha256": "cb5d5b577b8510c6a2892611f69cbc0a75f20d68a2da6f93dfd6181fa097afb1"
+    },
+    "desktop_cargo": {
+      "passed": true,
+      "log_sha256": "d856eb9eb15068ca2029a55bcad3bccf82bffdda2b73a2639694e9bdb610d62d"
+    },
+    "forward_model": {
+      "passed": true,
+      "cases": 60,
+      "bit_exact": true
+    }
+  },
+  "maximum_relative_std": {
+    "parameter": 1.1222085439103612e-9,
+    "fraction": 3.613499299433851e-10,
+    "same_coordinate": 0,
+    "numerical_same_coordinate": 0.0000017418250916433711
+  },
+  "hashes": {
+    "PORTING.md": "a3fb5b5ec76171cf80f0da41ff3baeeab26e29a317fc03a4067b2e962d735b52",
+    "README.md": "95413b9f7683167c753257fbce3feb9b9605820be2cf46248f9ab6c670b0dd48",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "rust-core/src/analytical.rs": "9885407e3233fed712a8374942e76cfc13390a8109fcbe041094d15dffe21c63",
+    "rust-core/src/analytical/distribution.rs": "63e7a11d455ab0ff650fc329b3033613f28886c2653c372a64b58a518c66d28a",
+    "rust-core/src/analytical/projection.rs": "2a0ab8bee2e6ead981871f1f1973c6b3689a52f4de2a60326f49bd645175ea39",
+    "rust-core/src/buffer_tests.rs": "9a216c6da056dcf2d5dd1c9d7184dc74b238159d9bba3af9a09f6054b8122abc",
+    "rust-core/src/lib.rs": "64043b50931b92fd47de2bdb829d3a88bac901049a1cf1b4ab8b72fbb7f25c18",
+    "rust-core/src/parallel.rs": "3beb0dc8206f610466afd22ed1faddf0cafc16b99f5f36a960bfd74d6192e64a",
+    "rust-core/src/variable_projection.rs": "ede9415d11d748498d8bb27ce681ee206f80c2a022abbb71122ca95f7d5b3b7d",
+    "rust-core/target/release/examples/native_fixture": "38cd21cee5224bacd72e0bb0863d3d1a44e86fde653f65bc2262f383d91a3087",
+    "rust-core/vendor/basin/README.mossa.md": "c6c3c647d66ca6403d6a2ef081aaee1498f61455533621865300ab2ae7569e44",
+    "rust-core/vendor/basin/implicit-q-fused.patch": "8aeba80d42f0b4e9662463da1169bbc5e4782a551ff7605e00d7a6c8c9380371",
+    "rust-core/vendor/basin/src/core/convergence/builders.rs": "472babec4fa846e39e0dddb0e2728c3e1d34147a2dfcdc2b2178200341e65d70",
+    "rust-core/vendor/basin/src/core/math/dense.rs": "26b7d72867c5cd2e6a9f4b197586730d744204e320d19ac7e88e1877cb983dc3",
+    "rust-core/vendor/basin/src/core/math/dense_svd.rs": "ba84556d63335cd9762b2f50d28f3c41dab66959a966beaf234cea14f4133d34",
+    "rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "442ed384426fc8fd0ce8ee6b35a80f39f9c8506a64417f7e4ab0c74edc8ac466",
+    "rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "a3f0aa3eaedcb753c9732dd602dff88ee4c164693982ec7ec20f3299092b12d9",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-implicit-q-fused-browser.mjs": "aa5955e87509ebe60390990752fbcaf4c2e1b0b1e9ce5f258051f61ac982f5cb",
+    "scripts/benchmark-implicit-q-fused.mjs": "ad8087b40695b823de9ca5b9b6d61ca77ccdcd7c09b4eb7e03c800de14e45c43",
+    "scripts/solver-linear-algebra-cases.mjs": "871d8b9bb94f08036dce2daefe7e8e2e6b8ca7e7cdf20aea421547fc08ce848e",
+    "scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
+    "scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
+    "scripts/verify-implicit-q-fused.mjs": "1bf949737b8ea5ce08f7bc8ca7c8a1e68ddac4fbae014244b62a0e3db18e098d",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "src/wasm/mossa_core_bg.wasm": "423a895552243b8db94bd90bf0ef5468fce9c74ce33ff5907ecd58e0bdcbccb2",
+    "tests/fixtures/solver-qr-mixed-distribution.json": "6570f6062f4b783f8158aa2d7b95ac4a131c82c08c6e56f107116eb7a338cb63",
+    "tests/solver-linear-algebra.test.mjs": "f1a4161d82fbd538a7adea268165de606701424946c38a3fad95b52c1388b7ad",
+    "validation-data/performance/IMPLICIT-Q-FUSED.md": "59cc79621a7bb5e36c2d645ea7929632636a3dce6e135a57ddbf73fd8a41ef62",
+    "validation-data/performance/implicit-q-fused-baseline-provenance.json": "34dd7639de85d068f2fd8cdcdbeca1262234308df93e8ea3c07e295c32f11f98",
+    "validation-data/performance/implicit-q-fused-browser.json": "d70fe2d8de29d923088316584355734eb018723043b2a037bfa1b7b045e9a8c9",
+    "validation-data/performance/implicit-q-fused-fused-native.json": "e80baf05f1657e02fa7ce2fcadd5e83f11d0b7ce0a367473c389e5eb3b721dc1",
+    "validation-data/performance/implicit-q-fused-fused-search.json": "237978fb80b8f714277ef3ce4262e0064e52c7a26574ee2b09fc150df2f28844",
+    "validation-data/performance/implicit-q-fused-fused-search12.json": "179937e4fe50690c25743f683d58c5fae69f4b5c9ef45a9c3a9dba34aa42ff68",
+    "validation-data/performance/implicit-q-fused-implicit-native.json": "20302bfee0506fdf82e8f07acd7405a34f3539b5fb1deab2bda548b92000aebc",
+    "validation-data/performance/implicit-q-fused-implicit-provenance.json": "189fb1b4bce85eeb9b4e50931668c911b9ee9a40f05917209eb5d57b1c867f99",
+    "validation-data/performance/implicit-q-fused-implicit-search.json": "f382943304a6f51bcd407bac85bcb785e4fdc42d3986be2c9984e31c2c6dc62b",
+    "validation-data/performance/implicit-q-fused-implicit-search12.json": "b3e03c34b99dae75fd0c892ae98c22d2ae2fefc26aa7f685e6130464ee4d1a84",
+    "validation-data/performance/implicit-q-fused-repeat-control.json": "d62ba4f9dee348e5a8cd293adf18effa979961aff35683ff5eef8c5225c73bd3",
+    "validation-data/performance/implicit-q-fused-repeat-native.json": "46aa04fc322c9c87f85c7f31e59f98e44b4445059d58ea48e8b0e85cf63af540",
+    "validation-data/performance/implicit-q-fused-repeat-search12.json": "b0e0f4e57933f572d62442ee3b02774fafe12bf185d63021b540fa11a2475985",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/mossa_core_bg.wasm": "76c4b9c0636dd36baded39a4aaac09c9edaaa08b8be05a631e10b8b7a453d9f3",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/native_fixture": "f5400d7f8855b8dd4c9667a412597702ab7cecee435b5439da80dcef27b6a7e3",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/src/analytical.rs": "fe62de2400f34a5a0a87b4d4ab18019c2d01617d21266a8242b5144347a8dfc0",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/src/lib.rs": "64043b50931b92fd47de2bdb829d3a88bac901049a1cf1b4ab8b72fbb7f25c18",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/src/parallel.rs": "3beb0dc8206f610466afd22ed1faddf0cafc16b99f5f36a960bfd74d6192e64a",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/src/variable_projection.rs": "15d17f3b55b0e3207054c9ce1c602e8de8fca813e0c3fd837e3f07220df0000d",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/vendor/basin/src/core/math/dense_svd.rs": "0487e8a0896011179f908aff5485155bd11fb546ad77596388c31e169ad2dbd7",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "3cf17858f8e223b2ba0ccfb373c521962bf5473481ba8a79afc32d7febe971f8",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "2ae4739badc46e500c5954202a44b81fdbdb338b7ef61294947ddb778575e0cb",
+    "validation-data/performance/runtime/implicit-q-fused/baseline/src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "validation-data/performance/runtime/implicit-q-fused/fused/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/implicit-q-fused/fused/mossa_core_bg.wasm": "423a895552243b8db94bd90bf0ef5468fce9c74ce33ff5907ecd58e0bdcbccb2",
+    "validation-data/performance/runtime/implicit-q-fused/fused/native_fixture": "38cd21cee5224bacd72e0bb0863d3d1a44e86fde653f65bc2262f383d91a3087",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/mossa_core_bg.wasm": "6481e350ab993c51f9f8835c764fe3a82b1fdb91d7bef671ec16d6899460fc62",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/native_fixture": "3048f0f2ac270382a33bef023d6f36fc473fb70798a81cb6979fb33091968c0d",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/src/analytical.rs": "fe62de2400f34a5a0a87b4d4ab18019c2d01617d21266a8242b5144347a8dfc0",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/src/lib.rs": "64043b50931b92fd47de2bdb829d3a88bac901049a1cf1b4ab8b72fbb7f25c18",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/src/parallel.rs": "3beb0dc8206f610466afd22ed1faddf0cafc16b99f5f36a960bfd74d6192e64a",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/src/variable_projection.rs": "15d17f3b55b0e3207054c9ce1c602e8de8fca813e0c3fd837e3f07220df0000d",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/vendor/basin/src/core/convergence/builders.rs": "472babec4fa846e39e0dddb0e2728c3e1d34147a2dfcdc2b2178200341e65d70",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/vendor/basin/src/core/math/dense.rs": "26b7d72867c5cd2e6a9f4b197586730d744204e320d19ac7e88e1877cb983dc3",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/vendor/basin/src/core/math/dense_svd.rs": "ba84556d63335cd9762b2f50d28f3c41dab66959a966beaf234cea14f4133d34",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "442ed384426fc8fd0ce8ee6b35a80f39f9c8506a64417f7e4ab0c74edc8ac466",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "a3f0aa3eaedcb753c9732dd602dff88ee4c164693982ec7ec20f3299092b12d9",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/scripts/benchmark-implicit-q-fused.mjs": "2fa2155f3721f262f3110a5c1a328cdaf2c31ba2940d0010d1370f06639c65f7",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/scripts/solver-linear-algebra-cases.mjs": "871d8b9bb94f08036dce2daefe7e8e2e6b8ca7e7cdf20aea421547fc08ce848e",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
+    "validation-data/performance/runtime/implicit-q-fused/implicit/src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6"
+  }
+}

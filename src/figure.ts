@@ -5,7 +5,8 @@ import { colors, siteColor, type Project, type Evaluation } from './types';
 import { formatTick } from './axes.mjs';
 import { layoutLabel, svgLabelLine } from './scientific-label';
 import { figureTicks, legendSpace, type FigureRect } from './figure-layout';
-import {formatResult,intensityFractions} from './results';
+import {formatParenthetical,formatResult,intensityFractions} from './results';
+import type {FitSummary} from './session';
 
 export type FigureSite = { index: number; name: string; color: string; visible: boolean };
 export type FigureOptions = {
@@ -35,7 +36,7 @@ function wrap(text: string, width: number): string[] {
 }
 
 /** A standalone, white-page figure. Preview and downloads use these exact SVG bytes. */
-export function renderFigure(project: Project, evaluation: Evaluation, options: FigureOptions, fitted: boolean): string {
+export function renderFigure(project: Project, evaluation: Evaluation, options: FigureOptions, fitted: boolean, result: FitSummary | null = null): string {
   if (!Number.isFinite(options.width) || !Number.isFinite(options.height) || options.width < 70 || options.width > 300 || options.height < 60 || options.height > 300) throw new Error('Use a width of 70–300 mm and a height of 60–300 mm.');
   if(!Number.isFinite(options.fillOpacity)||options.fillOpacity<0||options.fillOpacity>1)throw new Error('Use a transparency from 0 to 100%.');
   const W = options.width * 4, H = options.height * 4, xs = project.spectrum.x, ys = project.spectrum.y;
@@ -50,8 +51,18 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
     return { ...s, curve, depth };
   });
   if (options.order === 'depth') sites.sort((a, b) => b.depth - a.depth || a.index - b.index);
-  const fractions=intensityFractions(project,evaluation,null);
-  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data',annotation:'' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model',annotation:'' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site',annotation:options.legendFractions?` · ${fractions[s.index].value==null?'—':(fractions[s.index].value!>0&&fractions[s.index].value!<.1?formatResult(fractions[s.index].value!,2):fractions[s.index].value!.toFixed(1))}%`:'' })) ];
+  const fractions=intensityFractions(project,evaluation,fitted?result:null);
+  const fractionLabel = (index:number) => {
+    const {value,error}=fractions[index];
+    if(value==null)return '—';
+    if(fitted && error!=null && Number.isFinite(error) && error>=0) {
+      const formatted=formatParenthetical(value,error);
+      return formatted.value+formatted.suffix;
+    }
+    const displayed=value>0&&value<.1?formatResult(value,2):value.toFixed(1);
+    return displayed+(fitted?' (—)':'');
+  };
+  const legendItems = [ ...(options.legendDataFit ? [{ name: 'Data', color: '#222222', type: 'data',annotation:'' }, { name: fitted ? 'Fit' : 'Model (unfitted)', color: '#202124', type: 'model',annotation:'' }] : []), ...sites.map(s => ({ name: s.name, color: s.color, type: 'site',annotation:options.legendFractions?` · ${fractionLabel(s.index)}%`:'' })) ];
   const inside = options.legend === 'auto' || /^(top|bottom)-(left|right)$/.test(options.legend);
   const horizontalLegend = options.legend === 'above' || options.legend === 'below';
   const legendWidth = options.legend === 'right' ? Math.min(180, W * .29) : 0;
@@ -67,7 +78,7 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
     rowHeights.push(Math.max(...legendHeights.slice(i,i+columns).map((height,j)=>height+firstHeight-lineHeights[i+j][0]))+9);
   }
   const legendHeight = rowHeights.reduce((sum, h) => sum + h, 0);
-  const fractionBasis=options.legendFractions&&options.legend!=='none'&&sites.length ? `Legend percentages: ${project.mode==='transmission'?'absorber ':''}intensity fractions of all model sites, including hidden sites${!fitted?' (unfitted starting parameters)':''}.${project.mode==='transmission'?' Not phase abundances.':''}` : '';
+  const fractionBasis=options.legendFractions&&options.legend!=='none'&&sites.length ? `Legend percentages: ${project.mode==='transmission'?'absorber ':''}intensity fractions of all model sites, including hidden sites${!fitted?' (unfitted starting parameters)':''}.${fitted?' Parentheses: approximate 1 std in the last quoted digits; (—): std unavailable.':''}${project.mode==='transmission'?' Not phase abundances.':''}` : '';
   const noteLines = [project.mode === 'transmission' && sites.length ? 'Sites: display-scaled absorber profiles; not additive transmission components.' : '',fractionBasis].filter(Boolean).flatMap(note=>wrap(note,W-36));
   const noteHeight = noteLines.length ? noteLines.length * 12 + 16 : 0;
   const titleLines = options.title ? wrap(options.title, W - 130 - legendWidth) : [];
@@ -135,7 +146,7 @@ export function renderFigure(project: Project, evaluation: Evaluation, options: 
       if (options.residual !== 'none') segment(L, pr(0), R, pr(0));
       legendRect = legendSpace(plot, width, height, occupied);
       // Never cover scientific content when no free interior rectangle exists.
-      if (!legendRect) return renderFigure(project, evaluation, { ...options, legend: 'above' }, fitted);
+      if (!legendRect) return renderFigure(project, evaluation, { ...options, legend: 'above' }, fitted, result);
     } else {
       if (width > plot.width - 24 || height > plot.height - 24) throw new Error('Place the legend above or below, or increase the figure size to fit these labels.');
       legendRect = { x: options.legend.endsWith('right') ? R - width - 12 : L + 12, y: options.legend.startsWith('top') ? mainTop + 12 : mainBottom - height - 12, width, height };

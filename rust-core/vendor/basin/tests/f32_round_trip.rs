@@ -1,0 +1,654 @@
+//! End-to-end smoke test that solvers, states, and termination criteria
+//! compose at `F = f32` over the `Vec<F>` backend. Demonstrates the
+//! provisional-choice trigger from `CONTRIBUTING.md` is now satisfiable: the
+//! whole pipeline runs at a non-`f64` scalar without further refactor.
+
+#[path = "support/reflective_backend.rs"]
+mod reflective_backend;
+
+#[path = "support/nonlinear_cg_backend.rs"]
+mod nonlinear_cg_backend;
+
+#[path = "support/direct_backend.rs"]
+mod direct_backend;
+
+#[test]
+fn direct_f32() {
+    direct_backend::check::<_, f32>(|x| x.to_vec());
+}
+
+#[test]
+fn nonlinear_cg_f32() {
+    nonlinear_cg_backend::check::<_, f32>(|x| x.to_vec());
+}
+
+#[test]
+fn trust_region_reflective_f32() {
+    reflective_backend::check::<_, f32>(|x| x.to_vec());
+}
+
+#[test]
+fn scalar_bracketing_and_roots_f32() {
+    use basin::{
+        BisectionRoot, HalleyRoot, MinimumBracketer, NewtonRoot, RootBracketer,
+        SecantRoot, Toms748Root,
+    };
+    use std::convert::Infallible;
+    let f = |x: f32| Ok::<_, Infallible>(x * x - 2.0);
+    let bracket = RootBracketer::new(0.0_f32, 0.5)
+        .with_lower_bound(0.0)
+        .bracket(f)
+        .unwrap();
+    assert!(bracket.bracketed());
+    let (a, b) = bracket.bracket();
+    let results = [
+        BisectionRoot::new(a, b).solve(f).unwrap(),
+        SecantRoot::new(a, b).solve(f).unwrap(),
+        NewtonRoot::new(a, b).solve(f, |x| Ok(2.0 * x)).unwrap(),
+        NewtonRoot::new(a, b)
+            .solve_combined(|x| Ok::<_, Infallible>((x * x - 2.0, 2.0 * x)))
+            .unwrap(),
+        HalleyRoot::new(a, b)
+            .solve(f, |x| Ok(2.0 * x), |_| Ok(2.0))
+            .unwrap(),
+        HalleyRoot::new(a, b)
+            .solve_combined(|x| {
+                Ok::<_, Infallible>((x * x - 2.0, 2.0 * x, 2.0))
+            })
+            .unwrap(),
+        Toms748Root::new(a, b).solve(f).unwrap(),
+    ];
+    for result in results {
+        let root: f32 = result.root();
+        assert!(result.converged(), "{result:?}");
+        assert!((root - 2.0_f32.sqrt()).abs() <= 8.0 * f32::EPSILON);
+        assert_eq!(result.value(), f(root).unwrap());
+    }
+    let minimum = MinimumBracketer::new(-1.0_f32, 0.0, 1.0)
+        .bracket(|x| Ok::<_, Infallible>((x - 10.0).powi(2)))
+        .unwrap();
+    assert!(minimum.bracketed());
+    let (a, _, b): (f32, f32, f32) = minimum.bracket();
+    assert!(a < 10.0 && 10.0 < b);
+}
+
+use basin::core::executor::Executor;
+use basin::core::math::DenseMatrix;
+use basin::core::problem::{CostFunction, Gradient, Hessian, HessianProduct};
+use basin::core::state::{FirstOrderState, PointState, State};
+use basin::line_search::{Backtracking, HagerZhang, MoreThuente};
+use basin::solver::lbfgs::{Lbfgs, Unbounded};
+use basin::{
+    Cobyla, Gbnm, GradientDescent, MatrixFree, MoreSorensen, SelectedState,
+    Steihaug, TerminationCode, TrustRegion,
+};
+
+/// `f(x) = ‖x − c‖²` with `c = (1, 2, 3)`. Minimum at `c`, cost 0.
+struct ShiftedQuadF32 {
+    c: Vec<f32>,
+}
+
+impl CostFunction for ShiftedQuadF32 {
+    type Param = Vec<f32>;
+    type Output = f32;
+    type Error = std::convert::Infallible;
+    fn cost(&self, x: &Vec<f32>) -> Result<f32, Self::Error> {
+        Ok(x.iter().zip(&self.c).map(|(a, b)| (a - b).powi(2)).sum())
+    }
+}
+
+impl Gradient for ShiftedQuadF32 {
+    type Gradient = Vec<f32>;
+    fn gradient(&self, x: &Vec<f32>) -> Result<Vec<f32>, Self::Error> {
+        Ok(x.iter().zip(&self.c).map(|(a, b)| 2.0 * (a - b)).collect())
+    }
+}
+
+struct BoundedSphereF32 {
+    lower: Vec<f32>,
+    upper: Vec<f32>,
+}
+
+impl basin::Constraints for BoundedSphereF32 {
+    type Set = basin::ConstraintSet<basin::BoxBounds<Vec<f32>>>;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new().with_bounds(basin::BoxBounds::new(
+            Some(&self.lower),
+            Some(&self.upper),
+        ))
+    }
+}
+impl CostFunction for BoundedSphereF32 {
+    type Param = Vec<f32>;
+    type Output = f32;
+    type Error = std::convert::Infallible;
+
+    fn cost(&self, x: &Self::Param) -> Result<Self::Output, Self::Error> {
+        Ok(x.iter().map(|value| value * value).sum())
+    }
+}
+
+impl basin::NonlinearInequalityValues for BoundedSphereF32 {
+    type Param = Vec<f32>;
+    type Values = Vec<f32>;
+    type Error = std::convert::Infallible;
+    fn nonlinear_inequalities(
+        &self,
+        x: &Self::Param,
+    ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>> {
+        {
+            Ok(x.iter()
+                .zip(&self.lower)
+                .zip(&self.upper)
+                .flat_map(|((&v, &l), &u)| [l - v, v - u])
+                .collect())
+        }
+        .map_err(basin::ConstraintSolveError::Evaluation)
+    }
+}
+
+#[test]
+fn cobyla_f32_round_trips_small_and_cached_inverse_paths() {
+    for n in [2, 3, 5] {
+        let problem = BoundedSphereF32 {
+            lower: vec![1.0; n],
+            upper: vec![5.0; n],
+        };
+        let result = Executor::new(
+            problem,
+            Cobyla::<_, f32>::new()
+                .with_initial_radius(0.5)
+                .with_final_radius(1e-4),
+            SelectedState::<Vec<f32>, f32>::new(vec![3.0; n]),
+        )
+        .max_iter(1000)
+        .run()
+        .unwrap();
+        assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+        let x = result.best_param();
+        assert!(x.iter().all(|v| v.is_finite() && (*v - 1.0).abs() < 5e-4));
+        assert!((result.best_cost() - n as f32).abs() < 5e-3);
+        assert_eq!(result.best_cost(), x.iter().map(|v| v * v).sum::<f32>());
+    }
+}
+
+#[test]
+fn cobyla_f32_round_trips_full_form_constraints() {
+    struct MixedF32 {
+        inequality: DenseMatrix<f32>,
+        inequality_rhs: Vec<f32>,
+        equality: DenseMatrix<f32>,
+        equality_rhs: Vec<f32>,
+        lower: Vec<f32>,
+        upper: Vec<f32>,
+    }
+
+    impl basin::Constraints for MixedF32 {
+        type Set = basin::ConstraintSet<
+            basin::BoxBounds<Vec<f32>>,
+            basin::LinearBlocks<
+                basin::LinearBlock<DenseMatrix<f32>, Vec<f32>>,
+                basin::LinearBlock<DenseMatrix<f32>, Vec<f32>>,
+            >,
+            basin::NonlinearBlocks<
+                basin::NoNonlinearBlock,
+                basin::NonlinearBlock,
+            >,
+        >;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new()
+                .with_bounds(basin::BoxBounds::new(
+                    Some(&self.lower),
+                    Some(&self.upper),
+                ))
+                .with_linear_equalities(basin::LinearBlock::optional({
+                    Some((&self.equality, &self.equality_rhs))
+                }))
+                .with_linear_inequalities(basin::LinearBlock::optional({
+                    Some((&self.inequality, &self.inequality_rhs))
+                }))
+                .with_nonlinear_inequalities(1)
+        }
+    }
+    impl CostFunction for MixedF32 {
+        type Param = Vec<f32>;
+        type Output = f32;
+        type Error = std::convert::Infallible;
+
+        fn cost(&self, x: &Vec<f32>) -> Result<f32, Self::Error> {
+            Ok(x.iter().map(|v| (v - 2.0).powi(2)).sum())
+        }
+    }
+
+    impl basin::NonlinearInequalityValues for MixedF32 {
+        type Param = Vec<f32>;
+        type Values = Vec<f32>;
+        type Error = std::convert::Infallible;
+        fn nonlinear_inequalities(
+            &self,
+            x: &Self::Param,
+        ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>>
+        {
+            { Ok(vec![x[0] * x[0] - 1.0]) }
+                .map_err(basin::ConstraintSolveError::Evaluation)
+        }
+    }
+
+    let problem = MixedF32 {
+        inequality: DenseMatrix::from_row_slice(
+            1,
+            5,
+            &[0.0, 1.0, 0.0, 0.0, 0.0],
+        ),
+        inequality_rhs: vec![0.5],
+        equality: DenseMatrix::from_row_slice(1, 5, &[0.0, 0.0, 1.0, 0.0, 0.0]),
+        equality_rhs: vec![0.25],
+        lower: vec![
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            3.0,
+        ],
+        upper: vec![
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            0.75,
+            f32::INFINITY,
+        ],
+    };
+    let result = Executor::from_start(
+        problem,
+        Cobyla::<_, f32>::new()
+            .with_initial_radius(0.5)
+            .with_final_radius(1e-4),
+        vec![0.0_f32; 5],
+    )
+    .max_cost_evals(3000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    let x = result.best_param();
+    let expected = [1.0, 0.5, 0.25, 0.75, 3.0];
+    for (value, target) in x.iter().zip(expected) {
+        assert!((value - target).abs() < 2e-3, "x = {x:?}");
+    }
+    assert!(x[0] * x[0] <= 1.0 + 1e-3);
+    assert!(x[1] <= 0.5 + 1e-3);
+    assert!((x[2] - 0.25).abs() < 1e-3);
+    assert!(x[3] <= 0.75 + 1e-3);
+    assert!(x[4] >= 3.0 - 1e-3);
+    assert!((result.best_cost() - 8.875).abs() < 1e-2);
+    assert_eq!(
+        result.best_cost(),
+        x.iter().map(|value| (value - 2.0).powi(2)).sum::<f32>()
+    );
+}
+
+#[test]
+fn gbnm_f32_round_trips_solver_state_and_bounds() {
+    let problem = BoundedSphereF32 {
+        lower: vec![-5.0; 2],
+        upper: vec![5.0; 2],
+    };
+    let solver = Gbnm::<_, f32>::new(42);
+    let state = PointState::<Vec<f32>, f32>::new(vec![3.0, 3.0]);
+
+    let result = Executor::new(problem, solver, state)
+        .max_iter(300)
+        .run_with_solver()
+        .unwrap();
+
+    assert!(result.state.best_cost() < 1e-5);
+    assert!(
+        result
+            .solver
+            .vertices()
+            .iter()
+            .flatten()
+            .all(|value| (-5.0..=5.0).contains(value))
+    );
+}
+
+#[test]
+fn gradient_descent_f32_with_f32_termination_converges() {
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: GradientDescent<Backtracking<f32>, Vec<f32>, f32> =
+        GradientDescent::with_line_search(Backtracking::new());
+
+    let result = Executor::new(
+        problem,
+        (solver).with_absolute_gradient_tolerance(1e-3),
+        state,
+    )
+    .max_iter(500)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-2);
+    assert!((final_x[1] - 2.0).abs() < 1e-2);
+    assert!((final_x[2] - 3.0).abs() < 1e-2);
+}
+
+#[test]
+fn unbounded_lbfgs_f32_round_trips_state_solver_termination() {
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: Lbfgs<Vec<f32>, f32, Unbounded, MoreThuente<f32>> =
+        Lbfgs::with_line_search(MoreThuente::new())
+            .unbounded()
+            .with_m_capacity(5);
+
+    let result = Executor::new(
+        problem,
+        (((solver).with_relative_cost_change_tolerance(1e-6))
+            .with_absolute_gradient_tolerance(1e-3))
+        .with_absolute_cost_change_tolerance(1e-6),
+        state,
+    )
+    .max_iter(100)
+    .target_objective(1e-6)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-3);
+    assert!((final_x[1] - 2.0).abs() < 1e-3);
+    assert!((final_x[2] - 3.0).abs() < 1e-3);
+}
+
+#[test]
+fn hager_zhang_f32_round_trips_line_search_and_lbfgs() {
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: Lbfgs<Vec<f32>, f32, Unbounded, HagerZhang<f32>> =
+        Lbfgs::with_line_search(HagerZhang::new())
+            .unbounded()
+            .with_m_capacity(5);
+
+    let result = Executor::new(
+        problem,
+        (solver).with_absolute_gradient_tolerance(1e-3),
+        state,
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-3);
+    assert!((final_x[1] - 2.0).abs() < 1e-3);
+    assert!((final_x[2] - 3.0).abs() < 1e-3);
+}
+
+impl Hessian for ShiftedQuadF32 {
+    type Hessian = DenseMatrix<f32>;
+    fn hessian(&self, _x: &Vec<f32>) -> Result<DenseMatrix<f32>, Self::Error> {
+        // f(x) = Σ (xᵢ − cᵢ)², so ∇²f = 2 I.
+        Ok(DenseMatrix::from_fn(
+            3,
+            3,
+            |i, j| if i == j { 2.0 } else { 0.0 },
+        ))
+    }
+}
+
+impl HessianProduct for ShiftedQuadF32 {
+    fn hessian_product(
+        &self,
+        _x: &Vec<f32>,
+        v: &Vec<f32>,
+    ) -> Result<Vec<f32>, Self::Error> {
+        // ∇²f = 2 I, so ∇²f·v = 2 v.
+        Ok(v.iter().map(|vi| 2.0 * vi).collect())
+    }
+}
+
+#[test]
+fn matrix_free_trust_region_f32_round_trips_state_solver_termination() {
+    // The matrix-free second-order pipeline (HessianProduct trait, Steihaug
+    // CG via products) runs end-to-end at F = f32 over Vec<f32>, with no
+    // matrix type anywhere.
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: TrustRegion<Steihaug, f32, MatrixFree> =
+        TrustRegion::matrix_free_with(Steihaug::new());
+
+    let result = Executor::new(
+        problem,
+        (solver).with_absolute_gradient_tolerance(1e-4),
+        state,
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-3);
+    assert!((final_x[1] - 2.0).abs() < 1e-3);
+    assert!((final_x[2] - 3.0).abs() < 1e-3);
+}
+
+#[test]
+fn configured_steihaug_f32_runs_in_both_modes() {
+    for (kappa, theta) in [(0.5_f32, 0.5), (0.1, 1.0), (1e-5, 0.0)] {
+        let subproblem = Steihaug::new()
+            .with_forcing_parameters(kappa, theta)
+            .with_max_iter(6);
+        let exact = Executor::from_start(
+            ShiftedQuadF32 {
+                c: vec![1.0, 2.0, 3.0],
+            },
+            TrustRegion::with_subproblem(subproblem),
+            vec![0.0_f32; 3],
+        )
+        .target_objective(1e-8_f32)
+        .run()
+        .unwrap();
+        let free = Executor::from_start(
+            ShiftedQuadF32 {
+                c: vec![1.0, 2.0, 3.0],
+            },
+            TrustRegion::matrix_free_with(subproblem),
+            vec![0.0_f32; 3],
+        )
+        .target_objective(1e-8_f32)
+        .run()
+        .unwrap();
+        assert!(exact.cost() <= 1e-8_f32);
+        assert_eq!(exact.cost(), free.cost());
+        assert_eq!(exact.param(), free.param());
+    }
+}
+
+#[test]
+fn solis_wets_f32_round_trips_state_solver_termination() {
+    // The derivative-free adaptive-random-search pipeline (SolisWets,
+    // PointState, solver-owned step size and RhoTolerance) runs end-to-end at
+    // F = f32 over Vec<f32>.
+    use basin::SolisWets;
+
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let solver = SolisWets::<_, f32>::new(42);
+
+    let result = Executor::from_start(
+        problem,
+        (solver).with_absolute_step_size_tolerance(1e-5),
+        vec![0.0_f32; 3],
+    )
+    .max_iter(20_000)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.best_param();
+    assert!((final_x[0] - 1.0).abs() < 1e-1);
+    assert!((final_x[1] - 2.0).abs() < 1e-1);
+    assert!((final_x[2] - 3.0).abs() < 1e-1);
+}
+
+#[test]
+fn trust_region_f32_round_trips_state_solver_termination() {
+    // The whole second-order pipeline (Hessian trait, DenseMatrix<f32>
+    // matvec, Steihaug CG) runs end-to-end at F = f32 over Vec<f32>.
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: TrustRegion<Steihaug, f32> =
+        TrustRegion::with_subproblem(Steihaug::new());
+
+    let result = Executor::new(
+        problem,
+        (solver).with_absolute_gradient_tolerance(1e-4),
+        state,
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-3);
+    assert!((final_x[1] - 2.0).abs() < 1e-3);
+    assert!((final_x[2] - 3.0).abs() < 1e-3);
+}
+
+#[test]
+fn more_sorensen_f32_round_trips_state_solver_termination() {
+    let problem = ShiftedQuadF32 {
+        c: vec![1.0_f32, 2.0, 3.0],
+    };
+    let state = FirstOrderState::<Vec<f32>, f32>::new(vec![0.0_f32; 3]);
+    let solver: TrustRegion<MoreSorensen, f32> =
+        TrustRegion::with_subproblem(MoreSorensen::new());
+
+    let result = Executor::new(
+        problem,
+        (solver).with_absolute_gradient_tolerance(1e-4),
+        state,
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+
+    let final_x = result.state.param();
+    assert!((final_x[0] - 1.0).abs() < 1e-3);
+    assert!((final_x[1] - 2.0).abs() < 1e-3);
+    assert!((final_x[2] - 3.0).abs() < 1e-3);
+}
+
+#[test]
+fn levenberg_marquardt_qr_f32_round_trip() {
+    struct Fit;
+
+    impl basin::Residual for Fit {
+        type Param = Vec<f32>;
+        type Output = Vec<f32>;
+        type Error = std::convert::Infallible;
+        fn residual(&self, x: &Vec<f32>) -> Result<Vec<f32>, Self::Error> {
+            Ok(vec![x[0] - 1., 2. * (x[1] - 2.)])
+        }
+    }
+    impl basin::Jacobian for Fit {
+        type Jacobian = DenseMatrix<f32>;
+        fn jacobian(
+            &self,
+            _: &Vec<f32>,
+        ) -> Result<Self::Jacobian, Self::Error> {
+            Ok(DenseMatrix::from_row_slice(2, 2, &[1., 0., 0., 2.]))
+        }
+    }
+    let solver = basin::LevenbergMarquardtQr::<_, _, f32>::new()
+        .with_absolute_gradient_tolerance(1e-5);
+    let result = Executor::from_start(Fit, solver, vec![0., 0.])
+        .max_iter(50)
+        .run()
+        .unwrap();
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!((result.param()[0] - 1.).abs() < 1e-5);
+    assert!((result.param()[1] - 2.).abs() < 1e-5);
+}
+
+#[test]
+fn slsqp_f32_round_trips_bounded_numerical_derivatives() {
+    struct Equality;
+
+    impl basin::Constraints for Equality {
+        type Set = basin::ConstraintSet<
+            basin::NoBounds,
+            basin::NoLinearConstraints,
+            basin::NonlinearBlocks<
+                basin::NonlinearBlock,
+                basin::NoNonlinearBlock,
+            >,
+        >;
+        fn constraints(
+            &self,
+        ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+            basin::ConstraintSet::new().with_nonlinear_equalities(1)
+        }
+    }
+    impl CostFunction for Equality {
+        type Param = Vec<f32>;
+        type Output = f32;
+        type Error = std::convert::Infallible;
+        fn cost(&self, x: &Vec<f32>) -> Result<f32, Self::Error> {
+            Ok(x[0] * x[0] + x[1] * x[1])
+        }
+    }
+    impl basin::NonlinearEqualityValues for Equality {
+        type Param = Vec<f32>;
+        type Values = Vec<f32>;
+        type Error = std::convert::Infallible;
+        fn nonlinear_equalities(
+            &self,
+            x: &Self::Param,
+        ) -> Result<Self::Values, basin::ConstraintSolveError<Self::Error>>
+        {
+            { Ok(Some(vec![x[0] + x[1] - 1.0])) }
+                .map_err(basin::ConstraintSolveError::Evaluation)?
+                .ok_or(basin::ConstraintSolveError::InvalidConstraints(
+                    basin::ConstraintError::DimensionMismatch {
+                        block: basin::ConstraintBlock::NonlinearEqualities,
+                        axis: basin::ConstraintAxis::Length,
+                        expected: 1,
+                        actual: 0,
+                    },
+                ))
+        }
+    }
+
+    let p = basin::BoundedFiniteDiff::<_, f32>::new(
+        Equality,
+        vec![-2.; 2],
+        vec![2.; 2],
+    );
+    let result = Executor::from_start(
+        p,
+        basin::Slsqp::<f32>::new().with_absolute_accuracy_tolerance(1e-4),
+        vec![0.; 2],
+    )
+    .max_iter(30)
+    .run()
+    .unwrap();
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!(result.param().iter().all(|v| (*v - 0.5).abs() < 1e-3));
+    assert!(result.state.current().unwrap().3.value < 1e-4);
+}

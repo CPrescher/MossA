@@ -1,0 +1,649 @@
+# DIRECT reference fixtures
+
+`direct_reference.tsv` records original-DIRECT runs from
+[SciPy 1.16.2](https://github.com/scipy/scipy/tree/v1.16.2/scipy/optimize/_direct),
+with NumPy 2.3.3. SciPy is BSD-3-Clause licensed; its DIRECT kernel derives
+from Gablonsky's MIT-licensed DIRECT 2.0.4, translated and reorganized for
+NLopt. Basin independently implements the subdivision procedure and
+Definition 4.1 on pp. 169–170 of Jones, Perttunen, and Stuckman (1993),
+[doi:10.1007/BF00941892](https://doi.org/10.1007/BF00941892).
+
+All cases use `[-5, 5]^n`, `locally_biased=False`, `eps=1e-4`,
+`len_tol=0`, `vol_tol=0`, and `maxiter=1000`. The evaluation budget is
+2,000 for Styblinski–Tang 2D and 10,000 for Styblinski–Tang 6D and
+Ackley 6D translated by `0.37` in every coordinate. The translation keeps
+Ackley's minimizer away from DIRECT's initial midpoint. The generator computes
+the quartic's known minimum from its negative stationary root. Each row records
+the dimension, budget, accuracy threshold, known minimum, returned cost,
+actual evaluations, iterations, and returned coordinates.
+
+`tests/direct.rs` verifies the reference objective values independently, then
+requires objective gaps of at most `1e-4`, `0.5`, and `0.01`, respectively.
+It prints both implementations' gaps and evaluation counts and requires
+Basin to use no more than twice the reference's evaluations. Both solvers
+finish subdivision sweeps before testing budgets, so actual evaluations can
+exceed the requested budget.
+
+These are solution-quality and evaluation-count comparisons, not complete
+trajectory parity. SciPy groups costs within an absolute `1e-13` as ties,
+while Basin uses exact ties and stable coordinate and creation order.
+Different floating-point evaluation orders can therefore change the selected
+rectangles. Separate analytic tests check the initial coordinate cross,
+subdivision geometry, exact ties, and selection inequalities. CI needs neither
+Python nor an external executable.
+
+Regenerate from the repository root:
+
+```sh
+uv run --no-project --with scipy==1.16.2 --with numpy==2.3.3 \
+  python crates/basin/tests/fixtures/direct_reference.py
+```
+
+On NixOS, the wheel environment also needs zlib and the C++ runtime on its
+library search path. Use the existing development environment's libraries;
+the generator does not change project dependencies.
+
+# Nonlinear conjugate gradient reference fixtures
+
+`nonlinear_cg_reference.tsv` records final solutions from the authors'
+[CG_DESCENT C 1.2](https://www.math.lsu.edu/~hozhang/software-archive.html),
+released November 14, 2005. Its safeguarded Hager–Zhang recurrence follows
+equations (1.3), (1.5), and (1.6) of Hager and Zhang (2005),
+[doi:10.1137/030601880](https://doi.org/10.1137/030601880). The C source is
+GPL-2.0-or-later and stays under gitignored `references/`; Basin implements
+the published equations independently. The committed C driver supplies only
+independent objective callbacks and calls the reference's public API.
+
+Locked cases match `tests/support/nonlinear_cg_backend.rs`:
+
+- `quadratic`: `f(x) = (3x₀² + 2x₀x₁ + 2x₁²)/2`, start `(2, -1)`.
+- `rosenbrock`: `100(x₁ − x₀²)² + (1 − x₀)²`, start `(-1.2, 1)`.
+- `ill_conditioned`: seven-dimensional quadratic with eigenvalues `10⁰`
+  through `10⁶`, rotated by `Q = I − 2uuᵀ`, `u = (1,…,1)/√7`, start `(1,…,1)`.
+
+The reference uses its default settings except `restart_fac = 1000000`
+(beyond the run budget), `maxit_fac = 10000`, and `PrintFinal = 0`.
+Its gradient infinity tolerance is `1e-8`. Each row contains the problem,
+dimension, status, cost, gradient infinity norm, and final coordinates.
+The driver recomputes costs and gradients at the returned point and requires
+status zero. Rust tests verify fixture consistency, then require Basin's
+Euclidean gradient norm to reach `1e-7`, objective agreement within `1e-12`,
+and coordinate agreement within `5e-7`.
+
+These are solution and stationarity comparisons, not trajectory parity.
+CG_DESCENT uses step-initialization heuristics and an approximate-Wolfe
+switching policy that differ from Basin's existing line search. Its original
+default periodic restarts are disabled for comparison with Basin's chosen
+default. Separate analytic tests verify exact-search conjugacy, the coefficient
+lower bound, and sufficient descent.
+
+Regenerate from the repository root with Python and a C compiler:
+
+```sh
+python crates/basin/tests/fixtures/nonlinear_cg_reference.py
+```
+
+The script downloads the pinned archive, checks SHA-256
+`8c09fdb6f98540b214ef348060fa6834d45c32f84cdfbc200e3d97d6631d0573`,
+and builds and runs the reference under `references/nonlinear-cg-c-1.2/`.
+CI reads the committed fixture and needs neither the reference nor a C compiler.
+
+# L-BFGS-B parity fixtures
+
+`lbfgsb_rosenbrock_5d.tsv` is the iteration-wise trajectory of Nocedal's
+L-BFGS-B v3.0 Fortran source on Rosenbrock 5D, used by
+`tests/lbfgsb_iter_parity.rs` to verify basin's port reproduces it
+within `~1e-10`.
+
+## Format
+
+One line per iterate. Whitespace-separated (Fortran TSV-ish):
+
+```
+iter f x(0) x(1) x(2) x(3) x(4) g(0) g(1) g(2) g(3) g(4)
+```
+
+- `iter == 0` is the post-init state (x has been projected onto the
+  feasible box; cost and gradient have been evaluated). No L-BFGS-B
+  step has been taken yet.
+- `iter == k > 0` is the state at the end of iteration `k`, i.e.
+  after `k` accepted line searches.
+
+Numbers are printed with `es24.16` for full f64 round-trip.
+
+## Problem setup (locked)
+
+- `n = 5`, `m = 5`
+- Bounds `[0, 5]^5` (Fortran `nbd(i) = 2`)
+- Start `(-1, 2, -1, 2, -1)` (infeasible; `active` projects it to
+  `(0, 2, 0, 2, 0)`)
+- `factr = 0`, `pgtol = 0`, `max_iter = 30`
+- Rosenbrock in basin's standard coefficient form
+  (`Σ 100 (xᵢ₊₁ − xᵢ²)² + (1 − xᵢ)²`, not the rescaled `driver1.f`
+  variant).
+
+## Regenerating
+
+The committed `.tsv` is the artifact the test reads; you only need
+to follow the steps below if you've changed the fixture parameters
+(start point, bounds, `max_iter`, etc.) and need a fresh trajectory.
+
+The L-BFGS-B v3.0 source is **not vendored** in this repo;
+`references/` is gitignored, by project convention (papers and
+reference implementations live there locally). Fetch the BSD-3
+v3.0 tarball from Nocedal's group:
+
+```bash
+mkdir -p ../../../../references/lbfgsb-v3.0
+curl -L https://users.iems.northwestern.edu/~nocedal/Software/Lbfgsb.3.0.tar.gz \
+  | tar -xz --strip-components=1 -C ../../../../references/lbfgsb-v3.0
+```
+
+Then build the driver and dump a fresh fixture:
+
+```bash
+gfortran -O0 -std=legacy -o lbfgsb_driver lbfgsb_driver.f \
+  ../../../../references/lbfgsb-v3.0/lbfgsb.f \
+  ../../../../references/lbfgsb-v3.0/linpack.f \
+  ../../../../references/lbfgsb-v3.0/blas.f \
+  ../../../../references/lbfgsb-v3.0/timer.f
+./lbfgsb_driver > lbfgsb_rosenbrock_5d.tsv
+rm lbfgsb_driver
+```
+
+This is a manual on-demand step. CI does not rebuild the fixture.
+
+# NEWUOA parity fixtures
+
+`newuoa_<problem>_<n>d.tsv` are reference runs of **PRIMA's** NEWUOA (the BSD-3
+C/Fortran translation of Powell's solvers, vendored at `tools/prima`, submodule
+v0.7.2), used by `crates/basin/src/solver/newuoa/parity.rs` to cross-validate
+basin's NEWUOA port (`docs/newuoa-roadmap.md`). The parity test is **in-crate**
+(not under `tests/`) because `minimize` is `pub(crate)`; it reads these files via
+`include_str!`.
+
+Committed fixtures (`problem`, `n`, start `x0`, `rho_beg`):
+
+- `newuoa_rosenbrock_2d.tsv`: Rosenbrock 2D (basin form), `x0=(-1.2, 1)`,
+  `rho_beg=0.5`.
+- `newuoa_chrosen_5d.tsv`: chained Rosenbrock 5D, `x0=(-1,…)`, `rho_beg=0.5`.
+- `newuoa_arwhead_5d.tsv`: ARWHEAD 5D, `x0=(1,…)`, `rho_beg=1.0`.
+- `newuoa_vardim_5d.tsv`: VARDIM 5D (the §8 Qint motivator), `x0_i=1-i/n`,
+  `rho_beg=1/(2n)`.
+
+All use `rho_end=1e-6`, `npt=2n+1`, `maxfun=500n`. The locked inputs live in the
+fixture itself (the `# config`/`# x0` lines), so the test recomputes nothing.
+
+There is intentionally **no `rosenbrock_5d`** fixture: 5D chained Rosenbrock is
+already `chrosen_5d` (the only difference is the summation term order, which the
+test's tier-1 objective check confirms is equivalent), and from the hard
+`(-1.2, 1, …)` start basin and PRIMA converge to *different* stationary points
+(basin to the global minimum `f≈1e-11`, PRIMA to a local one at `f≈3.93`), a
+property of ill-conditioned multi-basin problems, not a parity signal. The
+fixture set therefore uses problems where both solvers reach the same minimizer.
+
+## Format
+
+One line per objective evaluation, plus three metadata lines. Whitespace-
+separated, `%.17e` for full f64 round-trip:
+
+```
+# config problem=<p> n=<n> rho_beg=<..> rho_end=<..> maxfun=<..> npt=<..>
+# x0 <x0_0> ... <x0_{n-1}>
+<evalindex> <f> <x_0> ... <x_{n-1}>     # one per call, PRIMA's eval order
+...
+# final nf=<nf> rc=<rc> f=<f> x= <x_0> ... <x_{n-1}>
+```
+
+`rc` is PRIMA's return code (`0 == PRIMA_SMALL_TR_RADIUS`, the converged stop).
+
+## What the test asserts
+
+Three tiers (basin is paper-derived, not an FP-identical transcription of
+PRIMA's Fortran, so per-eval trajectory parity is not expected past init):
+
+1. **Objective equivalence**: the Rust objective recomputed at every traced
+   point matches the fixture `f` to `1e-12` relative (catches C↔Rust drift).
+2. **Initial design**: basin's first `npt` samples are the coordinate cross
+   `{x0, x0 ± ρ_beg eₖ}` (§3), compared as a set (PRIMA emits all `+` then all
+   `−`; basin interleaves).
+3. **Final output**: basin converges (ρ reached) to the same minimizer: `f` to
+   `1e-6·(1 + |f*|)` (absolute `~1e-6` when the optimum is near zero, relative
+   otherwise), `x` to `1e-4` in `‖·‖∞`, `nf` within a 25% same-ballpark margin
+   (not exact).
+
+## Regenerating
+
+The committed `.tsv` files are the artifacts the test reads; follow the steps
+below only if you change the locked parameters (start, `rho_beg`, …) or the set
+of problems. The generator source `newuoa_prima_driver.c` is vendored here. CI
+never rebuilds the fixtures.
+
+Inside the devenv shell (provides `cmake` and `gfortran`):
+
+```bash
+# 1. Build static libprima (Fortran + C binding) from the vendored submodule.
+cmake -S tools/prima -B tools/prima/build \
+      -DBUILD_SHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=Release -DPRIMA_ENABLE_C=ON
+cmake --build tools/prima/build --target primac -j
+
+# 2. Compile + link the generator. Link via gfortran so its runtime is found;
+#    primac depends on primaf, so list primac first. -ffp-contract=off keeps the
+#    objective arithmetic reproducible across compilers.
+gcc -std=c99 -O2 -ffp-contract=off -DPRIMAC_STATIC \
+    -I tools/prima/c/include \
+    -c crates/basin/tests/fixtures/newuoa_prima_driver.c -o /tmp/newuoa_gen.o
+gfortran -O2 -o /tmp/newuoa_gen /tmp/newuoa_gen.o \
+    tools/prima/build/c/libprimac.a tools/prima/build/fortran/libprimaf.a -lm
+
+# 3. Regenerate each fixture (run from crates/basin/tests/fixtures/).
+/tmp/newuoa_gen rosenbrock 2 > newuoa_rosenbrock_2d.tsv
+/tmp/newuoa_gen chrosen    5 > newuoa_chrosen_5d.tsv
+/tmp/newuoa_gen arwhead    5 > newuoa_arwhead_5d.tsv
+/tmp/newuoa_gen vardim     5 > newuoa_vardim_5d.tsv
+```
+
+`tools/prima/build/` is build output (not committed). The objective functions in
+`newuoa_prima_driver.c` and in `parity.rs` must stay textually mirrored; the
+tier-1 check enforces it.
+
+# BOBYQA parity fixtures
+
+`bobyqa_<problem>_<n>d.tsv` are reference runs of **PRIMA's** BOBYQA, the
+bound-constrained sibling of NEWUOA (same vendored submodule, v0.7.2), used by
+`crates/basin/src/solver/bobyqa/parity.rs` to cross-validate basin's BOBYQA
+port. Unlike NEWUOA, BOBYQA has a public `Bobyqa` solver, so the parity test
+drives the public `Executor` surface (recording the eval trace through a
+problem wrapper) rather than a `pub(crate)` `minimize`; it still lives in-crate
+to sit beside `newuoa/parity.rs` and read these files via `include_str!`.
+
+Committed fixtures (`problem`, `n`, box, start `x0`, `rho_beg`):
+
+- `bobyqa_rosenbrock_2d.tsv`: Rosenbrock 2D (basin form), box `[-5,5]²`,
+  `x0=(-1.2, 1)`, `rho_beg=0.5`. Interior minimizer `(1,1)` with ≥ `2·rho_beg`
+  slack on every coordinate, so bounds never bind and the initial design is the
+  plain coordinate cross, confirming boxing doesn't perturb the unconstrained
+  trajectory.
+- `bobyqa_sphere_2d.tsv`: shifted sphere `Σ (xᵢ−3)²`, box `[-2,2]²`,
+  `x0=(0,0)`, `rho_beg=0.5`. The unconstrained minimizer `(3,3)` lies *outside*
+  the box, so the solution is the active corner `(2,2)`, exercising the TRSBOX
+  active-set path and bound-aware ALTMOV.
+- `bobyqa_chrosen_5d.tsv`: chained Rosenbrock 5D, wide box `[-10,10]⁵`,
+  `x0=(-1,…)`, `rho_beg=0.5`. Interior minimizer, bounds never bind; a
+  dimensional-scaling check.
+
+All use `rho_end=1e-6`, `npt=2n+1`, `maxfun=500n`. Problems are chosen so PRIMA
+and basin reach the *same* minimizer (see the NEWUOA chrosen_5d note above for
+the multi-basin caveat that informs this choice). The locked inputs (now
+including the box) live in the fixture itself (`# config`/`# x0`/`# xl`/`# xu`),
+so the test recomputes nothing.
+
+## Format
+
+As NEWUOA's, plus two metadata lines recording the box (BOBYQA is
+bound-constrained):
+
+```
+# config problem=<p> n=<n> rho_beg=<..> rho_end=<..> maxfun=<..> npt=<..>
+# x0 <x0_0> ... <x0_{n-1}>
+# xl <xl_0> ... <xl_{n-1}>
+# xu <xu_0> ... <xu_{n-1}>
+<evalindex> <f> <x_0> ... <x_{n-1}>     # one per call, PRIMA's eval order
+...
+# final nf=<nf> rc=<rc> f=<f> x= <x_0> ... <x_{n-1}>
+```
+
+## What the test asserts
+
+The same three tiers as NEWUOA, with one BOBYQA adaptation in tier 2:
+
+1. **Objective equivalence**: the Rust objective recomputed at every traced
+   point matches the fixture `f` to `1e-12` relative.
+2. **Initial design**: basin's first `npt` samples equal PRIMA's first `npt`
+   samples *as a set* (within `1e-12`). BOBYQA's initial design is bound-aware,
+   so this compares against the fixture rather than reconstructing the
+   coordinate cross analytically (PRIMA emits all `+` then all `−`; basin
+   interleaves).
+3. **Final output**: basin converges (`SolverConverged`, ρ reached) to the
+   same minimizer: `f` to `1e-6·(1 + |f*|)` (absolute `~1e-6` near a zero
+   optimum, relative otherwise), `x` to `1e-4` in `‖·‖∞`, `nf` within a 25%
+   same-ballpark margin.
+
+## Regenerating
+
+Same recipe as NEWUOA: build `libprima` once (step 1 above), then compile,
+link, and run `bobyqa_prima_driver.c`:
+
+```bash
+# Compile + link the BOBYQA generator (reuses the libprima build from above).
+gcc -std=c99 -O2 -ffp-contract=off -DPRIMAC_STATIC \
+    -I tools/prima/c/include \
+    -c crates/basin/tests/fixtures/bobyqa_prima_driver.c -o /tmp/bobyqa_gen.o
+gfortran -O2 -o /tmp/bobyqa_gen /tmp/bobyqa_gen.o \
+    tools/prima/build/c/libprimac.a tools/prima/build/fortran/libprimaf.a -lm
+
+# Regenerate each fixture (run from crates/basin/tests/fixtures/).
+/tmp/bobyqa_gen rosenbrock 2 > bobyqa_rosenbrock_2d.tsv
+/tmp/bobyqa_gen sphere     2 > bobyqa_sphere_2d.tsv
+/tmp/bobyqa_gen chrosen    5 > bobyqa_chrosen_5d.tsv
+```
+
+As with NEWUOA, CI never rebuilds these; the committed `.tsv` files are the
+artifacts, and the objective fns in `bobyqa_prima_driver.c` and `parity.rs`
+must stay textually mirrored (the tier-1 check enforces it).
+
+## LINCOA fixtures
+
+Same recipe: build `libprima` once (step 1 above), then compile, link, and run
+`lincoa_prima_driver.c`. The problems are linear-inequality-constrained only
+(`xl`/`xu` passed as `±INFINITY`, no equalities), so PRIMA's folded constraint
+system equals the explicit `A x ≤ b` that basin's `Lincoa` folds.
+
+```bash
+# Compile + link the LINCOA generator (reuses the libprima build from above).
+gcc -std=c99 -O2 -ffp-contract=off -DPRIMAC_STATIC \
+    -I tools/prima/c/include \
+    -c crates/basin/tests/fixtures/lincoa_prima_driver.c -o /tmp/lincoa_gen.o
+gfortran -O2 -o /tmp/lincoa_gen /tmp/lincoa_gen.o \
+    tools/prima/build/c/libprimac.a tools/prima/build/fortran/libprimaf.a -lm
+
+# Regenerate each fixture (run from crates/basin/tests/fixtures/).
+/tmp/lincoa_gen proj2   > lincoa_proj2_2d.tsv     # (x0-2)²+(x1-2)² s.t. x0+x1≤2
+/tmp/lincoa_gen crosen2 > lincoa_crosen2_2d.tsv   # 2D Rosenbrock s.t. x0≤0.5
+/tmp/lincoa_gen cquad3  > lincoa_cquad3_3d.tsv    # Σ(xᵢ-2)² s.t. x0+x1+x2≤3
+```
+
+The fixture carries the `A x ≤ b` system (`# aineq`/`# bineq`) and the final
+`cstrv`; `solver/lincoa/parity.rs` rebuilds the same problem, recomputes the
+objective at every traced point (tier 1), and asserts the converged `x`/`f`,
+feasibility, and `nf` against PRIMA. The objective + constraint definitions in
+`lincoa_prima_driver.c` and `parity.rs` must stay textually mirrored.
+
+## COBYLA fixtures
+
+`cobyla_<problem>_<n>d.tsv` are reference runs of **PRIMA's** COBYLA, the
+nonlinearly-constrained Powell solver (same vendored submodule, v0.7.2), used by
+`crates/basin/src/solver/cobyla/parity.rs` to cross-validate basin's COBYLA port.
+The parity test drives the `pub(crate)` `CobylaWork` directly and reads these
+files via `include_str!`.
+
+Committed fixtures (`problem`, `n`, `m_nlcon`, start `x0`):
+
+- `cobyla_disk_2d.tsv`: Powell (B): `min x0·x1 s.t. x0²+x1²−1 ≤ 0`, `F*=−0.5`.
+  Started at the *asymmetric* feasible point `(0.7, −0.3)`: this objective has
+  two sign-symmetric minima `(+,−)` and `(−,+)`, so a start off the symmetry
+  axis keeps PRIMA and basin in the same basin (both reach `(√½, −√½)`).
+- `cobyla_fletcher_2d.tsv`: Powell (F): `min −x0−x1 s.t. x0²−x1 ≤ 0,
+  x0²+x1²−1 ≤ 0`, `F*=−√2`, `x0=(0.5, 0.5)`. Two active nonlinear constraints
+  at the solution.
+- `cobyla_ballsphere_3d.tsv`: convex sanity: `min Σ(xᵢ−2)² s.t. Σxᵢ²−1 ≤ 0`,
+  `x0=(0.5, 0.5, 0.5)`. Unique minimizer on the unit sphere at `(1/√3)·𝟙`.
+
+All use `rho_beg=0.5`, `rho_end=1e-6`, `maxfun=500n`, and a strictly feasible
+start. Problems are chosen so PRIMA and basin reach the *same* minimizer (see the
+NEWUOA chrosen_5d note above for the multi-basin caveat that motivates the disk
+start). The locked inputs live in the fixture itself, so the test recomputes
+nothing.
+
+### Format
+
+Differs from the linear-constraint fixtures: COBYLA's constraints are
+*functions* (recomputed in Rust, not stored as matrix data), the simplex is
+always `n+1` vertices (no `npt`), and each eval row carries the constraint
+violation `cstrv = [maxᵢ cᵢ(x)]₊` so tier 1 can guard the constraint functions
+too. Whitespace-separated, `%.17e`:
+
+```
+# config problem=<p> n=<n> m_nlcon=<m> rho_beg=<..> rho_end=<..> maxfun=<..>
+# x0 <x0_0> ... <x0_{n-1}>
+<evalindex> <f> <cstrv> <x_0> ... <x_{n-1}>   # one per calcfc call, PRIMA's order
+...
+# final nf=<nf> rc=<rc> f=<f> cstrv=<cstrv> x= <x_0> ... <x_{n-1}>
+```
+
+### What the test asserts
+
+The same three tiers as the siblings, with COBYLA's constraints folded into
+tier 1:
+
+1. **Function equivalence**: the Rust objective *and* the constraint violation
+   recomputed at every traced point match the fixture `f`/`cstrv` to `1e-12`
+   (catches C↔Rust drift in either function).
+2. **Initial design**: basin's first `n+1` samples equal PRIMA's first `n+1`
+   samples *as a set* (within `1e-12`). COBYLA's simplex is built cumulatively
+   with pole swaps, so this compares against the fixture rather than
+   reconstructing a coordinate cross.
+3. **Final output**: basin converges (ρ reached) to the same minimizer: `f` to
+   `1e-6·(1+|f*|)`, `x` to `1e-4` in `‖·‖∞`, the returned point feasible
+   (`cstrv ≤ 1e-6`), `nf` within a same-ballpark margin.
+
+### Regenerating
+
+Same recipe: build `libprima` once (step 1 above), then compile, link, and run
+`cobyla_prima_driver.c`. The problems use only the nonlinear block (`m_ineq =
+m_eq = 0`, `xl`/`xu = ±INFINITY`), matching basin's trait-only path.
+
+```bash
+# Compile + link the COBYLA generator (reuses the libprima build from above).
+gcc -std=c99 -O2 -ffp-contract=off -DPRIMAC_STATIC \
+    -I tools/prima/c/include \
+    -c crates/basin/tests/fixtures/cobyla_prima_driver.c -o /tmp/cobyla_gen.o
+gfortran -O2 -o /tmp/cobyla_gen /tmp/cobyla_gen.o \
+    tools/prima/build/c/libprimac.a tools/prima/build/fortran/libprimaf.a -lm
+
+# Regenerate each fixture (run from crates/basin/tests/fixtures/).
+/tmp/cobyla_gen disk       > cobyla_disk_2d.tsv        # x0·x1 s.t. x0²+x1²≤1
+/tmp/cobyla_gen fletcher   > cobyla_fletcher_2d.tsv    # −x0−x1 s.t. x0²≤x1, ‖x‖≤1
+/tmp/cobyla_gen ballsphere > cobyla_ballsphere_3d.tsv  # Σ(xᵢ−2)² s.t. ‖x‖≤1
+```
+
+As with the others, CI never rebuilds these; the committed `.tsv` files are the
+artifacts, and the objective + constraint fns in `cobyla_prima_driver.c` and
+`parity.rs` must stay textually mirrored (the tier-1 check enforces it).
+
+# Global-best PSO parity fixture
+
+`global_best_pso_argmin_0_11.csv` records one warm-started generation from
+Argmin 0.11.0's `ParticleSwarm`. The exact upstream revision is
+`c94c32adefd6c2525ce05806092ca868ec85fba4` (`argmin-v0.11.0`), licensed
+MIT OR Apache-2.0. Basin's test compares positions and costs only: Argmin does
+not expose velocity or personal-best fields, and Basin independently implements
+the documented global-best equation.
+
+The locked setup has two 2-D particles, box `[-1, 1]^2`, `w=0.7`, `c1=1.2`,
+`c2=1.4`, preserved velocities at clamped boundaries, and a scripted RNG. The
+Argmin vector helper skips draws on zero-length ranges and orders descending
+ranges before sampling. The Basin test therefore supplies the equivalent
+effective `r1`/`r2` coefficients to the standard equation instead of asserting
+RNG-consumption parity, which is not an algorithmic invariant. The driver
+prints rows sorted by current cost because Basin's PSO implementation
+sorts every current generation, while Argmin retains
+particle order after a step. Values use 17 significant decimal digits.
+
+To regenerate, create a temporary Cargo binary with these dependencies:
+
+```toml
+argmin = { version = "=0.11.0", features = ["rand"] }
+argmin-math = { version = "=0.5.1", features = ["vec"] }
+rand = "=0.9.2"
+```
+
+Copy `global_best_pso_argmin_0_11_driver.rs` to its `src/main.rs`, then run:
+
+```bash
+cargo run --quiet > global_best_pso_argmin_0_11.csv
+```
+
+Restore the fixture's `# cost,x0,x1` header after regeneration. CI consumes the
+committed CSV and does not depend on Argmin.
+
+# SLSQP fixtures
+
+`slsqp_hs71.tsv` records accepted major iterates of Jacob Williams's **SLSQP
+1.6.1**, commit `97884f98042624007f736dc536fa5636906ff26a`. Its BSD-3 and
+original SLSQP notices are reproduced in `crates/basin/COPYRIGHT`. The algorithm
+is Kraft's Han–Powell SQP: damped BFGS in packed LDLᵀ form, LSEI/LSI/LDP with the
+original Lawson–Hanson NNLS, an inexact L1 merit line search, and an extra slack
+variable for inconsistent linearizations. Kraft's 1988 report, §§2.2 and 3.2,
+is the mathematical reference:
+<https://degenerateconic.com/uploads/2018/03/DFVLR_FB_88_28.pdf>.
+
+The locked problem is HS71:
+
+- `f = x0*x3*(x0+x1+x2) + x2`;
+- equality `sum(x_i²) - 40 = 0`;
+- public inequality `25 - product(x_i) <= 0` (the Fortran sign is reversed);
+- bounds `[1,5]^4`, start `(1,5,5,1)`, analytic derivatives;
+- accuracy `1e-10`, iteration limit 100, line-search factors `[0.1,1]`,
+  original NNLS (`nnls_mode=1`, automatic `3*n` limit), auxiliary stopping
+  tolerances disabled.
+
+Columns are `accepted_index f x0 x1 x2 x3`. The first row is initialization;
+`mode=-1` requests mark accepted points. The driver also prints the final point
+on `mode=0`, duplicating the preceding row when the following QP recognizes
+convergence. Tests omit that duplicate. Basin's independent Householder and
+Givens arithmetic is compared at `2e-8` absolute tolerance. Every accepted
+record also checks its objective gradient, incumbent, and counts. The same
+trajectory continues across an exact checkpoint, including a serialization
+round trip when `serde` is enabled.
+
+Regenerate from the repository root (external source stays gitignored):
+
+```bash
+mkdir -p references/slsqp-1.6.1
+for file in slsqp_kinds.F90 slsqp_support.F90 bvls_module.f90 slsqp_core.f90; do
+    curl --fail -L "https://raw.githubusercontent.com/jacobwilliams/slsqp/97884f98042624007f736dc536fa5636906ff26a/src/$file" \
+        -o "references/slsqp-1.6.1/$file"
+done
+gfortran -O0 -cpp -J references/slsqp-1.6.1 -I references/slsqp-1.6.1 \
+    references/slsqp-1.6.1/slsqp_kinds.F90 \
+    references/slsqp-1.6.1/slsqp_support.F90 \
+    references/slsqp-1.6.1/bvls_module.f90 \
+    references/slsqp-1.6.1/slsqp_core.f90 \
+    crates/basin/tests/fixtures/slsqp_driver.f90 \
+    -o references/slsqp-1.6.1/driver
+references/slsqp-1.6.1/driver > crates/basin/tests/fixtures/slsqp_hs71.tsv
+```
+
+`slsqp_hs71_libraries.tsv` supplies independent final-output checks against
+**SciPy 1.16.3** (commit `b9105ccc2237f57acb1060202cd77f6dd264fb34`) and
+**NLopt 2.10.0** (commit `7d04da19236148f9ae9d8dfa470a2264f5d2aa33`). Both use
+the same problem and analytic derivatives, with absolute objective tolerance
+`1e-10`; NLopt also uses constraint and absolute parameter tolerances `1e-10`.
+The generation environment uses NumPy 2.5.3. The fixture includes signed
+constraint residuals and projected stationarity from multipliers fitted on
+free variables. Tests compare final cost to `1e-8`, parameters to `1e-7`, and
+check feasibility and stationarity separately. Different wrapper stopping
+rules mean iteration and evaluation counts are not compared to these libraries.
+
+```bash
+uv venv references/slsqp-python
+uv pip install --python references/slsqp-python/bin/python \
+    numpy==2.5.3 scipy==1.16.3 nlopt==2.10.0
+references/slsqp-python/bin/python crates/basin/tests/fixtures/slsqp_python_driver.py \
+    > crates/basin/tests/fixtures/slsqp_hs71_libraries.tsv
+```
+
+On NixOS, wheel extension modules additionally need the system zlib and GCC
+runtime library directories on `LD_LIBRARY_PATH`. CI reads the compact fixtures
+and does not build or install these reference implementations.
+
+# Scalar root and bracket reference fixtures
+
+`scalar_roots.tsv`, `scalar_bisection.tsv`, and `scalar_brackets.tsv` are
+generated by `scalar_reference.py` using **SciPy 1.16.3** (commit
+`b9105ccc2237f57acb1060202cd77f6dd264fb34`, BSD-3-Clause) and **NumPy 2.5.3**
+(BSD-3-Clause). The script specifies every seed, domain limit, and function.
+The Rust tests consume these numeric fixtures without importing Python.
+
+TOMS 748 fixtures (`scalar_roots.tsv`) use `k = 2`, absolute tolerance
+`1e-12`, and relative tolerance `4 * f64::EPSILON`. Tests compare the final
+roots within `2e-12`, verify returned values and enclosing brackets independently, and
+compare the first five evaluation points for the cubic and cosine cases
+within `2e-14`. The other cases exercise different arithmetic safeguards,
+so their trajectories, iteration counts, and evaluation counts are reference
+information rather than parity requirements. Basin returns an evaluated
+endpoint and tests its bracket width; SciPy returns a midpoint and uses a
+slightly different tolerance test.
+
+Bisection fixtures use `scipy.optimize.bisect` with absolute tolerance `1e-12`
+and relative tolerance `4 * f64::EPSILON`. Tests compare final roots within
+`2e-12`, independently check the signed value and enclosing bracket, and
+require exact agreement of the first five evaluation points, which are
+dyadic for these inputs. Final estimates, iteration counts, and evaluation
+counts need not match: Basin chooses the endpoint with the smaller absolute
+residual and checks its actual bracket width, while SciPy returns its last
+midpoint and checks the halved step width. The algorithm follows the GNU
+Scientific Library Reference Manual's "One Dimensional Root-Finding,"
+"Root Bracketing Algorithms," bisection description. Additional analytic
+tests verify interval halving and exactly one callback per iteration.
+
+Bracket fixtures use growth factor `2` and up to `2000` rounds. Tests compare
+points and values with tolerance `8ε * max(1, abs(expected))`, and require
+matching iteration and evaluation counts. Minimum bracketing follows SciPy's
+implementation: unbounded distances grow from the initial leading endpoint.
+This differs from the moving-endpoint recurrence described in its prose docs.
+Exact-root collapse and non-finite status conventions intentionally differ
+between the APIs and are tested against Basin's own documented contract.
+
+Newton, secant, and Halley use analytic solutions and explicit safeguard tests.
+The safeguarded variants have different stopping and fallback rules from the
+SciPy and Boost methods, so they do not claim trajectory parity.
+
+Regenerate from the repository root with an environment containing the pinned
+versions (the existing `references/slsqp-python` environment also suffices):
+
+```bash
+uv venv references/scalar-roots/python
+uv pip install --python references/scalar-roots/python/bin/python \
+    numpy==2.5.3 scipy==1.16.3
+references/scalar-roots/python/bin/python crates/basin/tests/fixtures/scalar_reference.py roots \
+    > crates/basin/tests/fixtures/scalar_roots.tsv
+references/scalar-roots/python/bin/python crates/basin/tests/fixtures/scalar_reference.py bisection \
+    > crates/basin/tests/fixtures/scalar_bisection.tsv
+references/scalar-roots/python/bin/python crates/basin/tests/fixtures/scalar_reference.py brackets \
+    > crates/basin/tests/fixtures/scalar_brackets.tsv
+```
+
+On NixOS, include zlib and the GCC runtime library directories in
+`LD_LIBRARY_PATH` when running the Python wheel environment. External source
+and the original Alefeld–Potra–Shi paper stay under gitignored `references/`.
+
+# Dense trust-region-reflective fixtures
+
+`trust_region_reflective_reference.tsv` contains endpoint comparisons against
+SciPy **1.16.2** (BSD-3-Clause), with NumPy **2.3.3**, analytic Jacobians,
+`method="trf"`, `tr_solver="exact"`, `loss="linear"`, `x_scale=1`,
+`gtol=1e-10`, disabled `ftol`/`xtol`, and at most 1,000 residual evaluations.
+Inputs, reference parameters, cost, scaled optimality, and evaluation counts
+are recorded in each pipe-delimited row; vectors use comma-separated entries.
+The header names every column. Infinite bounds use `-inf`/`inf`.
+
+The cases cover interior and active-bound linear fits, deficient rank,
+underdetermined and ill-conditioned Jacobians, fixed parameters, and bounded
+Rosenbrock. Fixed coordinates are eliminated before invoking SciPy. Basin and
+SciPy need not choose the same point in a nonunique solution set; the
+ill-conditioned case likewise checks the objective and stationarity rather
+than weakly determined parameters. Objective comparisons use `1e-8 * max(1,
+reference_cost)`, parameter comparisons use `2e-5`, and Basin's scaled
+optimality must satisfy `1.01e-10`. Evaluation counts are provenance, not parity
+assertions. In particular, Basin permits a minimum-norm interior step when the
+Jacobian is rank deficient, whereas SciPy may choose a boundary step.
+
+`trust_region_reflective_steps.tsv` locks quadratic models selecting each of
+the truncated, reflected, and gradient candidates in SciPy's `select_step`.
+The generator uses NumPy seed **391** to locate the first example of each.
+The fixed geometry is recorded in the header. Unit tests compare selected
+steps and predicted reductions with absolute tolerance `1e-12`.
+
+Regenerate both files from the repository root:
+
+```bash
+uv run --no-project --with scipy==1.16.2 --with numpy==2.3.3 \
+  python crates/basin/tests/fixtures/trust_region_reflective_reference.py
+```
+
+On NixOS, the wheel environment may need the zlib and C++ runtime library
+directories in `LD_LIBRARY_PATH`. Rust tests read the committed files and need
+neither Python nor SciPy. Candidate-selection code retains SciPy's BSD notice
+in `src/solver/trust_region_reflective/step.rs`.

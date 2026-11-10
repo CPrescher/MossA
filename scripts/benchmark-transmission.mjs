@@ -29,7 +29,13 @@ function project(sites) {
     mode: 'transmission', source_fwhm: .097, source_squared: false, weighting: 'unweighted', max_iterations: 250 };
 }
 const evaluate = (c, p = c.project) => JSON.parse(module[c.calibration ? 'evaluate_source_json' : 'evaluate_json'](JSON.stringify(p)));
-const fit = c => JSON.parse(module[c.calibration ? 'fit_source_json' : 'fit_json'](JSON.stringify(c.project)));
+// This historical benchmark isolates numerical-kernel changes. New analytical
+// fits have separate scientific-equivalence and end-to-end timing benchmarks.
+const fit = c => {
+  const result = JSON.parse(module[c.calibration ? 'fit_source_json' : 'fit_json'](JSON.stringify({ ...c.project, derivative_method: 'numerical' })));
+  if (c.project.derivative_method === undefined) delete result.project.derivative_method;
+  return result;
+};
 function makeCases() {
   const cases = [];
   for (const squared of [false, true]) {

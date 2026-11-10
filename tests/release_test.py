@@ -15,8 +15,15 @@ class ReleaseGateTest(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 release.validate_identity({**info, **change}, info["version"], info["commit"])
 
+    def test_browser_artifact_identity_is_separate_from_desktop(self):
+        info = {"version": "2.0.0-rc.1", "commit": "a" * 40, "dirty": False, "channel": "github-pages"}
+        release.validate_identity(info, info["version"], info["commit"], "github-pages")
+        with self.assertRaises(RuntimeError):
+            release.validate_identity(info, info["version"], info["commit"])
+
     def test_version_cannot_inject_a_ref_or_workflow_expression(self):
         self.assertEqual(release.version_tag("2.0.0-preview.16"), "v2.0.0-preview.16")
+        self.assertEqual(release.version_tag("2.0.0-rc.1"), "v2.0.0-rc.1")
         for version in ("main", "2.0.0/evil", "2.0.0;echo", "${{ secrets.APPLE_ID }}"):
             with self.assertRaises(ValueError):
                 release.version_tag(version)

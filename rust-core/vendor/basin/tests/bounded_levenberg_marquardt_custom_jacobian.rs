@@ -1,0 +1,140 @@
+use std::convert::Infallible;
+
+use basin::{
+    AddDiagonalVectorInPlace, BoundedLevenbergMarquardt, CostFunction,
+    Executor, GramMatrix, Jacobian, LinearSolveError, LinearSolveSpd,
+    MatTransposeVec, MaxDiagonal, Residual, State, TerminationCode,
+};
+
+#[derive(Clone)]
+struct ScalarMatrix(f64, bool);
+
+impl GramMatrix for ScalarMatrix {
+    fn gram(&self) -> Self {
+        Self(self.0 * self.0, self.1)
+    }
+}
+
+impl MatTransposeVec<Vec<f64>> for ScalarMatrix {
+    fn mat_transpose_vec(&self, x: &Vec<f64>) -> Vec<f64> {
+        assert_eq!(x.len(), 1);
+        vec![self.0 * x[0]]
+    }
+}
+
+impl LinearSolveSpd<Vec<f64>> for ScalarMatrix {
+    fn solve_spd(&self, b: &Vec<f64>) -> Result<Vec<f64>, LinearSolveError> {
+        assert_eq!(b.len(), 1);
+        if self.1 {
+            return Ok(vec![f64::MAX / 4.0]);
+        }
+        if self.0 <= 0.0 {
+            return Err(LinearSolveError::NotPositiveDefinite);
+        }
+        Ok(vec![b[0] / self.0])
+    }
+}
+
+impl AddDiagonalVectorInPlace<Vec<f64>> for ScalarMatrix {
+    fn add_diagonal_vector_in_place(&mut self, diagonal: &Vec<f64>) {
+        assert_eq!(diagonal.len(), 1);
+        self.0 += diagonal[0];
+    }
+}
+
+impl MaxDiagonal for ScalarMatrix {
+    fn max_diagonal(&self) -> f64 {
+        self.0
+    }
+}
+
+struct BoundedResidual {
+    lower: Vec<f64>,
+    upper: Vec<f64>,
+    invalid_step: bool,
+}
+
+impl basin::Constraints for BoundedResidual {
+    type Set = basin::ConstraintSet<basin::BoxBounds<Vec<f64>>>;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new().with_bounds(basin::BoxBounds::new(
+            Some(&self.lower),
+            Some(&self.upper),
+        ))
+    }
+}
+impl CostFunction for BoundedResidual {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = Infallible;
+
+    fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+        Ok(0.5 * (x[0] - 2.0).powi(2))
+    }
+}
+
+impl Residual for BoundedResidual {
+    type Param = Vec<f64>;
+    type Output = Vec<f64>;
+    type Error = Infallible;
+
+    fn residual(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+        Ok(vec![x[0] - 2.0])
+    }
+}
+
+impl Jacobian for BoundedResidual {
+    type Jacobian = ScalarMatrix;
+
+    fn jacobian(&self, _x: &Vec<f64>) -> Result<ScalarMatrix, Self::Error> {
+        Ok(ScalarMatrix(1.0, self.invalid_step))
+    }
+}
+
+#[test]
+fn bounded_lm_accepts_a_downstream_jacobian_type() {
+    let problem = BoundedResidual {
+        lower: vec![-10.0],
+        upper: vec![10.0],
+        invalid_step: false,
+    };
+
+    let result = Executor::from_start(
+        problem,
+        BoundedLevenbergMarquardt::<Vec<f64>, ScalarMatrix>::new(),
+        vec![0.0],
+    )
+    .max_iter(50)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert!((result.param()[0] - 2.0).abs() < 1e-8);
+}
+
+#[test]
+fn nonfinite_trial_model_stops_before_residual_evaluation() {
+    let problem = BoundedResidual {
+        lower: vec![f64::NEG_INFINITY],
+        upper: vec![f64::INFINITY],
+        invalid_step: true,
+    };
+    let mut stepper = Executor::from_start(
+        problem,
+        BoundedLevenbergMarquardt::<Vec<f64>, ScalarMatrix>::new(),
+        vec![0.0],
+    )
+    .into_stepper()
+    .unwrap();
+    let counts = *stepper.counts();
+    let outcome = stepper.step().unwrap();
+    let basin::StepOutcome::Stopped(report) = outcome else {
+        panic!("a non-finite prediction must stop bounded LM");
+    };
+    assert_eq!(report.code(), TerminationCode::SolverFailed);
+    assert_eq!(stepper.state().param(), &vec![0.0]);
+    assert_eq!(stepper.state().cost(), 2.0);
+    assert_eq!(*stepper.counts(), counts);
+}

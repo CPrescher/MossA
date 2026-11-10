@@ -32,6 +32,31 @@ fn main() {
                 Err(error) => json!({"id":id,"error":error}),
             }),
             "status" => emit(json!({"id":id,"result":{"active":engine.active()}})),
+            "native_comparison_batch" => {
+                let job = match engine.job(session) {
+                    Ok(j) => j,
+                    Err(e) => {
+                        emit(json!({"id":id,"error":e}));
+                        continue;
+                    }
+                };
+                let request = match serde_json::from_value(args["request"].clone()) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        emit(json!({"id":id,"error":e.to_string()}));
+                        continue;
+                    }
+                };
+                handles.push(std::thread::spawn(move || {
+                    let result =
+                        native::comparison::run(&job.comparison, request, job.token.clone());
+                    drop(job);
+                    emit(match result {
+                        Ok(result) => json!({"id":id,"result":result}),
+                        Err(error) => json!({"id":id,"error":error}),
+                    });
+                }));
+            }
             "native_compute" => {
                 let job = match engine.job(session) {
                     Ok(job) => job,
@@ -51,12 +76,34 @@ fn main() {
                 let publish = args["progress"].as_bool().unwrap_or(false);
                 let operation: Operation =
                     serde_json::from_value(args["operation"].clone()).unwrap();
+                let derivative_workers: Option<usize> = match serde_json::from_value(
+                    args.get("derivativeWorkers")
+                        .cloned()
+                        .unwrap_or(Value::Null),
+                ) {
+                    Ok(value) => value,
+                    Err(error) => {
+                        drop(job);
+                        emit(json!({"id":id,"error":error.to_string()}));
+                        continue;
+                    }
+                };
+                let state: Option<mossa_core::FitState> =
+                    match serde_json::from_value(args.get("state").cloned().unwrap_or(Value::Null))
+                    {
+                        Ok(value) => value,
+                        Err(error) => {
+                            drop(job);
+                            emit(json!({"id":id,"error":error.to_string()}));
+                            continue;
+                        }
+                    };
                 handles.push(std::thread::spawn(move || {
                     let start = Instant::now(); let token = job.token.clone();
                     let callback: Option<Box<dyn FnMut(mossa_core::FitProgress)>> = if publish { Some(Box::new(move |progress| { if !token.is_cancelled() { emit(json!({"id":id,"progress":progress})); } })) } else { None };
-                    let result = native::compute(&project, operation, job.token.clone(), callback);
+                    let result = native::compute_with_state(&project, operation, job.token.clone(), callback, derivative_workers, state);
                     let response = match result {
-                        Ok(result) if !job.token.is_cancelled() => json!({"id":id,"result":{"result":result,"elapsed":start.elapsed().as_secs_f64()*1000.,"execution":{"backend":"native-rust","derivative_workers":1}}}),
+                        Ok(computed) if !job.token.is_cancelled() => json!({"id":id,"result":{"result":computed.result,"elapsed":start.elapsed().as_secs_f64()*1000.,"execution":computed.execution}}),
                         Ok(_) => json!({"id":id,"error":"Calculation canceled."}),
                         Err(error) => json!({"id":id,"error":error}),
                     };

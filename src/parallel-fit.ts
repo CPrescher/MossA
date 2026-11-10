@@ -1,8 +1,9 @@
-import { FitSession, fit_parallel_json } from './wasm/mossa_core';
-import type { FitProgress, FitResult, Project } from './types';
+import { usesAnalyticalDerivatives } from './analytical-derivatives';
+import { FitSession, fit_parallel_json, finalize_fit_json, finalize_fit_with_columns_json } from './wasm/mossa_core';
+import type { FitProgress, FitResult, Project, LocalFitResult, FitFinalization } from './types';
 import type { DerivativePool } from './derivative-pool';
 
-export async function fitParallel(project: Project, calibration: boolean, pool: DerivativePool, onProgress?: (state: FitProgress) => void, report?: (timings: object) => void): Promise<FitResult> {
+export async function fitParallel(project: Project, calibration: boolean, pool: DerivativePool, onProgress?: (state: FitProgress) => void, report?: (timings: object) => void): Promise<LocalFitResult> {
   const json = JSON.stringify(project), session = new FitSession(json, calibration);
   let last = -Infinity;
   const timings = { prepare_ms: 0, solver_ms: 0, derivative_wait_ms: 0, batches: 0, advances: 0 };
@@ -36,4 +37,16 @@ export async function fitParallel(project: Project, calibration: boolean, pool: 
       }
     }
   } finally { report?.(timings); session.free(); }
+}
+
+export async function finalizeParallel(pending: FitFinalization, pool: DerivativePool | null): Promise<FitResult> {
+  const json = JSON.stringify(pending), x = pending.state.x;
+  if (usesAnalyticalDerivatives(pending.project, pending.state.source_calibration) || !pool || !x.length) return JSON.parse(finalize_fit_json(json));
+  // Derivative scales belong to the original trial model, not its fitted values
+  // or whichever model the helper workers happened to process last.
+  await pool.prepare(JSON.stringify(pending.project), pending.state.source_calibration);
+  const rows = pending.project.spectrum.x.length;
+  const columns = pool.synchronous ? pool.columnsSync(new Float64Array(x), rows, x.length)
+    : await pool.columns(x, rows, x.length);
+  return JSON.parse(finalize_fit_with_columns_json(json, columns));
 }

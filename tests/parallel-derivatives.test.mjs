@@ -7,6 +7,12 @@ import { evaluate_json } from '../src/wasm/mossa_core.js';
 
 await init({ module_or_path: readFileSync(new URL('../src/wasm/mossa_core_bg.wasm', import.meta.url)) });
 const cases = ['transmission-performance.json', 'transmission-measured-performance.json'].flatMap(name => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url))).cases);
+// These frozen receipts qualify the explicit numerical override. Default
+// analytical/checkpoint behavior is covered by analytical-derivatives.test.mjs.
+for (const c of cases) {
+  c.project.derivative_method='numerical';c.result.project.derivative_method='numerical';
+}
+
 function run(c, progress = false) {
   const json = JSON.stringify(c.project), session = new FitSession(json, !!c.calibration), worker = new DerivativeModel(json, !!c.calibration);
   const iterations = [];
@@ -77,6 +83,34 @@ test('all-fixed and iteration-limited sessions preserve the serial result', () =
   for (const site of c.project.sites) for (const p of Object.values(site.params)) p.fit = false;
   c.project.background.forEach(p => p.fit = false);
   assert.deepEqual(run(c).result, JSON.parse(fit_json(JSON.stringify(c.project))));
+});
+
+test('exploratory cutoff agrees across scalar, shared, and checkpointed derivative paths', () => {
+  const c = structuredClone(cases[3]);
+  c.project.search_probe = { after_iterations: 2, objective_ceiling: 0 };
+  const json = JSON.stringify(c.project), expected = JSON.parse(fit_json(json));
+  assert.equal(expected.termination, 'ExplorationPruned');
+  assert.equal(expected.converged, false);
+  assert.equal(expected.iterations, 2);
+  assert.equal(expected.project.search_probe, undefined);
+  assert.deepEqual(run(c).result, expected);
+  const model = new DerivativeModel(json, false);
+  try { assert.deepEqual(JSON.parse(fit_parallel_json(json, false, x => model.columns(x, 0, x.length), () => {})), expected); }
+  finally { model.free(); }
+});
+
+test('promising exploratory fits continue without changing any final fit field', () => {
+  for (const c of cases.filter(c => !c.calibration)) {
+    const project = { ...c.project, search_probe: { after_iterations: 2, objective_ceiling: Number.MAX_VALUE } };
+    assert.deepEqual(JSON.parse(fit_json(JSON.stringify(project))), c.result, c.id);
+    assert.deepEqual(run({ project }).result, c.result, `${c.id}: checkpointed`);
+  }
+});
+
+test('invalid exploratory controls are rejected at the core boundary', () => {
+  for (const search_probe of [{ after_iterations: 0, objective_ceiling: 1 }, { after_iterations: 24, objective_ceiling: -1 }, { after_iterations: 2001, objective_ceiling: 1 }]) {
+    assert.throws(() => fit_json(JSON.stringify({ ...cases[0].project, search_probe })), /exploratory/);
+  }
 });
 
 test('session rejects malformed, stale, missing and nonfinite derivative output', () => {

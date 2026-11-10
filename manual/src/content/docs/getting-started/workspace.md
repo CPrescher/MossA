@@ -74,7 +74,7 @@ An **xVBF** distribution is a site-model choice edited in its own tab. **Spectru
 
 Double-click a spectrum or model name to rename it. Enter or clicking away saves; Escape cancels. Click the project name to rename the project. Renaming preserves completed fits.
 
-The + and − controls act on the corresponding spectrum or model list. A new model starts without sites; **Duplicate model** copies the selected model, including its current fit. Right-click a model row to duplicate, rename, or remove that model, including an inactive one. Shift+F10 opens the same menu from the keyboard.
+The + controls add spectra or create a new model in the corresponding list. Point at a row or focus it to reveal its pencil and trash icons for renaming and deleting that item; Undo restores a deletion. A new model starts without sites; **Duplicate model** copies the selected model, including its current fit. Right-click a model row to duplicate, rename, or remove that model, including an inactive one. Shift+F10 opens the same menu from the keyboard.
 
 Counts and the velocity axis belong to the spectrum. Folding or calibration changes therefore affect **all models of that spectrum** and invalidate obsolete fits. Site, background, and source edits belong to the selected model.
 
@@ -112,7 +112,7 @@ Numeric inputs accept signed values and scientific notation. Touch devices recei
 
 **Save project** and **Export** stay visible in the header; narrow windows shorten Save project to **Save** and Add spectra to **Add**. Save project keeps the complete editable MossA workspace. Export groups **Spectrum data (CSV)**, **Parameter table (CSV)**, **Figure (SVG/PNG/EPS/PDF)**, and **Fit report (PDF)** for use outside MossA. The panel identifies the current spectrum and model. Parameter tables require a current fit. Text size and theme remain inline where they fit; smaller screens group them with Manual and Help under the three-dot control. The three-dot control is named **Manual and help** or **Display and help**, depending on the available space. Arrow Down enters a menu, and Escape closes it.
 
-The site name and collapsed Site settings share one line. When the full site list would hide primary parameter fields, a compact Site selector is used. The numbered count button can restore the full list. This changes the view, not the model. CS, FWHM, Intensity, QS, and BHF appear before the intensity ratios throughout the editor and tables.
+Site names appear in the list; double-click a name or use its pencil icon to rename it inline. **Site settings** is the disclosure above the numeric parameters. When the full site list would hide primary parameter fields, a compact Site selector is used. The numbered count button can restore the full list. This changes the view, not the model. CS, FWHM, Intensity, QS, and BHF appear before the intensity ratios throughout the editor and tables.
 
 On a tall portrait tablet, selecting Sites or Fitting options keeps the live spectrum above the editor. Editing a value updates that visible graph. Select Spectrum for a larger plot and Results. Shorter screens retain separate views. The compact footer's About control opens full version and change information.
 

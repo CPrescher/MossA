@@ -55,6 +55,7 @@ Only after all jobs pass does the command collect the complete installer set:
 | macOS, Apple Silicon and Intel | Signed and notarized universal DMG; app tarball |
 | Windows x64 | EXE installer and MSI, including the WebView2 offline installer |
 | Linux x64 | AppImage and DEB |
+| Browser | Static app/manual ZIP with local-server instructions |
 | All | `SHA256SUMS.txt` and `build-provenance.json` |
 
 The helper verifies every build's version, source commit, and clean status,
@@ -82,3 +83,22 @@ Windows binaries are currently unsigned. Native GUI workflows on Windows and
 Linux still require platform runtime testing; successful builds and native
 command tests do not qualify every GUI workflow. Record relevant validation
 limits in the release notes.
+
+## MossA 2.0 release candidates
+
+Prepare rc.1 on `codex/release-2.0.0-rc.1` without changing either deployed site.
+The candidate includes [reviewed release notes](release-notes/2.0.0-rc.1.md) and
+[the qualification record](RELEASE-CANDIDATE.md). After the candidate checks pass,
+create its tag, installer matrix, notarized universal Mac distribution and draft:
+
+```sh
+python3 scripts/release.py 2.0.0-rc.1 --ref codex/release-2.0.0-rc.1 --notes-file release-notes/2.0.0-rc.1.md
+```
+
+This stages a draft prerelease. Publishing it and promoting source to `main`
+are separate decisions. The root browser site stays on `main`; `/preview/`
+stays on `develop`. Packaged manual source links pin the exact candidate commit.
+Windows rc.N MSI versions use fourth field 10000 + N. This numeric label does
+not guarantee upgrade ordering: Windows Installer compares only three fields.
+Before stable 2.0, complete the platform runtime checklist and resolve or clearly
+retain the documented experimental/unsupported scope.

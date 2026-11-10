@@ -1,6 +1,6 @@
 [package]
 name = "mossa-desktop"
-version = "2.0.0-preview.17"
+version = "2.0.0-rc.1"
 description = "Offline desktop application for MossA Mössbauer analysis"
 authors = ["Clemens Prescher"]
 edition = "2021"

@@ -4,6 +4,7 @@ import { JSDOM } from 'jsdom';
 import { defaultFigureOptions, pngResolution, renderFigure } from '../src/figure';
 import { demo } from '../src/demo';
 import type { Evaluation } from '../src/types';
+import type {FitSummary} from '../src/session';
 import { figureTicks, legendSpace, intersects } from '../src/figure-layout';
 
 function fixture() {
@@ -190,11 +191,11 @@ test('optional legend fractions use resolved intensities and all sites, preserve
  options.legendFractions=true;
  let doc=documentSvg(renderFigure(project,evaluation,options,true));
  const labels=()=>[...doc.querySelectorAll('[data-scientific-label]')].map(label=>label.getAttribute('aria-label'));
- assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0%','Fe²⁺ · 75.0%']);
+ assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0 (—)%','Fe²⁺ · 75.0 (—)%']);
  assert.ok(doc.querySelector('[data-scientific-label] svg path'));
  assert.match(doc.querySelector('metadata')!.textContent!,/intensity fractions of all model sites/);
  options.sites[1].visible=false;doc=documentSvg(renderFigure(project,evaluation,options,true));
- assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0%']);
+ assert.deepEqual(labels(),['\\alpha_{Fe} · 25.0 (—)%']);
  assert.equal(JSON.stringify({project,evaluation}),before);
  project.sites[0].params.intensity.value=0;evaluation.parameters['site:1:intensity']=0;
  assert.match(documentSvg(renderFigure(project,evaluation,options,true)).querySelector('[data-scientific-label]')!.getAttribute('aria-label')!,/—%/);
@@ -234,4 +235,24 @@ test('chosen transparency affects fills only and rejects invalid percentages',()
  const {project,evaluation,options}=fixture();options.style='transparent';
  for(const opacity of [0,.35,1]){options.fillOpacity=opacity;const doc=documentSvg(renderFigure(project,evaluation,options,true));assert.ok([...doc.querySelectorAll('[data-site-fill]')].every(node=>Number(node.getAttribute('fill-opacity'))===opacity));assert.ok([...doc.querySelectorAll('[data-site-index]')].every(node=>!node.hasAttribute('opacity')&&!node.hasAttribute('stroke-opacity')));}
  options.fillOpacity=NaN;assert.throws(()=>renderFigure(project,evaluation,options,true),/transparency/);
+});
+
+
+test('legend fractions carry fitted std in parentheses through layouts and omit stale errors for unfitted models',()=>{
+ const {project,evaluation,options}=fixture();options.legendFractions=true;options.order='custom';
+ project.sites[0].params.intensity.value=1;project.sites[1].params.intensity.value=3;
+ const result={intensity_fractions:[{value:25,error:.25},{value:75,error:0}]} as FitSummary;
+ const before=JSON.stringify({project,evaluation,result});
+ for(const legend of ['auto','above','below','right','top-left'] as const){
+  options.legend=legend;
+  const doc=documentSvg(renderFigure(project,evaluation,options,true,result));
+  assert.deepEqual([...doc.querySelectorAll('[data-scientific-label]')].map(n=>n.getAttribute('aria-label')),['α-Fe · 25.00(25)%','Fe²⁺ · 75(0)%']);
+  assert.match(doc.querySelector('metadata')!.textContent!,/approximate 1 std in the last quoted digits/);
+ }
+ options.sites[1].visible=false;
+ let doc=documentSvg(renderFigure(project,evaluation,options,true,result));
+ assert.equal(doc.querySelector('[data-scientific-label]')!.getAttribute('aria-label'),'α-Fe · 25.00(25)%');
+ doc=documentSvg(renderFigure(project,evaluation,options,false,result));
+ assert.equal(doc.querySelector('[data-scientific-label]')!.getAttribute('aria-label'),'α-Fe · 25.0%');
+ assert.equal(JSON.stringify({project,evaluation,result}),before);
 });

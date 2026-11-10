@@ -1,8 +1,10 @@
-import init, { evaluate_json, fit_json_with_progress, evaluate_source_json, fit_source_json_with_progress, FitSession } from './wasm/mossa_core';
+import init, { evaluate_json, fit_json_with_progress, evaluate_source_json, fit_source_json_with_progress, finalize_fit_json, FitSession } from './wasm/mossa_core';
 import { fitMultiStartAsync } from './multistart.mjs';
 import { DerivativePool, DerivativePoolError, derivativeWorkerCount, synchronousDerivativesAvailable } from './derivative-pool';
-import { fitParallel } from './parallel-fit';
-import type { Project, FitProgress, FitResult } from './types';
+import { fitParallel, finalizeParallel } from './parallel-fit';
+import type { Project, FitProgress, FitResult, LocalFitResult, FitFinalization } from './types';
+import { SearchLane } from './search-lane';
+import { usesAnalyticalDerivatives } from './analytical-derivatives';
 const ready = init();
 ready.then(() => self.postMessage({ type: 'ready' })).catch(e => self.postMessage({ type: 'fatal', error: String(e) }));
 let pool: DerivativePool | null = null;
@@ -18,8 +20,20 @@ async function getPool(count: number): Promise<DerivativePool> {
     self.postMessage({ type: 'derivative-pool', count });
   });
 }
+let searchLane: SearchLane | null = null;
+let searchGeneration = 0;
+async function getSearchLane() {
+  if (!searchLane || searchLane.failed) {
+    const generation = ++searchGeneration;
+    searchLane = new SearchLane(message => self.postMessage({ type: 'search-send', generation, message }));
+    self.postMessage({ type: 'search-worker', generation });
+  }
+  await searchLane.ready;
+  return searchLane;
+}
 let queue = Promise.resolve();
 self.onmessage = ({ data }) => {
+  if (data.type === 'search-message') { if (data.generation === searchGeneration) searchLane?.receive(data.message); return; }
   // Pool setup and errors must be handled while a fit awaits its columns.
   if (data.type === 'derivative-pool-ready') {
     if (!poolReady) { for (const port of data.ports) port.close(); return; }
@@ -38,14 +52,15 @@ async function run(data: any) {
     const start = performance.now();
     const json = JSON.stringify(data.project);
     const notify = (progress: string) => self.postMessage({ id: data.id, progress: JSON.parse(progress) });
-    let usedWorkers = 1, fallback: string | undefined;
+    let usedWorkers = 1, searchWorkers = 1, fallback: string | undefined;
+    if (data.search_workers !== undefined && ![1, 2].includes(data.search_workers)) throw new Error('Search workers must be 1 or 2.');
     let transport = 'serial';
     const timings: object[] = [];
-    const fitLocal = async (project: Project, progress?: (state: FitProgress) => void, calibration = false): Promise<FitResult> => {
+    const fitLocal = async (project: Project, progress?: (state: FitProgress) => void, calibration = false): Promise<LocalFitResult> => {
       const count = data.derivative_workers ?? derivativeWorkerCount();
       if (!Number.isInteger(count) || count < 1 || count > 8) throw new Error('Derivative workers must be 1–8.');
       const serial = () => JSON.parse((calibration ? fit_source_json_with_progress : fit_json_with_progress)(JSON.stringify(project), (state: string) => progress?.(JSON.parse(state))));
-      if (count === 1 || (data.derivative_workers === undefined && project.mode !== 'transmission')) return serial();
+      if (usesAnalyticalDerivatives(project, calibration) || count === 1 || (data.derivative_workers === undefined && project.mode !== 'transmission')) return serial();
       const probe = new FitSession(JSON.stringify(project), calibration);
       const parameters = probe.free_parameters; probe.free();
       // Small fits retain the lower-latency serial path. An explicit count is
@@ -74,12 +89,40 @@ async function run(data: any) {
         return serial();
       }
     };
+    const finalize = async (pending: FitFinalization): Promise<FitResult> => {
+      try { return await finalizeParallel(pending, pool); }
+      catch (error) {
+        if (!(error instanceof DerivativePoolError)) throw error;
+        fallback = error.message; pool?.fail(fallback); pool = null;
+        self.postMessage({ type: 'release-derivative-pool' });
+        return JSON.parse(finalize_fit_json(JSON.stringify(pending)));
+      }
+    };
+    const eligibleSearch = data.method === 'fit' && (data.project.search_starts ?? 1) >= 4 && data.project.mode === 'thin' && usesAnalyticalDerivatives(data.project);
+    // A four-start first fit keeps its low startup latency. Subsequent searches
+    // can reuse the helper; longer searches amortize startup immediately.
+    const autoParallel = (navigator.hardwareConcurrency ?? 2) > 1 && ((data.project.search_starts ?? 1) >= 8 || (searchLane && !searchLane.failed));
+    let activeSearch: SearchLane | null = null;
+    if (eligibleSearch && (data.search_workers === 2 || (data.search_workers === undefined && autoParallel))) {
+      try { activeSearch = await getSearchLane(); }
+      catch (error) { fallback = String(error); self.postMessage({ type: 'release-search-worker', generation: searchGeneration }); }
+    }
     const result = data.method === 'fit-source' ? await fitLocal(data.project, state => notify(JSON.stringify(state)), true)
       : data.method === 'evaluate-source' ? evaluate_source_json(json)
       : data.method === 'fit' ? await fitMultiStartAsync(data.project, fitLocal,
           project => JSON.parse(evaluate_json(JSON.stringify(project))),
-          progress => self.postMessage({ id: data.id, progress })) : evaluate_json(json);
+          progress => self.postMessage({ id: data.id, progress }), finalize,
+          activeSearch ? { cancelIndependent: () => {
+            activeSearch.fail('Search canceled.');
+            self.postMessage({ type: 'release-search-worker', generation: searchGeneration });
+            searchLane = null;
+          }, independentFit: async (project, progress) => {
+            searchWorkers = 2;
+            try { return await activeSearch.fit(project, progress); }
+            catch (error) { fallback = String(error); throw error; }
+          } } : undefined) : evaluate_json(json);
     self.postMessage({ id: data.id, result: typeof result === 'string' ? JSON.parse(result) : result, elapsed: performance.now() - start,
-      execution: { derivative_workers: usedWorkers, transport, ...(fallback ? { fallback } : {}), ...(timings.length ? { timings } : {}) } });
+      execution: { derivative_workers: usedWorkers, search_workers: searchWorkers, transport, ...(fallback ? { fallback } : {}), ...(timings.length ? { timings } : {}) } });
+    if (eligibleSearch && data.search_workers !== 1 && !searchLane && (navigator.hardwareConcurrency ?? 2) > 1) void getSearchLane().catch(() => {});
   } catch (e) { self.postMessage({ id: data.id, error: String(e) }); }
 }

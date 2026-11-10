@@ -6,6 +6,12 @@ import { compare } from '../scripts/transmission-equivalence.mjs';
 
 await init({ module_or_path: readFileSync(new URL('../src/wasm/mossa_core_bg.wasm', import.meta.url)) });
 const cases = ['transmission-performance.json', 'transmission-measured-performance.json'].flatMap(file => JSON.parse(readFileSync(new URL(`./fixtures/${file}`, import.meta.url))).cases);
+// These frozen receipts qualify the explicit numerical override. Default
+// analytical/checkpoint behavior is covered by analytical-derivatives.test.mjs.
+for (const c of cases) {
+  c.project.derivative_method='numerical';c.result.project.derivative_method='numerical';
+}
+
 for (const c of cases) {
   test(`optimized core retains pre-optimization curves, fits and std: ${c.id}`, () => {
     const json = JSON.stringify(c.project);
@@ -17,6 +23,6 @@ for (const c of cases) {
     assert.deepEqual(initial, c.initial_evaluation, 'default scalar evaluation stays bit-for-bit identical');
     const result = JSON.parse((c.calibration ? fit_source_json : fit_json)(json));
     compare(c, result);
-    assert.deepEqual(result, c.result, 'default scalar fit, diagnostics and std stay bit-for-bit identical');
+    assert.deepEqual(result, c.result, 'explicit numerical fit, diagnostics and std stay bit-for-bit identical');
   });
 }

@@ -132,6 +132,7 @@ fn main() {
             native_engine::native_compute_start,
             native_engine::native_compute_cancel,
             native_engine::native_compute,
+            native_engine::native_comparison_batch,
             project_files::open_project_file,
             project_files::save_project_file,
             focus_main,

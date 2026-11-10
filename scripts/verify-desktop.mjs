@@ -25,7 +25,7 @@ for (const path of files.filter(f => /\.(html|css)$/.test(f))) {
   const content = await readFile(path, 'utf8');
   const url = new URL(relative(root, path).split(sep).join('/'), base);
   const references = path.endsWith('.html')
-    ? [...content.matchAll(/<(script|link|img|source)\b[^>]*?\b(?:src|href)="([^"#]+)"/g)].filter(m => !/rel="(?:canonical|sitemap|alternate)"/.test(m[0])).map(m => m[2])
+    ? [...content.matchAll(/<(script|link|img|source|iframe)\b[^>]*?\b(?:src|href)="([^"#]+)"/g)].filter(m => !/rel="(?:canonical|sitemap|alternate)"/.test(m[0])).map(m => m[2])
     : [...content.matchAll(/url\(\s*["']?([^\s)'"#]+)["']?\s*\)/g)].map(m => m[1]);
   for (const ref of references) {
     const asset = new URL(ref.replaceAll('&amp;', '&'), url);

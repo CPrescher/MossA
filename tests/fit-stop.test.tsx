@@ -35,6 +35,7 @@ class FitWorker {
     project.sites[0].params.cs.value = value;
     // The local solver resets the wrapper's search count in its snapshots.
     project.search_starts = 1;
+    delete project.search_strategy;
     const progress: FitProgress = { project, evaluation: evaluate(project), iteration, elapsed_ms: 200, search_start: 2, search_starts: 4 };
     this.send({ id: this.fit.id, progress });
   }
@@ -81,9 +82,17 @@ test('Stop & keep retains the newest snapshot, clears old std, persists, undoes,
   const app = await editor();
   try {
     await act(async () => [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find(tab => tab.textContent === 'Fit options')!.click());
+    const derivatives = document.querySelector<HTMLSelectElement>('[aria-label="Derivatives"]')!;
+    assert.equal(derivatives.value, 'analytical');
+    await act(async () => { derivatives.value = 'numerical'; derivatives.dispatchEvent(new app.dom.window.Event('change', { bubbles: true })); });
     const starts = document.querySelector<HTMLSelectElement>('[aria-label="Starting models"]')!;
     await act(async () => { starts.value = '4'; starts.dispatchEvent(new app.dom.window.Event('change', { bubbles: true })); });
+    const strategy = document.querySelector<HTMLSelectElement>('[aria-label="Search strategy"]')!;
+    assert.equal(strategy.value, 'full');
+    await act(async () => { strategy.value = 'selective'; strategy.dispatchEvent(new app.dom.window.Event('change', { bubbles: true })); });
     await app.click('Fit spectrum');
+    assert.equal(app.worker().fit.project.search_strategy, 'selective');
+    assert.equal(app.worker().fit.project.derivative_method, 'numerical');
     await act(async () => app.worker().finish(.12));
     assert.equal(app.value(), .12);
     assert.match(document.querySelector('.results-note')!.textContent!, /1 std/);
@@ -117,6 +126,7 @@ test('Stop & keep retains the newest snapshot, clears old std, persists, undoes,
     const model = saved.workspace.spectra[0].models[0];
     assert.equal(model.project.sites[0].params.cs.value, .56);
     assert.equal(model.project.search_starts, 4);
+    assert.equal(model.project.search_strategy, 'selective');
     assert.equal(model.fit, null);
     await app.travel('z');
     assert.equal(app.value(), .12);
@@ -125,6 +135,7 @@ test('Stop & keep retains the newest snapshot, clears old std, persists, undoes,
     assert.equal(app.value(), .56);
     await app.click('Fit spectrum');
     assert.equal(app.worker().fit.project.sites[0].params.cs.value, .56);
+    assert.equal(app.worker().fit.project.search_strategy, 'selective');
     await act(async () => app.worker().finish(.6));
     assert.equal(app.value(), .6);
     assert.match(document.querySelector('.results-note')!.textContent!, /1 std/);

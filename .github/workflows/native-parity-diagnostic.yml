@@ -1,0 +1,39 @@
+name: Diagnose native WASM release parity
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/release-2.0.0-rc.1]
+    paths: [.github/workflows/native-parity-diagnostic.yml, scripts/diagnose-native-parity.ts]
+permissions:
+  contents: read
+jobs:
+  parity:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 26.12.1
+          cache: npm
+      - name: Set up pinned Rust
+        run: |
+          rustup toolchain install 1.99.1 --profile minimal --target wasm32-unknown-unknown
+          rustup default 1.99.1
+      - name: Build native and WASM engines
+        run: |
+          npm ci
+          npm run wasm
+          cargo build --locked --release --manifest-path rust-core/Cargo.toml --example native_fixture
+      - name: Capture complete thin-control parity evidence
+        run: node --import tsx scripts/diagnose-native-parity.ts
+      - name: Check the complete native integration suite
+        run: npm run test:native
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-parity-diagnostic
+          path: native-parity-diagnostic.json
+          if-no-files-found: error
+          retention-days: 14

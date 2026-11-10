@@ -1,6 +1,16 @@
 // Newest first. Keep these student-facing notes with each named app version.
 export const changelog = [
   {
+    version: '2.0.0-rc.1', date: '2026-11-09', changes: [
+      'First MossA 2 release candidate, with a shared React interface and Rust fitting core: native desktop calculations and browser WASM workers.',
+      'Refined spectrum, model, and site controls; refreshed light/dark manual screenshots; SVG/PNG/EPS/PDF figures and paginated PDF fit reports.',
+      'Faster analytical fitting, optional selective multistart continuation, and compact native model comparisons retain full winning-fit diagnostics and uncertainties.',
+      'Late native progress messages cannot overwrite completed fitted values in the editor or result table.',
+      'Stabilized disappearing-component comparisons and arithmetic ties in seeded bootstrap tests, with native/WASM regression checks.',
+      'Scientific validation covers the documented cases. xVBF and Gaussian-mixture source extraction remain experimental pending measured-reference validation. Windows/Linux packaged GUI testing remains pending.',
+    ],
+  },
+  {
     version: '2.0.0-preview.17', date: '2026-11-07', changes: [
       'Desktop calculations run directly in native Rust; the browser keeps the WASM build of the same fitting core.',
       'Retain fit progress, cancellation, deterministic multistart search, and parallel model comparisons with complete diagnostics.',

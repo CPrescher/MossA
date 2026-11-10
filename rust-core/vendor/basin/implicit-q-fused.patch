@@ -1,0 +1,278 @@
+--- a/src/core/math/dense_svd.rs
++++ b/src/core/math/dense_svd.rs
+@@ -20,6 +20,7 @@
+     u: Vec<F>,
+     v: Vec<F>,
+     rows: usize,
++    qr: Option<qr::ImplicitQ<F>>,
+     #[cfg(test)]
+     compressed: bool,
+ }
+@@ -138,6 +139,7 @@
+             u: a,
+             v,
+             rows,
++            qr: None,
+             #[cfg(test)]
+             compressed: false,
+         })
+@@ -154,8 +156,34 @@
+         rank_tolerance: Option<F>,
+         max_iter: usize,
+     ) -> Option<Vec<F>> {
++        let projected = self.compressed_rhs(rhs);
++        self.trust_step_with_projection(rhs, projected.as_deref(), radius, rank_tolerance, max_iter)
++    }
++
++    /// The transformed residual belongs to this factorization and can be reused
++    /// while rejected trials change only the trust-region radius.
++    pub(crate) fn compressed_rhs(&self, rhs: &[F]) -> Option<Vec<F>> {
++        self.qr.as_ref().map(|q| {
++            let reduced = q.apply_transpose(rhs);
++            let n = self.singular.len();
++            (0..n)
++                .map(|j| (0..n).map(|i| self.u[i * n + j] * reduced[i]).sum())
++                .collect()
++        })
++    }
++    pub(crate) fn trust_step_with_projection(
++        &self,
++        rhs: &[F],
++        projected: Option<&[F]>,
++        radius: F,
++        rank_tolerance: Option<F>,
++        max_iter: usize,
++    ) -> Option<Vec<F>> {
+         assert_eq!(rhs.len(), self.rows);
+         let n = self.singular.len();
++        if let Some(p) = projected {
++            assert_eq!(p.len(), n);
++        }
+         let largest = self.singular.iter().copied().fold(F::zero(), F::max);
+         if !radius.is_finite() || radius <= F::zero() || rhs.iter().any(|x| !x.is_finite()) {
+             return None;
+@@ -174,7 +202,10 @@
+                 s[j] = F::zero();
+                 continue;
+             }
+-            let uf: F = (0..self.rows).map(|i| self.u[i * n + j] * rhs[i]).sum();
++            let uf: F = projected.map_or_else(
++                || (0..self.rows).map(|i| self.u[i * n + j] * rhs[i]).sum(),
++                |p| p[j],
++            );
+             coeff[j] = s[j] * (uf / largest);
+             z[j] = -uf / self.singular[j];
+         }
+@@ -288,7 +319,9 @@
+                     // Debug float formatting is round-trippable; this compares
+                     // U, V and singular values, including negative zero.
+                     assert_eq!(
+-                        format!("{actual:?}").replace(", compressed: false", ""),
++                        format!("{actual:?}")
++                            .replace(", compressed: false", "")
++                            .replace(", qr: None", ""),
+                         format!("{expected:?}"),
+                         "{rows}/{cols}/{seed}/{scale}"
+                     );
+--- a/src/core/math/dense_svd/qr.rs
++++ b/src/core/math/dense_svd/qr.rs
+@@ -1,7 +1,57 @@
+ //! Householder QR reduction before Jacobi SVD. No normal equations.
+ use super::{DenseSvd, Scalar};
+ 
++#[derive(Clone, Debug)]
++pub(super) struct ImplicitQ<F> {
++    reflectors: Vec<F>,
++    tau: Vec<F>,
++    rows: usize,
++    cols: usize,
++}
++impl<F: Scalar> ImplicitQ<F> {
++    pub(super) fn apply_transpose(&self, rhs: &[F]) -> Vec<F> {
++        assert_eq!(rhs.len(), self.rows);
++        let mut y = rhs.to_vec();
++        for k in 0..self.cols {
++            let mut dot = y[k];
++            for i in k + 1..self.rows {
++                dot = dot + self.reflectors[i * self.cols + k] * y[i];
++            }
++            dot = self.tau[k] * dot;
++            y[k] = y[k] - dot;
++            for i in k + 1..self.rows {
++                y[i] = y[i] - self.reflectors[i * self.cols + k] * dot;
++            }
++        }
++        y.truncate(self.cols);
++        y
++    }
++}
+ impl<F: Scalar> DenseSvd<F> {
++    #[cfg(test)]
++    fn expanded_u(&self) -> Vec<F> {
++        let Some(q) = &self.qr else {
++            return self.u.clone();
++        };
++        let n = self.singular.len();
++        let mut u = vec![F::zero(); self.rows * n];
++        u[..n * n].copy_from_slice(&self.u);
++        for k in (0..n).rev() {
++            for j in 0..n {
++                let mut dot = u[k * n + j];
++                for i in k + 1..self.rows {
++                    dot = dot + q.reflectors[i * n + k] * u[i * n + j];
++                }
++                dot = q.tau[k] * dot;
++                u[k * n + j] = u[k * n + j] - dot;
++                for i in k + 1..self.rows {
++                    u[i * n + j] = u[i * n + j] - q.reflectors[i * n + k] * dot;
++                }
++            }
++        }
++        u
++    }
++
+     /// Compress tall, nontrivial models. Preserve original row-dependent
+     /// convergence/rank thresholds and retain the direct SVD near rank loss.
+     pub(crate) fn factor_compressed(rows: usize, cols: usize, mut a: Vec<F>) -> Option<Self> {
+@@ -69,33 +119,28 @@
+         {
+             return Self::factor(rows, cols, original);
+         }
+-        let mut u = vec![F::zero(); rows * cols];
+-        u[..cols * cols].copy_from_slice(&small.u);
+-        // U = Q U_R. Apply stored reflectors in reverse order to the padded U_R.
+-        for k in (0..cols).rev() {
+-            for j in 0..cols {
+-                let mut dot = u[k * cols + j];
+-                for i in k + 1..rows {
+-                    dot = dot + a[i * cols + k] * u[i * cols + j];
+-                }
+-                dot = tau[k] * dot;
+-                u[k * cols + j] = u[k * cols + j] - dot;
+-                for i in k + 1..rows {
+-                    u[i * cols + j] = u[i * cols + j] - a[i * cols + k] * dot;
+-                }
+-            }
+-        }
+         for s in &mut small.singular {
+             *s = *s * scale;
+         }
+-        if small.singular.iter().chain(&u).any(|v| !v.is_finite()) {
++        if small
++            .singular
++            .iter()
++            .chain(&small.u)
++            .any(|v| !v.is_finite())
++        {
+             return Self::factor(rows, cols, original);
+         }
+         Some(Self {
+             singular: small.singular,
+-            u,
++            u: small.u,
+             v: small.v,
+             rows,
++            qr: Some(ImplicitQ {
++                reflectors: a,
++                tau,
++                rows,
++                cols,
++            }),
+             #[cfg(test)]
+             compressed: true,
+         })
+@@ -129,20 +174,32 @@
+                     for (s, t) in s.iter().zip(t) {
+                         assert!((s - t).abs() <= 2e-11 * s.abs(), "singular values");
+                     }
++                    assert_eq!(
++                        new.u.len(),
++                        n * n,
++                        "production retains only the small left factor"
++                    );
++                    let expanded = new.expanded_u();
+                     let error = (0..m * n).fold(0_f64, |e, k| {
+                         let i = k / n;
+                         let j = k % n;
+                         let v = (0..n)
+-                            .map(|l| new.u[i * n + l] * new.singular[l] * new.v[j * n + l])
++                            .map(|l| expanded[i * n + l] * new.singular[l] * new.v[j * n + l])
+                             .sum::<f64>();
+                         e.hypot(v - a[k])
+                     });
+                     let norm = a.iter().fold(0_f64, |s, &v| s.hypot(v));
+                     assert!(error <= 2e-11 * norm);
+                     let rhs: Vec<_> = (0..m).map(|i| scale * (i as f64 * 0.17).cos()).collect();
++                    let prepared = new.compressed_rhs(&rhs).unwrap();
+                     for radius in [0.001, 1., 100.] {
+                         let p = old.trust_step(&rhs, radius, None, 50).unwrap();
+                         let q = new.trust_step(&rhs, radius, None, 50).unwrap();
++                        assert_eq!(
++                            q,
++                            new.trust_step_with_projection(&rhs, Some(&prepared), radius, None, 50)
++                                .unwrap()
++                        );
+                         let error = p.iter().zip(&q).fold(0_f64, |s, (a, b)| s.hypot(a - b));
+                         let norm = p.iter().fold(0_f64, |s, &v| s.hypot(v));
+                         assert!(
+@@ -150,6 +207,39 @@
+                             "step {m}x{n}, scale {scale}, radius {radius}: {error}/{norm}"
+                         );
+                     }
++                }
++            }
++        }
++    }
++    #[test]
++    fn implicit_q_keeps_rhs_changes_and_rejected_trial_projections_independent() {
++        let (m, n) = (80, 4);
++        let a: Vec<f64> = (0..m * n)
++            .map(|k| ((k as f64) * 0.17).cos() + if k / n == k % n { 2. } else { 0. })
++            .collect();
++        let factor = DenseSvd::factor_compressed(m, n, a).unwrap();
++        let full = factor.expanded_u();
++        let mut first = None;
++        for index in [0, 1, 0] {
++            let rhs: Vec<f64> = (0..m)
++                .map(|i| ((i as f64) * 0.23 + index as f64).sin())
++                .collect();
++            let prepared = factor.compressed_rhs(&rhs).unwrap();
++            for j in 0..n {
++                let expected = (0..m).map(|i| full[i * n + j] * rhs[i]).sum::<f64>();
++                assert!((prepared[j] - expected).abs() < 2e-12);
++            }
++            for radius in [0.001, 0.1, 10.] {
++                assert_eq!(
++                    factor.trust_step(&rhs, radius, None, 50),
++                    factor.trust_step_with_projection(&rhs, Some(&prepared), radius, None, 50)
++                );
++            }
++            if index == 0 {
++                if let Some(old) = first.as_ref() {
++                    assert_eq!(&prepared, old);
++                } else {
++                    first = Some(prepared);
+                 }
+             }
+         }
+--- a/src/solver/trust_region_reflective.rs
++++ b/src/solver/trust_region_reflective.rs
+@@ -796,13 +796,16 @@
+         let old_cost = state.cost();
+         let raw_r =
+             residual_buffer.get_or_insert_with(|| state.param().clone());
++        let projected_rhs = svd.compressed_rhs(&rhs);
+         for _ in 0..self.max_inner_attempts {
+-            let result = svd.trust_step(
++            let result = if let Some(projected) = projected_rhs.as_deref() {
++                svd.trust_step_with_projection(&rhs, Some(projected), work.radius, self.rank_tolerance, self.max_subproblem_iterations)
++            } else { svd.trust_step(
+                 &rhs,
+                 work.radius,
+                 self.rank_tolerance,
+                 self.max_subproblem_iterations,
+-            );
++            ) };
+             self.trace.as_mut().map(|trace| {
+                 let mut row = LeastSquaresObservation::model(old_cost);
+                 row.event = "subproblem";

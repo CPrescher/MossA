@@ -1,0 +1,11 @@
+{
+  "validation-data/performance/runtime/shared-real-fft/shared/mossa_core_bg.wasm": "7cc281e97c674bda2eea10403f60fdda104ffdf0bcd71bcc2fd6e4b877e2a3db",
+  "validation-data/performance/runtime/shared-real-fft/shared/native_fixture": "0e44c134e62eb211d28a8fa1f280f1c386dd3cd37a93cad2673aea500e46af8b",
+  "validation-data/performance/runtime/shared-real-fft/shared/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+  "validation-data/performance/runtime/shared-real-fft/shared/package.json": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+  "validation-data/performance/runtime/shared-real-fft/shared/rust-core/Cargo.lock": "926fe0b8dced896718b1532f3ed161610cb3f406e520923001d5e704c9afbe75",
+  "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical.rs": "4a4db9b91bc174c9a3972d1ea81f08367f5a596a79fb92c3075c2f3291aec462",
+  "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/lib.rs": "6b35ba47718cb5fef9419e615ee7d7573458387f063cb7e0f5d269238d298303",
+  "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical/distribution.rs": "4a01fc8366dd8945bdd12b1afbe0f861bfa7e0ddb82a8841bd4494d5d88c40ab",
+  "validation-data/performance/runtime/shared-real-fft/shared/rust-core/src/analytical/transmission.rs": "7b7ab5caf69be8289aac9ffe36b9c1c29b88a9cea385ec62c8633295e16772da"
+}

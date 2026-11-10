@@ -1,0 +1,10 @@
+{
+  "description": "Separate copy of the frozen previous source. Only MIN_STEPS changed from 48 to u64::MAX, disabling continuation for trajectory collection. Built with nondefault projection-profile feature. Final trial audit checks diagnostic results against the original uninstrumented binary. No diagnostic timings are used for speed claims.",
+  "source_sha256": {
+    "rust-core/src/variable_projection.rs": "26cb2a4365f77f89fc5a099f9058b9a6821b642747079caf2283c4d912109a17",
+    "rust-core/src/lib.rs": "ebf20d322be8248384501265b22da568bef65a92a365df6ca1df26a807fa4724",
+    "rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c"
+  },
+  "binary_sha256": "264c37dd5c30a0b95ce87aa9df35968d809f5edda4fe4e45f9c38abee99ffea1"
+}

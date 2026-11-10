@@ -7,7 +7,7 @@ program, math outlines, searchable manual, manual fonts and screenshots, tutoria
 spectra and projects, and license notices. No local HTTP server, Node installation,
 Python, MATLAB, or internet connection is needed to run the installed app.
 
-The desktop is a scientific preview. [GitHub Releases](https://github.com/CPrescher/MossA/releases)
+The current desktop source is the **2.0.0-rc.1 release candidate**. See [the qualification record](RELEASE-CANDIDATE.md) for tested behavior and remaining validation limits. [GitHub Releases](https://github.com/CPrescher/MossA/releases)
 provide permanent user downloads. `.github/workflows/desktop.yml` builds and tests
 the platform packages; [RELEASING.md](RELEASING.md) describes the maintainer command
 that collects a complete release with a signed, notarized universal Mac app. CI
@@ -89,8 +89,13 @@ include `build-info.json`. The `.app` is archived as a tarball to preserve its
 executable permissions and symlinks. The workflow can be dispatched manually and
 does not create tags or GitHub Releases.
 
-The MSI package uses numeric version `2.0.0.16` because WiX rejects the textual
-`preview.16` prerelease. The app and NSIS installer retain `2.0.0-preview.16`.
+The rc.1 MSI package uses numeric version `2.0.0.10001` because WiX rejects the textual
+`rc.1` prerelease. The app and NSIS installer retain `2.0.0-rc.1`.
+Preview builds use fourth field N; release candidates use 10000 + N. This field
+labels the package; Windows Installer ignores the fourth field when comparing
+product versions, so it does not establish prerelease ordering. Export portable
+projects before changing versions and include upgrade/reinstallation in Windows
+runtime testing. See [Microsoft's ProductVersion documentation](https://learn.microsoft.com/windows/win32/msi/productversion).
 A test checks that the MSI version stays synchronized with the app version.
 
 Windows installers embed the WebView2 offline installer. This makes initial

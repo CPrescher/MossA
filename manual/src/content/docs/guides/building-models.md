@@ -51,7 +51,7 @@ For a magnetic sextet, QS enters the retained magnetic-line shift convention; it
 
 ## Site names and mathematical notation
 
-Site names are labels; they do not change the fit or assign a chemical species. Select a site using its visible name button (arrow keys also switch sites), then edit **Site name** above its parameters. Press Enter or click away to apply; Escape cancels the edit. Press Delete while a site button is focused to remove that site; Undo restores it.
+Site names are labels; they do not change the fit or assign a chemical species. Select a site using its name button (arrow keys also switch sites). Double-click its name or use the row’s pencil icon to edit **Site name** inline. In the compact selector, choose the site and use **Rename selected site**. Press Enter or click away to apply; Escape cancels the edit. Press Delete while a site button is focused to remove that site; Undo restores it.
 
 Use `$…$` for mathematical notation inside a name. For example:
 
@@ -83,7 +83,11 @@ The target follows its source instead of being optimized independently. Target b
 
 ## Choose fitting options
 
-Under **Fitting options → Fit options**, set **Residual weighting**, **Starting models**, and **Max. iterations**.
+Under **Fitting options → Fit options**, set **Derivatives**, **Residual weighting**, **Starting models**, and **Max. iterations**.
+
+Thin models use **Thin fitting → Variable projection** by default when analytical derivatives are selected. It solves fitted intensities and background coefficients as a bounded linear problem while refining the remaining parameters. Fixed parameters and proportional links retain their meanings, and std still uses the full Jacobian, including correlations with intensity and background. Select **Thin fitting → Joint fitting** to use the joint solver; compare both for difficult starting models. Saved joint selections are retained. Projects with no saved thin-solver selection use variable projection. Rank-deficient linear systems use joint fitting.
+
+**Derivatives → Analytical** is the default for ordinary thin and transmission singlets, doublets, and sextets with any supported line shape, including parameter links and count weighting. The same analytical Jacobian is used for fitting and parameter std. Transmission supports fixed Lorentzian, Lorentzian-squared, and Gaussian-mixture sources. Analytical derivatives also cover source calibration and xVBF distributions, including normalized source mixtures and constrained distribution weights. Numerical fallback handles affected columns at nonsmooth interpolation, normalization, weight-bound, and zero-width limits. For thin models, when starting components have coincident shapes, the solver separates independent free shape parameters deterministically within their existing bounds. The spread is based on the line width, and fixed parameters and linked roots remain unchanged. Models that already reproduce the data to roundoff stay at their supplied start. A separated fit also retains the supplied model if its objective worsens, including at a short iteration limit. The original model stays available for evaluation and undo; a completed fit records any separation in its warnings. If constraints prevent separation, rank-deficient uncertainties remain unavailable. **Numerical** remains available as an explicit override and retains the former starting behavior. Compare the objective and try multiple starting models when needed.
 
 - **Unweighted** minimizes the sum of squared observed-minus-model residuals.
 - **1 / observed counts** minimizes squared residuals divided by the observations. Every observation must be strictly positive.
@@ -92,6 +96,7 @@ Under **Fitting options → Fit options**, set **Residual weighting**, **Startin
 
 More starts cost more time and can reduce dependence on starting estimates. They do not prove a global optimum or identify a physically correct model.
 
+With more than one starting model, **Search strategy → Selective continuation** can save time by stopping less promising alternatives early. The current model and periodic alternatives around the original model retain their full iteration budget. Other alternatives receive an exploratory run; promising ones continue with the same optimizer state. **Full exploration** remains the default and can find a better minimum when a candidate improves late. Both choices preserve your model, bounds, links, weighting, and configured iteration limit. The strategy and search diagnostics are saved with the project. Model comparisons retain full exploration for observed and simulated refits.
 
 ![Fit options tab showing residual weighting, number of starting models, and iteration limit for the measured almandine model.](../../../assets/screenshots/fit-options.png)
 

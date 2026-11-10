@@ -1,0 +1,14 @@
+{
+  "source_sha256": {
+    "rust-core/src/lib.rs": "8d6a7f720b5c348fb767e0825aafab7898983d2253dacedebd8477a81a84d686",
+    "rust-core/src/native.rs": "b17d25a666b80e9dac2538940eeb1e31a80884aaf1337cbd2ed3b1c933d5ed67",
+    "rust-core/src/parallel.rs": "9b5eba16088569de592209055c6ff916fbb449654d24211bbf2c11e2777d8553",
+    "rust-core/Cargo.toml": "9745105b9018baf97f8dadd0f1a90ac4af21de3b0deb8083f1cd5201bda73958",
+    "rust-core/Cargo.lock": "4c3b3f3e4c561cee905731d835814cf76eed2170f91199115000a78ec1955214",
+    "src/native-engine.ts": "10e3e51e6f83028b5d71ce3b274253bc0a81e4bd20133f530097f4d46532b402",
+    "src/native-session.ts": "4882e7bdc2c0efc7f6eaa16161a80f3387fabdc66007957f2c1b620e5e8f4667",
+    "src-tauri/src/native_engine.rs": "d173b719e861855d3569a6910080744bdbcbee9e0f423b3748598ebbd0603d2e"
+  },
+  "binary_sha256": "93771557d534621f46bdd65c393621aeb5cc3b89562f68c4d03780fe1f525f32",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+}

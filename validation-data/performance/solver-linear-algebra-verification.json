@@ -1,0 +1,180 @@
+{
+  "date": "2026-11-08T22:15:41.096Z",
+  "passed": true,
+  "checks": {
+    "buffers_native": {
+      "passed": true,
+      "comparisons": 60,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "buffers_search": {
+      "passed": true,
+      "comparisons": 8,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "buffers_search12": {
+      "passed": true,
+      "comparisons": 4,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "qr_native": {
+      "passed": true,
+      "tests": 17,
+      "log_sha256": "cd9982dc0f3e123e2df4770ca9adb5917468b2f208b5c3e2bc48e216e29727cb"
+    },
+    "qr_search": {
+      "passed": true,
+      "comparisons": 24,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "qr_search12": {
+      "passed": true,
+      "comparisons": 12,
+      "source_binary_hashes_match": true,
+      "full_schemas_and_quality_recomputed": true,
+      "same_coordinate_covariance_exact": true
+    },
+    "browser": {
+      "passed": true,
+      "comparisons": 66,
+      "browsers": 2,
+      "full_schemas_and_quality_recomputed": true,
+      "verified_wasm": true
+    },
+    "buffer_rust": {
+      "passed": true,
+      "tests": 78,
+      "log_sha256": "5c5377607c27ca5e731e7de2f42949c3b51dfb9b2bc14daae81fbd04004be2dc"
+    },
+    "buffer_js": {
+      "passed": true,
+      "tests": 169,
+      "log_sha256": "462b9f63eb8bfd4515af2f75955171109e589ddaff2246145c64cfeb76d581c5"
+    },
+    "qr_rust": {
+      "passed": true,
+      "tests": 83,
+      "log_sha256": "9748d67f52b2443f895d4792c0ebecd0706b5150f3039d1185861ad73d349535"
+    },
+    "qr_profile_feature": {
+      "passed": true,
+      "tests": 5,
+      "log_sha256": "6ff0cc4406396d8ed1555f94e520e9cb8651749aa72baa329cb63f7653e5aa86"
+    },
+    "qr_js": {
+      "passed": true,
+      "tests": 171,
+      "log_sha256": "311a3ed208822f6e769de135972723e9f2ad5275bb18e314e287a381d0ef4d43"
+    },
+    "qr_typescript": {
+      "passed": true,
+      "tests": 274,
+      "log_sha256": "80bc5da08a0c6af83df4a5e698e06a7ef8dcdcdd5a9db5cce8268b44610ac9e5"
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "typescript_compile": true,
+      "manual_links": 1374,
+      "payload_files": 284,
+      "log_sha256": "d1f557f37a70c204b37bd1de0de1c76deab9cc853bfd28d6881bf585b73e5afc"
+    },
+    "desktop_cargo": {
+      "passed": true,
+      "log_sha256": "26861e9d08c373c942f4c839d978095ce911ec83afc408f4a5336ed65d5c8285"
+    },
+    "forward_model": {
+      "passed": true,
+      "cases": 60,
+      "bit_exact": true
+    }
+  },
+  "maximum_relative_std": {
+    "parameter": 1.879067016115618e-9,
+    "fraction": 4.22704541137523e-10,
+    "same_coordinate": 0,
+    "numerical_same_coordinate": 0.0000017418250916433711
+  },
+  "hashes": {
+    "PORTING.md": "582fb281176b5d0a6da61e8ae124b22f1bf7575ca44ed8d7bbdceaac13ad732f",
+    "README.md": "b15f80ea3ef0682df16ab67633f54cfd5936c59b280df007c2abe3a716b7e505",
+    "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "rust-core/src/analytical.rs": "fe62de2400f34a5a0a87b4d4ab18019c2d01617d21266a8242b5144347a8dfc0",
+    "rust-core/src/buffer_tests.rs": "9a216c6da056dcf2d5dd1c9d7184dc74b238159d9bba3af9a09f6054b8122abc",
+    "rust-core/src/lib.rs": "64043b50931b92fd47de2bdb829d3a88bac901049a1cf1b4ab8b72fbb7f25c18",
+    "rust-core/src/parallel.rs": "3beb0dc8206f610466afd22ed1faddf0cafc16b99f5f36a960bfd74d6192e64a",
+    "rust-core/src/variable_projection.rs": "15d17f3b55b0e3207054c9ce1c602e8de8fca813e0c3fd837e3f07220df0000d",
+    "rust-core/target/release/examples/native_fixture": "f5400d7f8855b8dd4c9667a412597702ab7cecee435b5439da80dcef27b6a7e3",
+    "rust-core/vendor/basin/README.mossa.md": "3e75a36a1a4011ead7fc45aa203413eed9714cb0fbc804a1f85cca833415bac5",
+    "rust-core/vendor/basin/solver-linear-algebra.patch": "ca2223ceb81e2d209890c35b923e8679c2f325c6a181bb34fcd1415f8b65bdaf",
+    "rust-core/vendor/basin/src/core/convergence/builders.rs": "472babec4fa846e39e0dddb0e2728c3e1d34147a2dfcdc2b2178200341e65d70",
+    "rust-core/vendor/basin/src/core/math/dense.rs": "26b7d72867c5cd2e6a9f4b197586730d744204e320d19ac7e88e1877cb983dc3",
+    "rust-core/vendor/basin/src/core/math/dense_svd.rs": "0487e8a0896011179f908aff5485155bd11fb546ad77596388c31e169ad2dbd7",
+    "rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "3cf17858f8e223b2ba0ccfb373c521962bf5473481ba8a79afc32d7febe971f8",
+    "rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "2ae4739badc46e500c5954202a44b81fdbdb338b7ef61294947ddb778575e0cb",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-solver-linear-algebra-browser.mjs": "db1b77f08c54dc1d6c9fd74508e3f540ff08b10069e776d28a9ca9f28eae14f3",
+    "scripts/benchmark-solver-linear-algebra.mjs": "34ecd59e3080740fdb0a312c3d1de3137fa0c813f1cf5853e66f4e4f2087cc34",
+    "scripts/solver-linear-algebra-cases.mjs": "871d8b9bb94f08036dce2daefe7e8e2e6b8ca7e7cdf20aea421547fc08ce848e",
+    "scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
+    "scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
+    "scripts/verify-solver-linear-algebra.mjs": "f3bba3599a2af955cd46405809fd72d5cbc12ab1c84b00a655cdf81f598f5c84",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "src/wasm/mossa_core_bg.wasm": "76c4b9c0636dd36baded39a4aaac09c9edaaa08b8be05a631e10b8b7a453d9f3",
+    "tests/fixtures/solver-qr-mixed-distribution.json": "6570f6062f4b783f8158aa2d7b95ac4a131c82c08c6e56f107116eb7a338cb63",
+    "tests/solver-linear-algebra.test.mjs": "f1a4161d82fbd538a7adea268165de606701424946c38a3fad95b52c1388b7ad",
+    "validation-data/performance/SOLVER-LINEAR-ALGEBRA.md": "a38f8ef0a382489f61a4a46b9370d001b49f112bc9d0a2fe944e8c99260656f9",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/mossa_core_bg.wasm": "fb7b43c8c03589937747051382d03a6821eb1394432db53e4493839074798faa",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/native_fixture": "3113eae109e473f2f09f60e880cf63210b30814ac726907e5f1b99ace21aa28c",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/src/analytical.rs": "5f41bd03927b6c3805e9fb62298e111c96791ecb02a7306c9e5c76a6e5953ade",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/src/lib.rs": "9aef55cd2845a83c80a95ecb66658bdb0b019439f43247dd5b8e05091b338bd9",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/src/parallel.rs": "ae690aa38fe1f000e21e432555217b3d028ecf41e6c773411f0885acdaa5ea2d",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/src/variable_projection.rs": "d3387389046a99204da9fa154aa3d6a7cf43ffb633a97831240500a84e109895",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/vendor/basin/src/core/convergence/builders.rs": "fad2d86d13d9ebbdfc7e5aa6731c90bc0b0a5f83b7833051d305e6c3b8b8b3ba",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/vendor/basin/src/core/math/dense.rs": "25ee3e924c81f224c84d664dcac401bf6d4add559a6e2adc3651f52428afb7da",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/vendor/basin/src/core/math/dense_svd.rs": "0154764362d8b88979cd6b276710d537536299f16fd7e2aca2eac8b6e5833257",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "8d4ddbb831331ee19d3692459fac82d23ff794012e617483ef322303a4e09551",
+    "validation-data/performance/runtime/solver-linear-algebra/baseline/src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/mossa_core_bg.wasm": "b485a1745a4280dfd13121b6dd958c75f8264f2b1260f6999064e2b6f0ee99fe",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/native_fixture": "4fbbd0d042bfdf0bb9e544c7d25236e5cb52c451ae8df15ac74d1b00a61c465a",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/src/analytical.rs": "5f41bd03927b6c3805e9fb62298e111c96791ecb02a7306c9e5c76a6e5953ade",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/src/lib.rs": "56e12e6c85178b02b78defcba96a4c8badc41c892c11296f2fc78d75b00ee48b",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/src/parallel.rs": "b61f85d70c51748d7a853b06262818a3979111d3550469b006b254dfa58dbeaa",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/src/variable_projection.rs": "15d17f3b55b0e3207054c9ce1c602e8de8fca813e0c3fd837e3f07220df0000d",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/vendor/basin/src/core/convergence/builders.rs": "472babec4fa846e39e0dddb0e2728c3e1d34147a2dfcdc2b2178200341e65d70",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/vendor/basin/src/core/math/dense.rs": "26b7d72867c5cd2e6a9f4b197586730d744204e320d19ac7e88e1877cb983dc3",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/vendor/basin/src/core/math/dense_svd.rs": "0154764362d8b88979cd6b276710d537536299f16fd7e2aca2eac8b6e5833257",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "6b8f9529bb8a25e32685be896139dec2bc0261d57f7caa99da8daf9bf3fa11cd",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/scripts/benchmark-solver-linear-algebra.mjs": "0edc9b1503b09463abe041cb09a8b3627d5ce9aa5681d674a93529ce88bf1c0d",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/scripts/solver-linear-algebra-cases.mjs": "871d8b9bb94f08036dce2daefe7e8e2e6b8ca7e7cdf20aea421547fc08ce848e",
+    "validation-data/performance/runtime/solver-linear-algebra/buffers/src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "validation-data/performance/runtime/solver-linear-algebra/qr/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/solver-linear-algebra/qr/mossa_core_bg.wasm": "76c4b9c0636dd36baded39a4aaac09c9edaaa08b8be05a631e10b8b7a453d9f3",
+    "validation-data/performance/runtime/solver-linear-algebra/qr/native_fixture": "f5400d7f8855b8dd4c9667a412597702ab7cecee435b5439da80dcef27b6a7e3",
+    "validation-data/performance/solver-linear-algebra-baseline-provenance.json": "a7d46bd0726549c1565f9d73dcaf8c6df08d7dbca17c1fce35e408c208b2d4ba",
+    "validation-data/performance/solver-linear-algebra-browser.json": "c30228d7d378884c34fc002d3bff6cc1f8b37ad8c5c1fe1f07e11835421ff47d",
+    "validation-data/performance/solver-linear-algebra-buffers-native.json": "ff58678ac76364570b1aee615e6312c73d4e3f8d23d154bd1e198d099230cd41",
+    "validation-data/performance/solver-linear-algebra-buffers-provenance.json": "9cda80b461dd6e36dbec747404bcc633e963a3fb609afb7dc3a99bad3e98fd0b",
+    "validation-data/performance/solver-linear-algebra-buffers-search.json": "3e5d4ee3ce341da60cc056902ee35b50ee36d14dcea979b43077ed97e3548a4e",
+    "validation-data/performance/solver-linear-algebra-buffers-search12.json": "2cb812fe183f3f99f525f0d8006931370aeae83956d7cbe0346560e4936a93c1",
+    "validation-data/performance/solver-linear-algebra-qr-native.json": "74f8b2d9884a2b95873942d4a3867ac6ce148843fca3a4f984e878f71dd54394",
+    "validation-data/performance/solver-linear-algebra-qr-search.json": "ffc91e91c6f8eb8916f1835ba2beba9e06293f75f5403a51fb173a854e2b668a",
+    "validation-data/performance/solver-linear-algebra-qr-search12.json": "e32fa06624b08095aa322bd983f692069dedd62274d70895fefa61ca85c10e41"
+  }
+}

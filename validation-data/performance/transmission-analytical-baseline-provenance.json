@@ -1,0 +1,13 @@
+{
+  "sha256": {
+    "rust-core/target/release/examples/native_fixture": "531ee38902ef870334c761ce1ce8290b0834fea38b7af8ff393f978650483999",
+    "src/wasm/mossa_core.js": "2906c822b3c3aad650eeae0b21bc9850b679ca9b28850069a5160fdd1dbec6c9",
+    "src/wasm/mossa_core_bg.wasm": "365adefd3b58386af4a8b7323632880ecac31df16a51f0ac665b5745a95bf9f3",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6"
+  },
+  "sources": {
+    "rust-core/src/lib.rs": "32e8c624fa67f43f6b121a54bf6d1673366f6e521e8e0da0bce82f4072032a74",
+    "rust-core/src/analytical.rs": "ff8c26fcf1381461f88ed3511648ec00ca6d4e70694ef32131c778a9bf89a4a9",
+    "src/analytical-derivatives.ts": "fe1a1db5bcaf247961acf5f7b441a9ce1e05b1310f829f80c307423137c18a71"
+  }
+}

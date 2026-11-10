@@ -39,7 +39,19 @@ export function decodeFitSummary(value: unknown, sites: number): FitSummary | nu
   if (finite(f.stationarity) && f.stationarity >= 0) fit.stationarity = f.stationarity;
   if (Array.isArray(f.intensity_fractions) && f.intensity_fractions.length === sites && f.intensity_fractions.every(v => v && (v.value === null || (finite(v.value) && v.value >= 0 && v.value <= 100)) && (v.error === null || (finite(v.error) && v.error >= 0)))) fit.intensity_fractions = f.intensity_fractions.map(v => ({ ...v }));
   const search = f.search;
-  if (search && [search.requested, search.completed, search.best_start, search.rejected_candidates, search.failed_starts, search.total_iterations].every(v => Number.isInteger(v) && v >= 0) && search.requested >= 1 && search.requested <= 32 && search.completed >= 1 && search.completed <= search.requested && search.best_start >= 1 && search.best_start <= search.requested && Array.isArray(search.objectives) && search.objectives.length === search.completed && search.objectives.every(v => finite(v) && v >= 0)) fit.search = { ...search, objectives: [...search.objectives] };
+  const selectiveValid = search?.strategy === undefined || (search.strategy === 'selective'
+    && Number.isInteger(search.exploration_iterations) && search.exploration_iterations! >= 1 && search.exploration_iterations! <= 2000
+    && finite(search.objective_margin) && search.objective_margin >= 0
+    && Number.isInteger(search.pruned_starts) && search.pruned_starts! >= 0 && search.pruned_starts! < search.completed
+    && Array.isArray(search.trials) && search.trials.length === search.completed
+    && search.trials.every((t, i, trials) => t && Number.isInteger(t.start) && t.start >= 1 && t.start <= search.requested && (i === 0 || t.start > trials[i - 1].start)
+      && Number.isInteger(t.iterations) && t.iterations >= 0 && finite(t.objective) && t.objective >= 0 && t.objective === search.objectives?.[i]
+      && typeof t.termination === 'string' && typeof t.pruned === 'boolean' && t.pruned === (t.termination === 'ExplorationPruned')
+      && typeof t.screened === 'boolean' && (!t.pruned || t.screened) && (t.start % 3 !== 1 || !t.screened))
+    && search.trials.filter(t => t.pruned).length === search.pruned_starts
+    && search.trials.reduce((n, t) => n + t.iterations, 0) === search.total_iterations
+    && search.trials.some(t => t.start === search.best_start && !t.pruned));
+  if (search && selectiveValid && [search.requested, search.completed, search.best_start, search.rejected_candidates, search.failed_starts, search.total_iterations].every(v => Number.isInteger(v) && v >= 0) && search.requested >= 1 && search.requested <= 32 && search.completed >= 1 && search.completed <= search.requested && search.best_start >= 1 && search.best_start <= search.requested && Array.isArray(search.objectives) && search.objectives.length === search.completed && search.objectives.every(v => finite(v) && v >= 0)) fit.search = { ...search, objectives: [...search.objectives], ...(search.trials ? { trials: search.trials.map(t => ({ ...t })) } : {}) };
   return fit;
 }
 export function decodeSession(text: string, allowEmptySpectrum = false): Session {
@@ -49,6 +61,9 @@ export function decodeSession(text: string, allowEmptySpectrum = false): Session
   if (!Array.isArray(p.sites) || p.sites.length > 16 || !p.sites.every(site => typeof site.name === 'string' && (site.color === undefined || (typeof site.color === 'string' && /^#[0-9a-f]{6}$/i.test(site.color))) && ['Singlet','Doublet','Sextet'].includes(site.kind) && ['Lorentzian','Gaussian','PseudoVoigt','LorSquared'].includes(site.profile) && ['cs','fwhm','intensity','qs','bhf','a12','a13','mix'].every(k => parameterOK(site.params?.[k]))) || !Array.isArray(p.background) || p.background.length < 1 || p.background.length > 4 || !p.background.every(parameterOK) || !['thin','transmission'].includes(p.mode) || !['unweighted','counts'].includes(p.weighting) || !finite(p.source_fwhm) || typeof p.source_squared !== 'boolean' || !finite(p.max_iterations)) throw new Error('Invalid saved model.');
   if (p.source_gaussians !== undefined && !validGaussianSource(p.source_gaussians)) throw new Error('Invalid saved Gaussian source profile.');
   if (p.search_starts !== undefined && (!Number.isInteger(p.search_starts) || p.search_starts < 1 || p.search_starts > 32)) throw new Error('Invalid saved search starts.');
+  if (p.derivative_method !== undefined && !['numerical', 'analytical'].includes(p.derivative_method)) throw new Error('Invalid saved derivative method.');
+  if (p.thin_solver !== undefined && !['joint', 'variable_projection'].includes(p.thin_solver)) throw new Error('Invalid saved thin solver.');
+  if (p.search_strategy !== undefined && !['full', 'selective'].includes(p.search_strategy)) throw new Error('Invalid saved search strategy.');
   if (p.nuclear_constants !== undefined && !validNuclearConstants(p.nuclear_constants)) throw new Error('Invalid saved nuclear constants.');
   if (p.sites.some(site=>site.xvbf && (site.kind!=='Doublet'||site.profile!=='Lorentzian'||!validXvbf(site.xvbf)))) throw new Error('Invalid saved xVBF model.');
   if (typeof s.filename !== 'string' || (s.raw !== null && (!Array.isArray(s.raw) || s.raw.length < 8 || s.raw.length > 20000 || !s.raw.every(finite))) || !validCalibration(s.cal)) throw new Error('Invalid saved preprocessing.');

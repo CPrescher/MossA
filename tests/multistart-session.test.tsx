@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import init,{fit_json,evaluate_json} from '../src/wasm/mossa_core.js';
+import init,{fit_json,evaluate_json,finalize_fit_json} from '../src/wasm/mossa_core.js';
 import {fitMultiStart} from '../src/multistart.mjs';
 import {demo} from '../src/demo';
 import {createProjectFile,openProjectFile} from '../src/projectFile';
@@ -9,14 +9,20 @@ import {summarizeFit,decodeSession,defaultLayout,type Snapshot} from '../src/ses
 import type {Project} from '../src/types';
 await init({module_or_path:readFileSync(new URL('../src/wasm/mossa_core_bg.wasm',import.meta.url))});
 test('search settings and completed search diagnostics survive portable save/open and autosave',async()=>{
- const p=demo();p.search_starts=4;
- const result=fitMultiStart(p,q=>JSON.parse(fit_json(JSON.stringify(q))),q=>JSON.parse(evaluate_json(JSON.stringify(q))));
+ const p=demo();p.search_starts=4;p.search_strategy='selective';
+ const result=fitMultiStart(p,q=>JSON.parse(fit_json(JSON.stringify(q))),q=>JSON.parse(evaluate_json(JSON.stringify(q))),undefined,pending=>JSON.parse(finalize_fit_json(JSON.stringify(pending))));
  const cal={max:10,shift:0,sinusoidal:false,folding:false,center:256.5};
  const snapshot:Snapshot={project:result.project,raw:null,cal,filename:'Search fit',selected:0,fit:summarizeFit(result),fitElapsed:15};
  const file=await createProjectFile(snapshot,{});
+ assert.equal(JSON.stringify(file).includes('"finalization"'),false);assert.equal(JSON.stringify(file).includes('search_defer_uncertainties'),false);
  const restored=await openProjectFile(JSON.parse(JSON.stringify(file)),cal,'search',async(q:Project)=>JSON.parse(evaluate_json(JSON.stringify(q))));
  assert.deepEqual(restored.snapshot.fit?.search,result.search);assert.equal(restored.snapshot.project.search_starts,4);
+ assert.equal(restored.snapshot.project.search_strategy,'selective');
  const saved={version:1,snapshot,layout:defaultLayout,fit:snapshot.fit,elapsed:15};
  assert.deepEqual(decodeSession(JSON.stringify(saved)).fit?.search,result.search);
+ const badSearch=structuredClone(saved);badSearch.fit!.search!.pruned_starts=4;
+ assert.equal(decodeSession(JSON.stringify(badSearch)).fit?.search,undefined);
+ const badStrategy=structuredClone(saved);(badStrategy.snapshot.project as any).search_strategy='invalid';
+ assert.throws(()=>decodeSession(JSON.stringify(badStrategy)),/search strategy/);
  saved.snapshot.project.search_starts=100;assert.throws(()=>decodeSession(JSON.stringify(saved)),/search starts/);
 });

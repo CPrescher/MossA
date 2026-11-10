@@ -1,0 +1,670 @@
+use basin::{
+    Backtracking, CostFunction, Executor, FirstOrderState, Gradient,
+    GradientDescent, GradientState, NelderMead, PointState, Problem,
+    SimplexProgress, Solver, State, TerminationCode,
+};
+use std::time::Duration;
+
+#[test]
+fn termination_reasons_preserve_numeric_casts_and_values() {
+    let reasons = [
+        TerminationCode::MaxIter,
+        TerminationCode::MaxCostEvals,
+        TerminationCode::MaxGradientEvals,
+        TerminationCode::GradientTolerance,
+        TerminationCode::RelativeGradientTolerance,
+        TerminationCode::ProjectedGradientTolerance,
+        TerminationCode::ParamTolerance,
+        TerminationCode::RelativeParamTolerance,
+        TerminationCode::CostTolerance,
+        TerminationCode::RelativeCostTolerance,
+        TerminationCode::TargetCost,
+        TerminationCode::NoImprovement,
+        TerminationCode::NoAcceptedMove,
+        TerminationCode::SimplexTolerance,
+        TerminationCode::CmaEsTolerance,
+        TerminationCode::RhoTolerance,
+        TerminationCode::MeshTolerance,
+        TerminationCode::MaxTime,
+        TerminationCode::Cancelled,
+        TerminationCode::UserRequested,
+        TerminationCode::SolverConverged,
+        TerminationCode::SolverFailed,
+        TerminationCode::NumericalNoProgress,
+    ];
+    for (reason, value) in reasons.into_iter().zip(0u8..) {
+        assert_eq!(reason as u8, value);
+    }
+}
+
+/// f(x) = ½ ‖x‖²: convex quadratic with minimum at origin, gradient = x.
+struct Quadratic;
+
+impl basin::Constraints for Quadratic {
+    type Set = basin::NoConstraints;
+    fn constraints(
+        &self,
+    ) -> <Self::Set as basin::ConstraintDescription>::Borrowed<'_> {
+        basin::ConstraintSet::new()
+    }
+}
+impl CostFunction for Quadratic {
+    type Param = Vec<f64>;
+    type Output = f64;
+    type Error = std::convert::Infallible;
+
+    fn cost(&self, x: &Vec<f64>) -> Result<f64, std::convert::Infallible> {
+        Ok(0.5 * x.iter().map(|v| v * v).sum::<f64>())
+    }
+}
+
+impl Gradient for Quadratic {
+    type Gradient = Vec<f64>;
+
+    fn gradient(
+        &self,
+        x: &Vec<f64>,
+    ) -> Result<Vec<f64>, std::convert::Infallible> {
+        Ok(x.clone())
+    }
+}
+
+#[test]
+fn gradient_tolerance_fires_at_iter_zero_when_starting_at_optimum() {
+    // Initial param is the optimum: gradient = 0. Should terminate before
+    // doing any iterations.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1).with_absolute_gradient_tolerance(1e-8),
+        FirstOrderState::new(vec![0.0, 0.0]),
+    )
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::GradientTolerance);
+    assert_eq!(result.iter(), 0, "should not have done any iterations");
+}
+
+#[test]
+fn gradient_tolerance_fires_after_convergence() {
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5).with_absolute_gradient_tolerance(1e-6),
+        FirstOrderState::new(vec![1.0, -1.0, 0.5]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::GradientTolerance);
+    assert!(result.iter() > 0 && result.iter() < 1_000);
+    let g = result
+        .state
+        .gradient()
+        .expect("gradient should be populated");
+    let g_norm = g.iter().map(|v| v * v).sum::<f64>().sqrt();
+    assert!(g_norm <= 1e-6);
+}
+
+#[test]
+fn relative_gradient_tolerance_fires_after_convergence() {
+    // On f = ½‖x‖², GradientDescent(0.5) gives ∇f_k = x_k = 0.5^k·x_0, so
+    // ‖∇f_k‖/‖∇f_0‖ = 0.5^k. A 1e-3 relative bound fires once 0.5^k ≤
+    // 1e-3, i.e. around iter 10.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5).with_relative_gradient_tolerance(1e-3),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(
+        result.report.code(),
+        TerminationCode::RelativeGradientTolerance
+    );
+    assert!(
+        result.iter() > 0 && result.iter() < 20,
+        "expected convergence near iter 10, got {}",
+        result.iter()
+    );
+}
+
+#[test]
+fn relative_gradient_tolerance_fires_at_iter_zero_when_starting_at_optimum() {
+    // ∇f(x_0) = 0 ⇒ initial norm 0, and 0 ≤ tol²·0, so it fires at iter 0
+    // (same edge as the absolute GradientTolerance).
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1).with_relative_gradient_tolerance(1e-6),
+        FirstOrderState::new(vec![0.0, 0.0]),
+    )
+    .run()
+    .unwrap();
+
+    assert_eq!(
+        result.report.code(),
+        TerminationCode::RelativeGradientTolerance
+    );
+    assert_eq!(result.iter(), 0);
+}
+
+#[test]
+fn relative_gradient_tolerance_is_scale_invariant() {
+    // The headline property: normalizing by the initial gradient makes
+    // the stopping iteration independent of the objective's scale, where
+    // the absolute GradientTolerance would fire at different iterations.
+    // Scaling the start by 10⁶ scales every gradient by 10⁶ but leaves
+    // the ratio ‖∇f_k‖/‖∇f_0‖ = 0.5^k unchanged.
+    let run_from = |x0: f64| {
+        Executor::new(
+            Quadratic,
+            GradientDescent::new(0.5).with_relative_gradient_tolerance(1e-3),
+            FirstOrderState::new(vec![x0, x0]),
+        )
+        .max_iter(1_000)
+        .run()
+        .unwrap()
+    };
+
+    let small = run_from(1.0);
+    let large = run_from(1.0e6);
+
+    assert_eq!(
+        small.report.code(),
+        TerminationCode::RelativeGradientTolerance
+    );
+    assert_eq!(
+        large.report.code(),
+        TerminationCode::RelativeGradientTolerance
+    );
+    assert_eq!(
+        small.iter(),
+        large.iter(),
+        "relative gradient tolerance should be scale-invariant"
+    );
+}
+
+#[test]
+fn max_iter_field_default_is_one_thousand() {
+    // No criteria configured: the default `max_iter = 1000` should fire.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001), // tiny step → won't converge in 1000
+        FirstOrderState::new(vec![10.0, 10.0]),
+    )
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxIter);
+    assert_eq!(result.iter(), 1_000);
+}
+
+#[test]
+fn explicit_max_iter_replaces_default() {
+    // The explicit limit replaces the default of 1000 iterations.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001),
+        FirstOrderState::new(vec![10.0, 10.0]),
+    )
+    .max_iter(5)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxIter);
+    assert_eq!(result.iter(), 5);
+}
+
+#[test]
+fn param_tolerance_fires_when_steps_become_small() {
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5).with_absolute_step_tolerance(1e-8),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::ParamTolerance);
+}
+
+#[test]
+fn cost_tolerance_fires_when_cost_stagnates() {
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5).with_absolute_cost_change_tolerance(1e-12),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::CostTolerance);
+}
+
+#[test]
+fn relative_param_tolerance_fires_when_relative_step_small() {
+    // On f = ½‖x‖², GradientDescent(α) gives x_{k+1} = (1−α)x_k, so the
+    // relative step ‖Δx‖/‖x_k‖ = α/(1−α) is constant. With α = 0.001
+    // that's ≈ 1e-3, below a 1e-2 relative bound, so the criterion fires
+    // early (where an *absolute* ParamTolerance would keep shrinking as
+    // x → 0).
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001).with_relative_step_tolerance(1e-2),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(
+        result.report.code(),
+        TerminationCode::RelativeParamTolerance
+    );
+    assert!(result.iter() < 5, "fired late at iter {}", result.iter());
+}
+
+#[test]
+fn relative_cost_tolerance_fires_when_relative_reduction_small() {
+    // Relative cost reduction |Δf|/|f_{k−1}| = α(2−α) is constant on the
+    // quadratic; α = 0.001 gives ≈ 2e-3 < 1e-2, so the criterion fires.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001).with_relative_cost_change_tolerance(1e-2),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::RelativeCostTolerance);
+    assert!(result.iter() < 5, "fired late at iter {}", result.iter());
+}
+
+#[test]
+fn target_objective_fires_at_iter_zero_when_start_is_below_target() {
+    // f(x_0) = 0.5·‖(0.5, 0.5)‖² = 0.25 ≤ 1.0, so the criterion fires
+    // before any iteration runs.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1),
+        FirstOrderState::new(vec![0.5, 0.5]),
+    )
+    .target_objective(1.0)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::TargetCost);
+    assert_eq!(result.iter(), 0);
+}
+
+#[test]
+fn target_objective_fires_when_cost_drops_to_target() {
+    // f_k = 0.5·(1-α)^(2k)·‖x_0‖²; with α = 0.5, ‖x_0‖² = 2, we hit
+    // f ≤ 1e-3 after a small number of iterations and well before
+    // max_iter.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .target_objective(1e-3)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::TargetCost);
+    assert!(result.iter() > 0 && result.iter() < 1_000);
+    assert!(result.state.cost() <= 1e-3);
+}
+
+#[test]
+fn target_objective_does_not_fire_when_target_unreachable() {
+    // Target below the global min (f ≥ 0); should never fire, MaxIter
+    // wins.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(10)
+    .target_objective(-1.0)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxIter);
+    assert_eq!(result.iter(), 10);
+}
+
+#[test]
+fn no_objective_improvement_fires_after_patience_stalled_iters() {
+    // tol = 10.0 is larger than any drop on the quadratic from [1, 1]
+    // (max drop is 0.75 at iter 1), so every iter past the first counts
+    // as "no improvement". With patience = 3 the criterion fires once
+    // stalled == 3, which is at state.iter() == 3.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(100)
+    .no_objective_improvement(3, 10.0)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::NoImprovement);
+    assert_eq!(result.iter(), 3);
+}
+
+#[test]
+fn no_objective_improvement_does_not_fire_under_monotone_decrease() {
+    // Quadratic with GD(α=0.5) gives f_k = 0.25^k, strictly
+    // decreasing. With tol = 0.0 every iteration is "an improvement",
+    // so the patience counter never advances and MaxIter wins.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(20)
+    .no_objective_improvement(5, 0.0)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxIter);
+    assert_eq!(result.iter(), 20);
+}
+
+#[test]
+fn no_objective_improvement_resets_counter_on_real_improvement() {
+    // f_k = 0.25^k on Quadratic with GD(α=0.5). Drops are 0.75,
+    // 0.1875, 0.0469, 0.0117, 0.0029, …. With tol = 0.1 the first two
+    // drops count as improvements (resetting `stalled` to 0 each
+    // time), then drops 3+ all fall below tol. So stalled increments
+    // from iter 3 onward; with patience = 3 the criterion fires at
+    // iter 5, not iter 3, which is what it would do without the
+    // reset-on-improvement behavior.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.5),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(100)
+    .no_objective_improvement(3, 0.1)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::NoImprovement);
+    assert_eq!(result.iter(), 5);
+}
+
+#[test]
+fn relative_cost_tolerance_is_scale_invariant() {
+    // The headline property: a single relative `tol` fires at the same
+    // iteration regardless of the cost scale, where an absolute
+    // `CostTolerance` would fire at wildly different points. Run the
+    // same solver from a small start and a 10⁶-times-larger start; the
+    // relative criterion must stop at the same iter.
+    let run_from = |x0: f64| {
+        Executor::new(
+            Quadratic,
+            GradientDescent::new(0.001)
+                .with_relative_cost_change_tolerance(1e-2),
+            FirstOrderState::new(vec![x0, x0]),
+        )
+        .max_iter(1_000)
+        .run()
+        .unwrap()
+    };
+
+    let small = run_from(1.0);
+    let large = run_from(1.0e6);
+
+    assert_eq!(small.report.code(), TerminationCode::RelativeCostTolerance);
+    assert_eq!(large.report.code(), TerminationCode::RelativeCostTolerance);
+    assert_eq!(
+        small.iter(),
+        large.iter(),
+        "relative cost tolerance should be scale-invariant"
+    );
+}
+
+#[test]
+fn solver_step_tolerance_precedes_iteration_budget() {
+    // ParamTolerance with a huge tolerance fires immediately on iter 1
+    // (any movement < 100). MaxIter(1000) would otherwise fire later.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1).with_absolute_step_tolerance(100.0),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(1_000)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::ParamTolerance);
+    assert!(result.iter() < 5);
+}
+
+#[test]
+fn max_time_eventually_fires() {
+    // Use a tiny budget so the test is fast but deterministic.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001),
+        FirstOrderState::new(vec![1e6, 1e6, 1e6]),
+    )
+    .max_iter(u64::MAX)
+    .max_time(Duration::from_millis(50))
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxTime);
+}
+
+/// Solver that always reports converged via the `terminate` hook, used to
+/// verify the per-solver hook still works after framework criteria are
+/// checked.
+struct AlwaysConverged;
+
+impl Solver<Quadratic, PointState<Vec<f64>>> for AlwaysConverged {
+    type Error = std::convert::Infallible;
+    fn next_iter(
+        &mut self,
+        _problem: &mut Problem<Quadratic>,
+        state: PointState<Vec<f64>>,
+    ) -> Result<basin::SolverStep<PointState<Vec<f64>>>, Self::Error> {
+        Ok(basin::SolverStep::from((state, None)))
+    }
+
+    fn terminate(
+        &self,
+        _state: &PointState<Vec<f64>>,
+    ) -> Option<basin::Termination<<PointState<Vec<f64>> as basin::State>::Float>>
+    {
+        Some(basin::Termination::custom(
+            "external.SolverConverged",
+            "External solver stopping predicate: SolverConverged.",
+            vec![],
+        ))
+    }
+}
+
+#[test]
+fn solver_terminate_hook_is_honored() {
+    let result = Executor::new(
+        Quadratic,
+        AlwaysConverged,
+        PointState::new(vec![1.0, 2.0]),
+    )
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverConverged);
+    assert_eq!(result.iter(), 0);
+}
+
+/// Solver that completes one full iteration, then reports a mid-iter
+/// failure on the next call via the tuple return value. Verifies that
+/// `next_iter`'s second return slot halts the executor and that
+/// `state.iter()` is *not* incremented for the bailed iteration.
+struct FailsOnSecondCall {
+    calls: u64,
+}
+
+impl Solver<Quadratic, PointState<Vec<f64>>> for FailsOnSecondCall {
+    type Error = std::convert::Infallible;
+    fn next_iter(
+        &mut self,
+        _problem: &mut Problem<Quadratic>,
+        state: PointState<Vec<f64>>,
+    ) -> Result<basin::SolverStep<PointState<Vec<f64>>>, Self::Error> {
+        Ok({
+            self.calls += 1;
+            if self.calls >= 2 {
+                basin::SolverStep::stopped(
+                    state,
+                    basin::Termination::numerical_failure(
+                        "External solver reported a numerical failure.",
+                    ),
+                )
+            } else {
+                basin::SolverStep::completed(state)
+            }
+        })
+    }
+}
+
+#[test]
+fn solver_can_signal_termination_mid_iter() {
+    let result = Executor::new(
+        Quadratic,
+        FailsOnSecondCall { calls: 0 },
+        PointState::new(vec![1.0, 2.0]),
+    )
+    .max_iter(100)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::SolverFailed);
+    // First call completed (iter 0 → 1), second call bailed without
+    // incrementing, so iter stays at 1.
+    assert_eq!(result.iter(), 1);
+}
+
+#[test]
+fn cost_evals_matches_iter_for_constant_step_gradient_descent() {
+    // Constant step + cost+gradient per iter ⇒ exactly 1 cost eval per
+    // iter, plus 1 in init. So cost_evals == iter + 1.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001),
+        FirstOrderState::new(vec![10.0, 10.0]),
+    )
+    .max_iter(20)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.iter(), 20);
+    assert_eq!(result.state.cost_evals(), 21);
+}
+
+#[test]
+fn cost_evals_exceeds_iter_with_backtracking() {
+    // Each backtracking call evaluates the cost at least once. A
+    // sufficiently aggressive `alpha_init` forces several rejections on
+    // most iterations, so cost_evals > iter + 1.
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::with_line_search(
+            Backtracking::new().alpha_init(8.0).rho(0.5),
+        ),
+        FirstOrderState::new(vec![1.0, 1.0]),
+    )
+    .max_iter(10)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.iter(), 10);
+    assert!(
+        result.state.cost_evals() > result.iter() + 1,
+        "expected line search to inflate cost_evals beyond iter+1: cost_evals={}, iter={}",
+        result.state.cost_evals(),
+        result.iter()
+    );
+}
+
+#[test]
+fn cost_evals_exceeds_iter_for_nelder_mead_shrinks() {
+    // Init evaluates n+1 vertices and each iteration spends 1–2 extra
+    // cost evals (more on shrink), so cost_evals ≥ iter + 3.
+    let result = Executor::new(
+        Quadratic,
+        NelderMead::new(),
+        SimplexProgress::new(vec![2.0, -3.0]),
+    )
+    .max_iter(50)
+    .run()
+    .unwrap();
+
+    assert!(result.state.cost_evals() >= result.iter() + 3);
+}
+
+#[test]
+fn max_gradient_evals_fires_before_max_iter() {
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.001),
+        FirstOrderState::new(vec![10.0, 10.0]),
+    )
+    .max_iter(10_000)
+    .max_gradient_evals(5)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxGradientEvals);
+    assert!(result.state.gradient_evals() >= 5);
+}
+
+#[test]
+fn max_cost_evals_fires_before_max_iter() {
+    let result = Executor::new(
+        Quadratic,
+        NelderMead::new(),
+        SimplexProgress::new(vec![5.0, -2.0, 4.0]),
+    )
+    .max_iter(10_000)
+    .max_cost_evals(25)
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::MaxCostEvals);
+    assert!(
+        result.state.cost_evals() >= 25,
+        "cost_evals should have reached the budget: {}",
+        result.state.cost_evals()
+    );
+}
+
+#[test]
+fn custom_stop_hook() {
+    let result = Executor::new(
+        Quadratic,
+        GradientDescent::new(0.1),
+        FirstOrderState::new(vec![5.0, 5.0]),
+    )
+    .max_iter(1_000)
+    .stop_when(|state| {
+        (state.iter() == 7)
+            .then(|| basin::ApplicationStop::new("user_requested"))
+    })
+    .run()
+    .unwrap();
+
+    assert_eq!(result.report.code(), TerminationCode::UserRequested);
+    assert_eq!(result.iter(), 7);
+}

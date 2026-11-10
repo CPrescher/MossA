@@ -1,0 +1,401 @@
+use crate::core::constraint::evaluation::BoxProblem;
+use crate::core::executor::OptimizationResult;
+use crate::core::inner::{InitialState, InnerExecutor};
+use crate::core::math::{
+    ClampInPlace, ComponentMulAssign, MatDiagonal, MatTransposeVec, MatVec,
+    MatrixFromDiagonal, MatrixIdentity, NormSquared, RankOneUpdate,
+    SampleStandardNormal, Scalar, ScaleInPlace, ScaledAdd, SymmetricEigen,
+    VectorLen,
+};
+use crate::core::problem::{CostFunction, Problem};
+use crate::core::solver::Solver;
+use crate::core::state::{CountsMirror, PopulationProgress, State};
+use crate::core::termination::Termination;
+use crate::solver::bounded_cma_es::{BoundedCmaEs, evaluate_with_penalty};
+use crate::solver::bounded_cma_es::{publish, sort_bounded_population};
+use crate::solver::cma_inject::{MemeticInner, default_c_y};
+
+/// Memetic [`BoundedCmaEs`] with Hansen (2011) injection. Sibling of
+/// [`CmaInject`](super::CmaInject); the outer is the bounded variant
+/// of CMA-ES, and bound-respecting inners (notably
+/// [`Lbfgsb`](crate::Lbfgsb)) see the same bounds the outer
+/// enforces via BoundPenalty.
+///
+/// The injection mechanism (Hansen 2011 eq. 4: Mahalanobis clip,
+/// plug back into the standard CMA update) is unchanged from
+/// `CmaInject`; only the outer solver is replaced. Adaptive
+/// boundary-penalty bookkeeping inside `BoundedCmaEs` is orthogonal
+/// to injection; `BoundedCmaInject` reads the same post-update
+/// `m, σ, B, D^{-1}` for clipping, and re-evaluates injected
+/// candidates with the same γ-weighted penalty regular samples
+/// receive (otherwise an out-of-box LM or L-BFGS-B refinement would
+/// dominate the population at a spuriously low raw cost, a bug
+/// noticed when writing the LM example).
+///
+/// # Inner solver
+///
+/// Generic over any `I: MemeticInner<V>`. The associated `I::State`
+/// determines the inner state shape. Shipped impls cover
+/// [`NelderMead`](crate::solver::NelderMead),
+/// [`LevenbergMarquardt`](crate::solver::LevenbergMarquardt), and
+/// [`Lbfgsb`](crate::Lbfgsb). L-BFGS-B is the natural inner
+/// here: its `P::Set = ConstraintSet<BoxBounds<V>>` bound matches the outer's, and the
+/// same box flows through both ends of the composition.
+///
+/// Unconstrained local solvers such as NM and LM require
+/// [`RelaxedInner::new`](crate::RelaxedInner::new). Their polish may step outside
+/// the box; the outer repairs and reevaluates the injected result using its
+/// existing BoundPenalty calculation. A box-respecting inner such as L-BFGS-B
+/// is passed directly. Additional constraint blocks are rejected at compile time.
+///
+/// Shared [`PopulationProgress`] contains repaired points and raw objective
+/// costs. The outer solver retains genotypes and penalized ranking values.
+/// Exact checkpoints retain both solvers, progress, and all six raw evaluation
+/// categories. With `serde`, these serialize when their constituent types do;
+/// application hooks cannot be serialized.
+///
+/// # Backends
+///
+/// Same coverage as [`BoundedCmaEs`]: the default `Vec<F>` (`F = f32` or `f64`) (via
+/// [`DenseMatrix`](crate::DenseMatrix)), nalgebra, ndarray, and faer. The
+/// matrix bound is [`SymmetricEigen`], which every backend satisfies, and the
+/// shipped [`MemeticInner`] inners are
+/// backend-generic.
+///
+/// # Examples
+///
+/// See [`BoundedCmaEs`] for the bounded population-based `Executor`
+/// pattern; `BoundedCmaInject` adds a bound-respecting local-search inner.
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "I: serde::Serialize, V: serde::Serialize, M: serde::Serialize, F: serde::Serialize",
+        deserialize = "I: serde::Deserialize<'de>, V: serde::Deserialize<'de>, M: serde::Deserialize<'de>, F: serde::Deserialize<'de>"
+    ))
+)]
+pub struct BoundedCmaInject<I, V, M, F = f64>
+where
+    F: Scalar,
+    I: MemeticInner<V, F>,
+{
+    cma: BoundedCmaEs<V, M, F>,
+    inner: InnerExecutor<I::State, I>,
+    #[cfg_attr(feature = "serde", serde(default))]
+    inner_diagnostics: Option<Vec<crate::core::inner::diagnostics::Record<F>>>,
+    k: usize,
+    c_y_override: Option<F>,
+}
+
+impl<I, V, M, F> BoundedCmaInject<I, V, M, F>
+where
+    F: Scalar,
+    I: MemeticInner<V, F>,
+    I::State: CountsMirror,
+{
+    /// Wrap a configured [`BoundedCmaEs`] with `inner` as the local
+    /// refinement step. Defaults: `k = 1`, inner `max_iter = 50`,
+    /// `c_y` = Hansen-2011 Table 1 default.
+    pub fn with_inner_solver(cma: BoundedCmaEs<V, M, F>, inner: I) -> Self {
+        Self {
+            cma,
+            inner: InnerExecutor::new(inner).max_iter(50),
+            k: 1,
+            c_y_override: None,
+            inner_diagnostics: None,
+        }
+    }
+
+    /// Inspect the outer distribution model without transferring its ownership.
+    pub fn cma(&self) -> &BoundedCmaEs<V, M, F> {
+        &self.cma
+    }
+
+    /// Number of best-ranked candidates to refine and inject each
+    /// generation. Default `1`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `k == 0`.
+    pub fn with_k(mut self, k: usize) -> Self {
+        assert!(k >= 1, "BoundedCmaInject requires k >= 1, got {}", k);
+        self.k = k;
+        self
+    }
+
+    /// Override the Hansen-2011 clipping threshold `c_y` (default
+    /// `√n + 2n/(n+2)`).
+    ///
+    /// # Panics
+    ///
+    /// Panics if `c_y <= 0`.
+    pub fn with_c_y(mut self, c_y: F) -> Self {
+        assert!(
+            c_y > F::zero(),
+            "BoundedCmaInject requires c_y > 0, got {:?}",
+            c_y
+        );
+        self.c_y_override = Some(c_y);
+        self
+    }
+
+    /// Enable owned inner stopping reports and count snapshots. Disabled by default.
+    /// Fresh initialization clears records; exact continuation retains them.
+    pub fn with_inner_diagnostics(mut self, enabled: bool) -> Self {
+        self.inner_diagnostics = enabled.then(Vec::new);
+        self
+    }
+
+    /// Inner reports consumed during this outer run, in dispatch order.
+    /// A callback error retains counts and has no returned report.
+    pub fn inner_diagnostics(
+        &self,
+    ) -> &[crate::core::inner::diagnostics::Record<F>] {
+        self.inner_diagnostics.as_deref().unwrap_or(&[])
+    }
+
+    /// Inner solver iteration budget per outer generation (default `50`).
+    pub fn with_inner_max_iter(self, n: u64) -> Self {
+        let Self {
+            cma,
+            inner,
+            k,
+            c_y_override,
+            inner_diagnostics,
+        } = self;
+        Self {
+            cma,
+            inner: inner.max_iter(n),
+            k,
+            c_y_override,
+            inner_diagnostics,
+        }
+    }
+
+    /// Configure the outer CMA distribution-size tolerance; `None` disables it.
+    pub fn with_absolute_distribution_size_tolerance(
+        mut self,
+        value: impl Into<Option<F>>,
+    ) -> Self {
+        self.cma = self.cma.with_absolute_distribution_size_tolerance(value);
+        self
+    }
+
+    /// Add a factory creating fresh application-stop history for each inner run.
+    pub fn inner_stop_when_factory<Mk, CheckFn>(self, make: Mk) -> Self
+    where
+        Mk: FnMut() -> CheckFn + 'static,
+        CheckFn: FnMut(&I::State) -> Option<crate::ApplicationStop> + 'static,
+    {
+        let Self {
+            cma,
+            inner,
+            k,
+            c_y_override,
+            inner_diagnostics,
+        } = self;
+        Self {
+            cma,
+            inner: inner.stop_when_factory(make),
+            k,
+            c_y_override,
+            inner_diagnostics,
+        }
+    }
+}
+
+impl<P, I, V, M, F> Solver<P, PopulationProgress<V, F>>
+    for BoundedCmaInject<I, V, M, F>
+where
+    F: Scalar,
+    P: CostFunction<Param = V, Output = F> + BoxProblem<Param = V>,
+    I: MemeticInner<V, F>
+        + Solver<
+            P,
+            <I as InitialState<V>>::State,
+            Error = crate::ConstraintSolveError<P::Error>,
+        >,
+    I::State: State<Param = V, Float = F> + CountsMirror,
+    V: VectorLen
+        + Clone
+        + ScaledAdd<F>
+        + ScaleInPlace<F>
+        + ComponentMulAssign
+        + ClampInPlace
+        + NormSquared<F>
+        + SampleStandardNormal
+        + std::ops::Index<usize, Output = F>
+        + std::ops::IndexMut<usize, Output = F>,
+    M: MatrixIdentity
+        + MatrixFromDiagonal<V>
+        + MatVec<V>
+        + MatTransposeVec<V>
+        + MatDiagonal<V>
+        + ScaleInPlace<F>
+        + RankOneUpdate<V, F>
+        + SymmetricEigen<V>
+        + Clone,
+    BoundedCmaEs<V, M, F>: Solver<
+            P,
+            PopulationProgress<V, F>,
+            Error = crate::ConstraintSolveError<P::Error>,
+        >,
+    V: crate::VectorLen + std::ops::Index<usize, Output = F>,
+{
+    type Error = crate::ConstraintSolveError<P::Error>;
+
+    fn init(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PopulationProgress<V, F>,
+    ) -> Result<PopulationProgress<V, F>, Self::Error> {
+        crate::core::constraint::evaluation::validate_box_problem(
+            problem.inner(),
+            None,
+            false,
+        )
+        .map_err(crate::core::constraint::evaluation::invalid)?;
+        if let Some(records) = &mut self.inner_diagnostics {
+            records.clear();
+        }
+        self.cma.init(problem, state)
+    }
+
+    fn next_iter(
+        &mut self,
+        problem: &mut Problem<P>,
+        state: PopulationProgress<V, F>,
+    ) -> Result<crate::SolverStep<PopulationProgress<V, F>>, Self::Error> {
+        // 1. Standard BoundedCmaEs iteration first.
+        let step = self.cma.next_iter(problem, state)?;
+        if step.termination.is_some() {
+            return Ok(step);
+        }
+        let mut state = step.state;
+
+        let work = self.cma.work.as_mut().expect("CMA init precedes injection");
+        let n = work.m.vec_len();
+        let m = work.m.clone();
+        let sigma = work.sigma;
+        let c_y = self.c_y_override.unwrap_or_else(|| default_c_y::<F>(n));
+        let refine = self.k.min(work.candidates.len());
+
+        for i in 0..refine {
+            // 2. Seed inner state via the trait.
+            let inner_state = self
+                .inner
+                .solver_mut()
+                .seed_scaled(&work.candidates[i], sigma);
+
+            // 3. Drive the inner solver. Same-problem composition: inner
+            //    shares the outer wrapper, so its evals flow into the
+            //    outer's EvalCounts transparently.
+            let inner_result: OptimizationResult<I::State> =
+                crate::core::inner::diagnostics::run(
+                    &mut self.inner_diagnostics,
+                    problem,
+                    crate::core::inner::diagnostics::Context {
+                        outer_iteration: state.iter(),
+                        member: Some(i),
+                        resumed: false,
+                        initial_scale: Some(sigma),
+                    },
+                    |problem| self.inner.run(problem, inner_state),
+                )?;
+
+            // 4. Failure routing: bubble SolverFailed only.
+            if !inner_result
+                .report
+                .termination
+                .can_continue_as_inner(crate::PartialResultPolicy::Consume)
+            {
+                sort_bounded_population(work);
+                publish(
+                    work,
+                    &mut state,
+                    problem.inner().lower(),
+                    problem.inner().upper(),
+                );
+                return Ok(crate::SolverStep::from((
+                    state,
+                    inner_result.report.into_outer_termination(
+                        crate::PartialResultPolicy::Consume,
+                    ),
+                )));
+            }
+
+            // 5. Extract refined point.
+            let x_refined = inner_result.state.param().clone();
+
+            // 6. y = (x_refined − m) / σ.
+            let mut y = x_refined;
+            y.scaled_add(-F::one(), &m);
+            y.scale_in_place(F::one() / sigma);
+
+            // 7. ‖C^{-1/2} y‖ = ‖D^{-1} ⊙ Bᵀ y‖, with B, D⁻¹ from the solver.
+            let inv_sqrt_norm = {
+                let mut bt_y = work.b.mat_transpose_vec(&y);
+                bt_y.component_mul_assign(&work.d_inv);
+                bt_y.norm_squared().sqrt()
+            };
+
+            // 8. Clipping (Hansen 2011 eq. 4 + eq. 10).
+            if inv_sqrt_norm > F::zero() {
+                let alpha = (c_y / inv_sqrt_norm).min(F::one());
+                if alpha < F::one() {
+                    y.scale_in_place(alpha);
+                }
+            }
+
+            // 9. Reconstruct x_inj = m + σ · y_clipped.
+            let mut x_inj = m.clone();
+            x_inj.scaled_add(sigma, &y);
+
+            // 10. Re-evaluate using the BoundPenalty so the injected
+            //     candidate ranks consistently with regular samples in
+            //     `work.costs`. Raw cost would let an LM or L-BFGS-B
+            //     refinement that landed outside the box skip the
+            //     penalty and dominate the population (bug surfaces
+            //     dramatically on bound-active problems). Mirrors
+            //     `bounded_cma_es.rs:next_iter`'s `evaluate_with_penalty`
+            //     for regular samples; uses the same γ via
+            //     `working().gamma`.
+            let lo = problem.inner().lower().clone();
+            let hi = problem.inner().upper().clone();
+            let gamma = work
+                .penalty
+                .as_ref()
+                .expect("BoundedCmaEs::init installs the penalty")
+                .gamma
+                .clone();
+            let (raw_new, cost_new) = {
+                let (raw, pen) = evaluate_with_penalty(
+                    problem, &x_inj, &lo, &hi, &gamma, n,
+                )?;
+                (raw, pen)
+            };
+
+            work.candidates[i] = x_inj;
+            work.costs[i] = cost_new;
+            work.objective_costs[i] = raw_new;
+        }
+
+        if refine > 0 {
+            sort_bounded_population(work);
+        }
+
+        publish(
+            work,
+            &mut state,
+            problem.inner().lower(),
+            problem.inner().upper(),
+        );
+        Ok(crate::SolverStep::from((state, None)))
+    }
+    fn terminate(
+        &self,
+        state: &PopulationProgress<V, F>,
+    ) -> Option<Termination<F>> {
+        <_ as Solver<P, PopulationProgress<V, F>>>::terminate(&self.cma, state)
+    }
+}

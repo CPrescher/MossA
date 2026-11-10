@@ -1,0 +1,238 @@
+# Basin <picture><source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/jolars/basin/main/images/logo-dark.png" /><img src="https://raw.githubusercontent.com/jolars/basin/main/images/logo.png" align="right" width="189" alt="basin logo" /></picture>
+
+[![CI](https://github.com/jolars/basin/actions/workflows/ci.yml/badge.svg)](https://github.com/jolars/basin/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/jolars/basin/branch/main/graph/badge.svg)](https://app.codecov.io/gh/jolars/basin/tree/main)
+[![crates.io](https://img.shields.io/crates/v/basin.svg)](https://crates.io/crates/basin)
+[![docs.rs](https://img.shields.io/docsrs/basin)](https://docs.rs/basin)
+[![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20610944-blue)](https://doi.org/10.5281/zenodo.20610944)
+
+Basin is a numerical optimization library for Rust. Solve problems with or
+without derivatives, fit models with nonlinear least squares, and handle
+bounds and other constraints with algorithms suited to your problem. Basin
+also provides a solver for bracketed scalar equations.
+
+Define the function you want to minimize, choose a solver, and supply a
+starting point. Use plain Rust vectors or your choice of nalgebra, ndarray, or
+faer. Basin runs natively and in the browser, with no BLAS/LAPACK or threads
+required by the default build. Its design is inspired by [argmin].
+
+Narrative documentation lives at [basin.rs/guide]; the rustdoc reference is at
+[docs.rs/basin]. There is also an in-browser [solver visualizer] and a
+[benchmarks site] comparing Basin against competing crates and across backends
+and solvers.
+
+To port an existing Argmin project, see [Migrating from
+Argmin](https://basin.rs/guide/migrating-from-argmin/).
+
+## Install
+
+```sh
+cargo add basin
+```
+
+Basin works on plain `Vec<f64>` out of the box. Linear-algebra backends are
+opt-in. Use a moving alias to follow the newest supported release:
+
+```sh
+cargo add basin --features nalgebra  # or: ndarray, faer
+```
+
+Exact version features, such as `nalgebra_v0_34`, keep dependency resolution
+stable. Basin's package minimum supported Rust version (MSRV) is **1.87.0**. The
+one exception is nalgebra 0.35: `nalgebra_v0_35` and `nalgebra` require Rust
+1.89.
+
+## Example
+
+Implement `CostFunction` (and `Gradient` when the solver needs derivatives),
+then hand the problem, a solver, and an initial state to the `Executor`:
+
+```rust
+use basin::{
+    CostFunction, Executor, FirstOrderState, Gradient, GradientDescent,
+};
+use std::convert::Infallible;
+
+struct Rosenbrock;
+
+fn main() {
+    impl CostFunction for Rosenbrock {
+        type Param = Vec<f64>;
+        type Output = f64;
+        type Error = Infallible;
+
+        fn cost(&self, x: &Vec<f64>) -> Result<f64, Self::Error> {
+            Ok((1.0 - x[0]).powi(2) + 100.0 * (x[1] - x[0].powi(2)).powi(2))
+        }
+    }
+
+    impl Gradient for Rosenbrock {
+        type Gradient = Vec<f64>;
+
+        fn gradient(&self, x: &Vec<f64>) -> Result<Vec<f64>, Self::Error> {
+            Ok(vec![
+                -2.0 * (1.0 - x[0]) - 400.0 * x[0] * (x[1] - x[0].powi(2)),
+                200.0 * (x[1] - x[0].powi(2)),
+            ])
+        }
+    }
+
+    let result = Executor::new(
+        Rosenbrock,
+        (GradientDescent::new(1e-3)).with_absolute_gradient_tolerance(1e-6),
+        FirstOrderState::new(vec![-1.2, 1.0]),
+    )
+    .max_iter(50_000)
+    .run()
+    .unwrap();
+
+    println!(
+        "x = {:?}, f = {}, stopped: {:?}",
+        result.param(),
+        result.cost(),
+        result.report.termination
+    );
+}
+```
+
+## Solvers
+
+- **First-order, quasi-Newton, and Newton:** gradient descent (with momentum and
+  pluggable line searches), SGD, BFGS, L-BFGS, L-BFGS-B, and a Newton
+  trust-region method.
+- **Derivative-free:** Nelder-Mead; Brent, Brent-with-derivatives, and
+  golden-section search (1D); Powell's model-based family (NEWUOA, BOBYQA,
+  LINCOA, COBYLA); and MADS (OrthoMADS).
+- **Nonlinear least squares:** Gauss-Newton, Levenberg-Marquardt, trust-region
+  reflective.
+- **Global and stochastic:** Globalized Bounded Nelder-Mead, simulated
+  annealing, random search, CMA-ES, differential evolution, a steady-state
+  genetic algorithm, and memetic combinations (MA-LS-Chain, plus CMA-ES and DE
+  injection wrappers).
+- **Constrained:** box bounds via projected gradient descent, bounded
+  Nelder-Mead, Globalized Bounded Nelder-Mead, L-BFGS-B, and bounded CMA-ES;
+  LINCOA for linear constraints and COBYLA for nonlinear inequalities;
+  log-barrier and augmented Lagrangian wrappers for more general constraints.
+- **Root finding:** Brent's bracketed scalar method through the direct
+  `BrentRoot::solve` API.
+
+See [Solvers] for which backends each one supports.
+
+## Backends
+
+Parameters and linear algebra are generic over the backend. `Vec<f64>` needs no
+features. Each external backend has exact version features and an unversioned
+alias that tracks the newest supported release:
+
+  | Backend    | Exact features                            | Moving alias |
+  | ---------- | ----------------------------------------- | ------------ |
+  | [nalgebra] | `nalgebra_v0_32` through `nalgebra_v0_35` | `nalgebra`   |
+  | [ndarray]  | `ndarray_v0_15` through `ndarray_v0_17`   | `ndarray`    |
+  | [faer]     | `faer_v0_22` through `faer_v0_24`         | `faer`       |
+
+Every nalgebra feature includes its matching `nalgebra-sparse` release:
+0.32/0.9, 0.33/0.10, 0.34/0.11, and 0.35/0.12. Exact acceleration features
+follow the same naming scheme—`nalgebra_v0_34-lapack` and `ndarray_v0_16-blas`,
+for example. The moving aliases are `nalgebra-lapack` and `ndarray-blas`.
+
+## Citation
+
+If you use Basin in your research, please cite the paper:
+
+> Larsson, J. (2026). *Basin: Efficient and Extensible Numerical Optimization in
+> Rust* (arXiv:2608.11279). arXiv. <https://doi.org/10.48550/arXiv.2608.11279>
+
+```bibtex
+@misc{larsson2026basin,
+  title         = {Basin: Efficient and Extensible Numerical Optimization in {{Rust}}},
+  shorttitle    = {Basin},
+  author        = {Larsson, Johan},
+  year          = {2026},
+  month         = aug,
+  number        = {arXiv:2608.11279},
+  eprint        = {2608.11279},
+  primaryclass  = {cs.LG},
+  publisher     = {arXiv},
+  doi           = {10.48550/arXiv.2608.11279},
+  archiveprefix = {arXiv}
+}
+```
+
+<details>
+<summary>BibLaTeX</summary>
+
+```bibtex
+@online{larsson2026basin,
+  title       = {Basin: Efficient and Extensible Numerical Optimization in {{Rust}}},
+  shorttitle  = {Basin},
+  author      = {Larsson, Johan},
+  date        = {2026-08-11},
+  eprint      = {2608.11279},
+  eprinttype  = {arXiv},
+  eprintclass = {cs.LG},
+  doi         = {10.48550/arXiv.2608.11279},
+  pubstate    = {prepublished}
+}
+```
+
+</details>
+
+For reproducibility, also cite the software release you used. Select that
+release in the [Zenodo archive](https://doi.org/10.5281/zenodo.20610944) and
+export its citation. The concept DOI `10.5281/zenodo.20610944` identifies Basin
+across all releases.
+
+[CITATION.cff](CITATION.cff) contains the software metadata and preferred paper
+citation, and \[basin.rs/guide\] renders the paper in APA, BibTeX, and BibLaTeX.
+
+## Acknowledgements
+
+Basin owes a substantial intellectual debt to [argmin]: the `Executor` driver
+loop, the `Solver`/`Problem` trait split, and per-solver `State` are borrowed
+from it, and several solver implementations and test-problem conventions were
+modeled on argmin's. Thanks to the argmin authors and contributors for a library
+that is a pleasure to learn from.
+
+The Powell-family derivative-free solvers (COBYLA, NEWUOA, BOBYQA, LINCOA) are
+derived from [PRIMA], Zaikun Zhang's modern-Fortran reference implementation of M. J. D.
+Powell's methods, used as the authoritative source for the exact formulas and as
+the cross-validation oracle. PRIMA is distributed under the BSD 3-Clause
+License; its notice is retained in
+[COPYRIGHT](https://github.com/jolars/basin/blob/main/crates/basin/COPYRIGHT).
+
+The bound-constrained L-BFGS-B solver is a port of the [L-BFGS-B] version 3.0
+Fortran code by Ciyou Zhu, Richard H. Byrd, Peihuang Lu, and Jorge Nocedal (ACM
+TOMS Algorithm 778), with the v3.0 improvements by José Luis Morales and Jorge
+Nocedal. It is released under the New BSD (BSD 3-Clause) License; its notice is
+likewise retained in
+[COPYRIGHT](https://github.com/jolars/basin/blob/main/crates/basin/COPYRIGHT).
+
+[PRIMA]: https://github.com/libprima/prima
+[L-BFGS-B]: https://users.iems.northwestern.edu/~nocedal/lbfgsb.html
+
+## License
+
+Licensed under either of
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or
+  <https://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or
+  <https://opensource.org/licenses/MIT>)
+
+at your convenience.
+
+### Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted
+for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
+dual licensed as above, without any additional terms or conditions.
+
+[argmin]: https://github.com/argmin-rs/argmin
+[nalgebra]: https://nalgebra.rs
+[ndarray]: https://github.com/rust-ndarray/ndarray
+[faer]: https://faer.veganb.tw
+[basin.rs/guide]: https://basin.rs/guide/
+[docs.rs/basin]: https://docs.rs/basin
+[solver visualizer]: https://basin.rs/visualizer/
+[benchmarks site]: https://basin.rs/benchmarks/
+[Solvers]: https://basin.rs/guide/solvers/

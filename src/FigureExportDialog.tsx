@@ -4,13 +4,14 @@ import {captureDialogFocus} from './focus-control';
 import {safeFilenamePart} from './export-filename';
 import {isTauri} from '@tauri-apps/api/core';
 import type { Evaluation, Project } from './types';
+import type {FitSummary} from './session';
 import { defaultFigureOptions, figureFilename, figurePng, renderFigure, saveFigureBlob, type FigureOptions } from './figure';
 import './figure-export.css';
 import {useActionNotice} from './useActionNotice';
 import {defaultFigureSettings,type FigureSettings} from './figure-settings';
 
-export function FigureExportDialog({ project, evaluation, fitted, name, viewRange, initial, sitesRefreshed, onSettingsChange, onClose }: {
-  project: Project; evaluation: Evaluation; fitted: boolean; name: string; viewRange: [number, number] | null; initial?:FigureSettings; sitesRefreshed?:boolean; onSettingsChange?: (settings:FigureSettings)=>void; onClose: (settings:FigureSettings) => void;
+export function FigureExportDialog({ project, evaluation, fitted, result = null, name, viewRange, initial, sitesRefreshed, onSettingsChange, onClose }: {
+  project: Project; evaluation: Evaluation; fitted: boolean; result?: FitSummary | null; name: string; viewRange: [number, number] | null; initial?:FigureSettings; sitesRefreshed?:boolean; onSettingsChange?: (settings:FigureSettings)=>void; onClose: (settings:FigureSettings) => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [options, setOptions] = useState(() => initial?.options??defaultFigureOptions(project));
@@ -21,9 +22,9 @@ export function FigureExportDialog({ project, evaluation, fitted, name, viewRang
   useEffect(() => { dialog.current?.showModal(); }, []);
   function reset() {const defaults=defaultFigureSettings(project,name);setOptions(defaults.options);setFormat(defaults.format);setDpi(defaults.dpi);setFilename(defaults.filename);setPreviewZoom(false);setError('');notice.show('Figure settings reset.');}
   const preview = useMemo(() => {
-    try { return { svg: renderFigure(project, evaluation, options, fitted), error: '' }; }
+    try { return { svg: renderFigure(project, evaluation, options, fitted, result), error: '' }; }
     catch (e) { return { svg: '', error: (e as Error).message }; }
-  }, [project, evaluation, options, fitted]);
+  }, [project, evaluation, options, fitted, result]);
   const lastValidOptions=useRef(options);
   useEffect(()=>{if(preview.svg)lastValidOptions.current=options;},[preview.svg,options]);
   const publish=useRef(onSettingsChange);publish.current=onSettingsChange;
@@ -63,7 +64,7 @@ export function FigureExportDialog({ project, evaluation, fitted, name, viewRang
           <div className="figure-control-pair"><label className="stack-label">Velocity range<select aria-label="Export velocity range" value={options.range ? savedRange?'saved':'view' : 'full'} onChange={e => change('range', e.target.value === 'view' ? viewRange : e.target.value==='saved'?options.range:null)}><option value="full">Full spectrum</option>{savedRange&&options.range&&<option value="saved">Saved range · {rangeText(options.range)}</option>}<option value="view" disabled={!viewRange}>{viewRange?`Current velocity range · ${Number(viewRange[0].toPrecision(4))} to ${Number(viewRange[1].toPrecision(4))} mm/s`:'Current velocity range'}</option></select></label><label className="stack-label">Legend<select aria-label="Legend position" value={options.legend} onChange={e => change('legend', e.target.value as FigureOptions['legend'])}><option value="auto">Inside · Auto placement</option><option value="top-right">Inside · Upper right</option><option value="top-left">Inside · Upper left</option><option value="bottom-right">Inside · Lower right</option><option value="bottom-left">Inside · Lower left</option><option value="above">Above figure</option><option value="below">Below figure</option><option value="right">To the right</option><option value="none">Hidden</option></select></label></div>
           <label className="check-label"><input type="checkbox" aria-label="Include data and fit in legend" checked={options.legendDataFit} disabled={options.legend === 'none'} onChange={e => change('legendDataFit', e.target.checked)}/>Include data and fit in legend</label>
           <label className="check-label"><input type="checkbox" aria-label="Include site fractions (%)" checked={options.legendFractions} disabled={options.legend === 'none'} onChange={e => change('legendFractions', e.target.checked)}/>Include site fractions (%)</label>
-          {options.legendFractions && <p className="figure-control-note">Intensity fractions of all model sites, including hidden sites.{project.mode === 'transmission' && ' Absorber intensity fractions, not phase abundances.'}</p>}
+          {options.legendFractions && <p className="figure-control-note">Intensity fractions of all model sites, including hidden sites. Fit std appear in parentheses in the last quoted digits.{project.mode === 'transmission' && ' Absorber intensity fractions, not phase abundances.'}</p>}
           {options.legend === 'auto' && <p className="figure-control-note">Finds open space inside the axes. Moves above the figure if there is no room.</p>}
         </section>
         <section id="figure-residual"><h3>Residual</h3><div className="figure-segments" role="group" aria-label="Residual position">{(['above', 'below', 'none'] as const).map(value => <button key={value} aria-pressed={options.residual === value} onClick={() => change('residual', value)}>{value === 'none' ? 'Hidden' : value === 'above' ? 'Above' : 'Below'}</button>)}</div>

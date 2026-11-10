@@ -1,0 +1,16 @@
+{
+  "rust-core/target/release/examples/native_fixture": "4fbbd0d042bfdf0bb9e544c7d25236e5cb52c451ae8df15ac74d1b00a61c465a",
+  "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+  "src/wasm/mossa_core_bg.wasm": "b485a1745a4280dfd13121b6dd958c75f8264f2b1260f6999064e2b6f0ee99fe",
+  "rust-core/src/lib.rs": "56e12e6c85178b02b78defcba96a4c8badc41c892c11296f2fc78d75b00ee48b",
+  "rust-core/src/variable_projection.rs": "15d17f3b55b0e3207054c9ce1c602e8de8fca813e0c3fd837e3f07220df0000d",
+  "rust-core/src/analytical.rs": "5f41bd03927b6c3805e9fb62298e111c96791ecb02a7306c9e5c76a6e5953ade",
+  "rust-core/src/parallel.rs": "b61f85d70c51748d7a853b06262818a3979111d3550469b006b254dfa58dbeaa",
+  "rust-core/Cargo.toml": "59884261732edf2de3cfa3c73d02c57338682f32e724a0bf14c3246e736d44bd",
+  "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+  "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+  "rust-core/vendor/basin/src/core/math/dense_svd.rs": "0154764362d8b88979cd6b276710d537536299f16fd7e2aca2eac8b6e5833257",
+  "rust-core/vendor/basin/src/core/math/dense.rs": "26b7d72867c5cd2e6a9f4b197586730d744204e320d19ac7e88e1877cb983dc3",
+  "rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "6b8f9529bb8a25e32685be896139dec2bc0261d57f7caa99da8daf9bf3fa11cd",
+  "rust-core/vendor/basin/src/core/convergence/builders.rs": "472babec4fa846e39e0dddb0e2728c3e1d34147a2dfcdc2b2178200341e65d70"
+}

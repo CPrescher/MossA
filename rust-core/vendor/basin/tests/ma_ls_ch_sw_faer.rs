@@ -1,0 +1,33 @@
+#![cfg(all(feature = "faer_all", feature = "problems"))]
+
+//! faer-backend smoke mirror for [`MaLsChSw`]; the deep tests live in
+//! `tests/ma_ls_ch_sw_nalgebra.rs`. Vector type only—no `Mat`.
+
+use crate::backend_aliases::faer::Col;
+use basin::problems::SphereBoxed;
+use basin::{Executor, MaLsChSw, PopulationProgress};
+
+#[test]
+fn converges_on_sphere_d10() {
+    let problem =
+        SphereBoxed::new(Col::from_fn(10, |_| -5.0), Col::from_fn(10, |_| 5.0));
+    let solver = MaLsChSw::<Col<f64>>::new(7).with_pop_size(20);
+    let result = Executor::new(
+        basin::SamplingDomain::new(problem),
+        solver,
+        PopulationProgress::empty(),
+    )
+    .max_iter(u64::MAX)
+    .max_cost_evals(20_000)
+    .run()
+    .unwrap();
+
+    assert!(
+        result.cost() < 1e-6,
+        "Sphere(D=10) faer cost {} should be < 1e-6 within 20k evals",
+        result.cost()
+    );
+}
+
+#[path = "support/backend_aliases.rs"]
+mod backend_aliases;

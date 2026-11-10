@@ -9,21 +9,27 @@ description = "MossA spectral models and bounded fitting for native Rust and Web
 crate-type = ["cdylib", "rlib"]
 
 [features]
+# Opt-in native diagnostic counters; compiled out of production builds.
+projection-profile = []
 # Opt-in FFT algorithm experiment. Build with +simd128 as well (wasm:simd).
-# Its different rounding fails the strict curve-equivalence gate; keep scalar
-# FFTs as the default, preserving fitted parameters and std bit-for-bit.
+# SIMD is not qualified for production. Default scalar WASM uses the validated
+# real FFT; the explicit numerical override retains the full complex reference.
 wasm-simd = ["rustfft/wasm_simd"]
 
 [dependencies]
-basin = "=3.2.0"
+basin = { version = "=3.2.0", path = "vendor/basin" }
 nalgebra = "0.34"
 serde = { version = "1", features = ["derive"] }
 # Preserve fixed source parameters and nuclear constants exactly across JS/WASM.
 serde_json = { version = "1", features = ["float_roundtrip"] }
 wasm-bindgen = "0.2"
 rustfft = "6.4"
+realfft = "3.5"
 js-sys = "0.3"
 web-time = "1"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rayon = "1.12"
 
 [profile.release]
 lto = true

@@ -1,0 +1,442 @@
+{
+  "date": "2026-11-08T21:37:26.020Z",
+  "passed": true,
+  "method": "Full results (including curves, parameters, full std, fractions, rank, DOF, convergence, warnings and search diagnostics) must be exact after removing only the solver-selection metadata. Frozen prior opt-in projection becomes the default. Explicit joint is compared with the frozen joint solver.",
+  "checks": [
+    {
+      "id": "thin-control:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "74b743645ca0da37f83b2e68a01b9eccf2d0b81249de765e60e31e699674a6df"
+    },
+    {
+      "id": "thin-control:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "28615849a0d5e530014531a8de7f03a86ad118accd16717748ae2a76a29a25e9"
+    },
+    {
+      "id": "MS_Fe2O3-Fe3O4_30-70_coarse:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6652811923be72252d1f6722e50ef58eb74fbb73d5e2f382b47afc6d6a6454c8"
+    },
+    {
+      "id": "MS_Fe2O3-Fe3O4_30-70_coarse:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "7f51858ffb2cdc919678b3094f78bc45f9cef650aa0bcff3363e7ded3340fd2d"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d4bece03d6d24a2b8f9862e53ca576821aa84ed9f4df2f60ebbec989dce717ba"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "ed2d7ae1d6f2fc2d69cfa12e064de08536561526da52b5830b47ecf3ecec4b99"
+    },
+    {
+      "id": "MS_Fe2O3-Fe3O4_50-50_coarse:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "346e018dced29863713b0962c8af6ed4732f2e982def9ce12bdd2092f8e83104"
+    },
+    {
+      "id": "MS_Fe2O3-Fe3O4_50-50_coarse:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d3d96c2337368c7b4a811a1129abb02d5034c79fee60175e85399d0565ac4b02"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "c87a586f207f4cfcb59366a8536e440759723ac7ce82c5dc1ae94ff9040d77e9"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1bef282c7c7ef6815d1ef77174bfdda64908e09351baec33858c1c6ed61bd807"
+    },
+    {
+      "id": "Singlet-Lorentzian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "3e3967c5fe7d48d5816d6226f3bd450405535cbb8c1de3d444932294d0bc0352"
+    },
+    {
+      "id": "Singlet-Lorentzian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "cc720073b51f3c288f66f628c65a1c4db5a75d3f7762e6927b9ed3683ecec44f"
+    },
+    {
+      "id": "Singlet-Gaussian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "edec05f1637a4c6fe48cf6e181ad8e3e00610015bc5fdaacd78fc12482204cb0"
+    },
+    {
+      "id": "Singlet-Gaussian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "461591223d9a50e116c265e187a9ed3e5b06fb3df94535923c8cd3aca31ab34f"
+    },
+    {
+      "id": "Singlet-PseudoVoigt:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1e83088ea7ef050a513ccbcaf02ae8bc7ec99affb1481d8ed811647ae63af404"
+    },
+    {
+      "id": "Singlet-PseudoVoigt:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "8a2e64b3ba0182bca3b735ce6cfcbc112e0fa7f015c0bbc76d354da6ec95883a"
+    },
+    {
+      "id": "Singlet-LorSquared:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "46e7a7f22b644dd291588cd8419d67269f031281826bfd3442e42c1e2efff3b0"
+    },
+    {
+      "id": "Singlet-LorSquared:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d9ee5fe089ffd719c870b3acc9bf697437162e572459ac8f5769180f63db61df"
+    },
+    {
+      "id": "Doublet-Lorentzian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6b2292f5411fb6835d518630330e1246e38a27748e7f48569a68036fbd0657c2"
+    },
+    {
+      "id": "Doublet-Lorentzian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "8579babd3bbcf45dd18d8b5268dff16205a0a5e5eca089bae514293521e029b3"
+    },
+    {
+      "id": "Doublet-Gaussian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6e9a91dabcae22c3eaf98cf5de1666f26b167510111976f9e8435bcc414e00d0"
+    },
+    {
+      "id": "Doublet-Gaussian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "10db16aea9413d4ad09ca3696f81d2d2955f32ed4fa5ff0681a36ef94924be64"
+    },
+    {
+      "id": "Doublet-PseudoVoigt:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "ca8f82a4c176b6ef2db134501e921e0f5e58e76142b65a163ffbb77d3627f815"
+    },
+    {
+      "id": "Doublet-PseudoVoigt:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "2215eb682f8458d702d74a7379249924aedde59d7598002607287e6ce520a584"
+    },
+    {
+      "id": "Doublet-LorSquared:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d3cf684a38277610b156f26c853e58a3529e7c0e107ad5ad142bcc8049cf1ec8"
+    },
+    {
+      "id": "Doublet-LorSquared:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1eb6a004b2804367f059decb68608d4b706a257076c4d9a21cd3bec1c8d487c2"
+    },
+    {
+      "id": "Sextet-Lorentzian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "59148ffaa416a1a9edffcaca2887a78707fea2846ea41d911084553e595d6790"
+    },
+    {
+      "id": "Sextet-Lorentzian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1a86ddf5e37f5452c7d27e9d4cb2ce7f92af2b5aec72ca71c069587251c6db38"
+    },
+    {
+      "id": "Sextet-Gaussian:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "38f258e8ead44706e0cec4a92d403651b6d88e2d8c8fe27d3b29ed29cffa7ce4"
+    },
+    {
+      "id": "Sextet-Gaussian:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "bea5f83ce95934b7c4736d32311786e56e2ac58d308ef41973874ab84c1a23d0"
+    },
+    {
+      "id": "Sextet-PseudoVoigt:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "a876e5bf014a6e5c9136ee4617fbd2cf7cbb4b4a22dfa8c872e93c8bbbe9baed"
+    },
+    {
+      "id": "Sextet-PseudoVoigt:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6d59ceb3dd2155a351bed2ac1eb7400996a8f9b864c47bf2d2bc47828653221e"
+    },
+    {
+      "id": "Sextet-LorSquared:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "48f57dbf7960e8dbd82af01fdd1cfb0658117ec783d7adf11f6d7cb862bc70c2"
+    },
+    {
+      "id": "Sextet-LorSquared:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "250423b7e190371e4d737ae3427925fa24fd17629dd97261c3f77cc4e86bc513"
+    },
+    {
+      "id": "linked-mixed-sites:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "0f25924ecd853edd0f78ce0fb243d9515742a132e6344caf9c67348a043c8b8a"
+    },
+    {
+      "id": "linked-mixed-sites:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "e44ea04b30362f943abf6e18ada3a848f7483a99b5c0aaa1167952e6f315f18b"
+    },
+    {
+      "id": "active-width-bound:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "83585a5e573826d9e702068e7d30f454934a1dc2677390516897f64ae46cefe9"
+    },
+    {
+      "id": "active-width-bound:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "8442993736bc0e1391587b314ed300a322e75e5180ea84b7a2d3e0605e922672"
+    },
+    {
+      "id": "rank-deficient-areas:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "57130fe886d4aa4efccd6a9f41ce6552c307080f1bdf016031b3f6280ffbbf59"
+    },
+    {
+      "id": "rank-deficient-areas:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "57130fe886d4aa4efccd6a9f41ce6552c307080f1bdf016031b3f6280ffbbf59"
+    },
+    {
+      "id": "xvbf-thin-single:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1431f9b53946b3688a655c9c2eeb639aeed44dcc9cd6c3c41c1dc10156dfe4ee"
+    },
+    {
+      "id": "xvbf-thin-single:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "8c10bd871ad6b1461b2e19b572cae8a8a9649c64b130df4d2d550cdbf345a713"
+    },
+    {
+      "id": "xvbf-thin-mixture:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "f51127d3d82b12a5aedb6fddb35742e0d94fd08829df973208239ac713359b51"
+    },
+    {
+      "id": "xvbf-thin-mixture:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d8d87add51ec8d8f9ed58f3e1d6a8eea2005305e24eed861f5527d6e1d18cb60"
+    },
+    {
+      "id": "linear-only:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "1c1e9cd46503fb4fe21a9f3670b0111478261f524ed4d706b8cae2ef9d17dd58"
+    },
+    {
+      "id": "linear-only:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "88b70a0b15cfbe72d6c3042ed46738c02824aa6ee2fa356c85fa357f7a3a6750"
+    },
+    {
+      "id": "background-only:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "67958d73bd11b849d7894679fe31c9e56272d49825eb5a717fc8db70b3a57e3d"
+    },
+    {
+      "id": "background-only:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "477190d3c8ed7e4e5105e33bc2cbbc34df3fc254853e347a6b0d2bb522b867ae"
+    },
+    {
+      "id": "bounded-intensity:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "217b92432cba22539a7c9885b00ccd5bfa494cb57f47036b3765d61d83007210"
+    },
+    {
+      "id": "bounded-intensity:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d30339838722f9b956fd75f130008cb1c96ba29fd2312484b456d04bc37f9090"
+    },
+    {
+      "id": "bounded-background:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6730729d4a7c9046a715f67c2dd46549e66261e7eac116588940bfc4f84b5679"
+    },
+    {
+      "id": "bounded-background:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "b3a8fd8d760d88179d0e91054fa8fbd0f53d480dd2dcc30081cdfeacd143d0be"
+    },
+    {
+      "id": "linked-linear-roots:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "0efe09df7be510343fa5342bc281e85d0c54e3643fd819af98351506ed3ce55f"
+    },
+    {
+      "id": "linked-linear-roots:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "4cefb09274496178209fda31055c7c582b48c3537f686980bfc748ea6aa92f4c"
+    },
+    {
+      "id": "cross-linked-shape-root:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "f913bec108b40abb999568f98e65964ba2d938af07181b24f20ce3588ac47171"
+    },
+    {
+      "id": "cross-linked-shape-root:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "5ec998a117c7792202ca76a5342befc86f376f3e35bda3af9dab8aa5d34daf19"
+    },
+    {
+      "id": "fixed-background:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "778a8efa3c65f2e19ee56a8594c2609a35ef3c81e33cafd19a9cb9e22a60cfec"
+    },
+    {
+      "id": "fixed-background:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "148998a41dd3a0d39d0fc5d0beb4ef1619a08469b88da1f1e4f071ed55f6daec"
+    },
+    {
+      "id": "all-fixed:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "660795984c7337479cc5f03f797387ba5e7ea10331c0b100233136172a01d450"
+    },
+    {
+      "id": "all-fixed:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "660795984c7337479cc5f03f797387ba5e7ea10331c0b100233136172a01d450"
+    },
+    {
+      "id": "coincident-starts:default",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "af8142231d7530f0af83139d5f19721b8da6d6d118cbca51617f0a6c48351a88"
+    },
+    {
+      "id": "coincident-starts:joint",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "c24ae30166ac2a6ddf73d73360032c3e0f31b328aad5817365ab90c17ce17e57"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:4:full",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "a4324d5ed904cd635fc88e6a1414e1681bcd1e55cfa74f86e53c55cbbda355fa"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:4:selective",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "644c873baa238998ed63c34555f41cee28b09fcfd609ba0de77ae9f9752fa8bf"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:12:full",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "64a861c80fd9f1557b7821f5ee5ebbc9ff7aa4b38109620727f22e649e59907d"
+    },
+    {
+      "id": "MS-Fe2O3-Fe3O4_70-30_coarse:12:selective",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "b1482915ea2a022b99c7b8a3d3401af2c7b72af3a783a600d18ea6d20111d6ff"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:4:full",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "f15d9832fa6093346ccf707c3f5d94897f49ae14e6ebf6a0af5b84fdbf2a3a37"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:4:selective",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "f1da6c11d4e0fe8c0bd0f9283503ef44571c858d400ae2229b0673287be70c5d"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:12:full",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "d8d0a96ca8ffb33b691e74986dae1133c64de32fbf73544ca169c1dc970ead87"
+    },
+    {
+      "id": "MS_MexicanMagnetite_coarse:12:selective",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "dbfa19d8ac3cb709007008b2eb8e754b57a1719e1533c9633382654cabf37e0c"
+    },
+    {
+      "id": "numerical-joint-fallback",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "93ca9fc0678b1ef19523e928f0f279c25b497f03bcf313fa150633bb5b07ce7a"
+    },
+    {
+      "id": "bounded-lm-joint-recovery",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6acc11ec3fd25e4a166114f63cc95de5ce4cf091c29efa1bdf4417df44f6077d"
+    },
+    {
+      "id": "singlet-lorentzian-source:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "71025f3ee756742bfa085408470ad934e5e6e7b08b0617b47d7860965794e7ab"
+    },
+    {
+      "id": "three-sites-lorentzian-source:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "a760bf33c503acdae2eb1db22ad2fd15a0f15bb07a6930d115d1c8ed9475cce2"
+    },
+    {
+      "id": "singlet-squared-source:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "dc284024925c825cc3cc9c8b724e002b2beb941bcf82aa9583106743f9c8344a"
+    },
+    {
+      "id": "three-sites-squared-source:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "13c0437ffb5150c331ebe8599b61be314c57e26efa15c63f9d77841abacc2197"
+    },
+    {
+      "id": "mixed-absorber-profiles-counts:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "b46c8c17d243c4d9954811f31da9023027da301a71d0a1e81a2e075b5356fa69"
+    },
+    {
+      "id": "asymmetric-gaussian-source:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "28cc33fb4a2931e4eab826a28d9814a81cc1426e0c3ca40a631733caf40cd0d5"
+    },
+    {
+      "id": "xvbf-transmission:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "b27cdf067c9b0dc8e0e7b86c145c4c88690bfdd6d0d827fe9ccff5e139453261"
+    },
+    {
+      "id": "linked-parameters:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "41e7cdf9f7057b3ae1bab211183521afb9b639a91c23641a245d9313169d0df9"
+    },
+    {
+      "id": "active-width-bound:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "32656e861d78ab295c1a78c0860eea3b42ebbda3a9f8dd105fdcb63a6a124c5f"
+    },
+    {
+      "id": "source-calibration-lorentzian:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "6f4ae8b1e8ea41dd18cb9a2d9ae01ce867944e92e8cd74e75198b874d89a6ca2"
+    },
+    {
+      "id": "source-calibration-squared:unaffected",
+      "complete_fit_and_uncertainties_exact": true,
+      "result_sha256": "a9338128fc45ff4be19d7ad97dd25e5286afb237690beeaf28036203829cc89c"
+    }
+  ],
+  "hashes": {
+    "rust-core/src/lib.rs": "9aef55cd2845a83c80a95ecb66658bdb0b019439f43247dd5b8e05091b338bd9",
+    "rust-core/src/variable_projection.rs": "d3387389046a99204da9fa154aa3d6a7cf43ffb633a97831240500a84e109895",
+    "rust-core/src/analytical.rs": "5f41bd03927b6c3805e9fb62298e111c96791ecb02a7306c9e5c76a6e5953ade",
+    "rust-core/src/parallel.rs": "ae690aa38fe1f000e21e432555217b3d028ecf41e6c773411f0885acdaa5ea2d",
+    "src/App.tsx": "6566dc252c0776a20b7a4330400ec714c970b2905a0fbf6e462e397a1ce68f04",
+    "src/session.ts": "f1a0988608d01afa5112aa947182c114a100e88e87ade4526d778b18d8722428",
+    "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "src/wasm/mossa_core_bg.wasm": "fb7b43c8c03589937747051382d03a6821eb1394432db53e4493839074798faa",
+    "tests/variable-projection.test.mjs": "78cc969e2a62d1e9efdd584b295a9ef0584caacc7af5e284af316ec30a924995",
+    "tests/variable-projection-options.test.tsx": "7d05e502bd408df69abb12feb85de569fc1d7e80632316bfea668d9390c3d415",
+    "tests/native-backend.integration.tsx": "bad1a2b4b95356da8d449fa45cfd4d58cc483e48e07593e5d8da901cd4d420e4",
+    "rust-core/src/tests.rs": "8f88edcb1227b8f8db1f0846f0d58a02be79a1f18f0b4c4ee6aa9404935397c1",
+    "README.md": "b9645f2b850ef7634e8acab1453e43fc2525e2cc82981ba3fe8ec6dd98af2a51",
+    "PORTING.md": "6bb731f02e3334e20ca22e71b7689d4851338eb8bf865953cae44728c241a84f",
+    "manual/src/content/docs/guides/building-models.md": "6a15f517d980928d00eae83ea0157b3a41960bd9cdd1b0a6ed1ce103f32a366e",
+    "scripts/verify-variable-projection-default.mjs": "4cc561d412d5712b5471f0c5877f33808d4f2e2ce96095b835cc7f4865d8fa8e",
+    "validation-data/performance/runtime/variable-projection-refined/improved/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+    "validation-data/performance/runtime/variable-projection-refined/improved/mossa_core_bg.wasm": "30789e379ce5ef0b10f6aad933bcae0a216752c7dec5f20b037afb1aa992445a"
+  }
+}

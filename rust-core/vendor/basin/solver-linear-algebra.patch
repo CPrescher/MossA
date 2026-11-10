@@ -1,0 +1,349 @@
+--- a/src/core/math/dense.rs
++++ b/src/core/math/dense.rs
+@@ -69,7 +69,8 @@
+ }
+ 
+ impl<F: Scalar> DenseMatrix<F> {
+-    pub(crate) fn fill_from_fn<G: FnMut(usize, usize) -> F>(
++    /// Resize as needed and overwrite entries in row-major order, reusing storage.
++    pub fn fill_from_fn<G: FnMut(usize, usize) -> F>(
+         &mut self,
+         rows: usize,
+         cols: usize,
+--- a/src/core/convergence/builders.rs
++++ b/src/core/convergence/builders.rs
+@@ -177,8 +177,8 @@
+ cost_setters!([V,M,F:Scalar] LevenbergMarquardtQr<V,M,F>, [M: crate::FactorizePivotedQr<V,F>]);
+ cost_setters!([V,M,F:Scalar] BoundedLevenbergMarquardt<V,M,F>, []);
+ step_setters!([V,M,F:Scalar] BoundedLevenbergMarquardt<V,M,F>, []);
+-cost_setters!([F:Scalar] TrustRegionReflective<F>, []);
+-step_setters!([F:Scalar] TrustRegionReflective<F>, []);
++cost_setters!([F:Scalar, W] TrustRegionReflective<F, W>, []);
++step_setters!([F:Scalar, W] TrustRegionReflective<F, W>, []);
+ cost_setters!([F:Scalar] Brent<F>, []);
+ step_setters!([F:Scalar] Brent<F>, []);
+ cost_setters!([F:Scalar] BrentDerivative<F>, []);
+--- a/src/core/math/dense_svd.rs
++++ b/src/core/math/dense_svd.rs
+@@ -7,6 +7,8 @@
+ //! This is a cyclic implementation, not DGESVJ's pivoted/blocked algorithm.
+ 
+ use super::Scalar;
++#[path = "dense_svd/qr.rs"]
++mod qr;
+ 
+ pub(crate) fn norm<F: Scalar>(values: &[F]) -> F {
+     values.iter().fold(F::zero(), |s, &x| s.hypot(x))
+@@ -18,12 +20,22 @@
+     u: Vec<F>,
+     v: Vec<F>,
+     rows: usize,
++    #[cfg(test)]
++    compressed: bool,
+ }
+ 
+ impl<F: Scalar> DenseSvd<F> {
+     /// Input and factors use row-major storage; zero singular vectors in U
+     /// remain zero because least-squares solves never use their coefficients.
+-    pub(crate) fn factor(rows: usize, cols: usize, mut a: Vec<F>) -> Option<Self> {
++    pub(crate) fn factor(rows: usize, cols: usize, a: Vec<F>) -> Option<Self> {
++        Self::factor_with_row_tolerance(rows, cols, a, rows)
++    }
++    fn factor_with_row_tolerance(
++        rows: usize,
++        cols: usize,
++        mut a: Vec<F>,
++        tolerance_rows: usize,
++    ) -> Option<Self> {
+         assert!(rows >= cols && cols > 0);
+         assert_eq!(a.len(), rows * cols);
+         if a.iter().any(|x| !x.is_finite()) {
+@@ -39,7 +51,7 @@
+         for i in 0..cols {
+             v[i * cols + i] = F::one();
+         }
+-        let tol = F::epsilon() * F::from_usize(rows).unwrap().sqrt();
++        let tol = F::epsilon() * F::from_usize(tolerance_rows).unwrap().sqrt();
+         let mut converged = false;
+         // Cached values use the original hypot fold, not an updated/approximate norm.
+         let mut norms: Vec<Option<F>> = vec![None; cols];
+@@ -126,6 +138,8 @@
+             u: a,
+             v,
+             rows,
++            #[cfg(test)]
++            compressed: false,
+         })
+     }
+ 
+@@ -274,7 +288,7 @@
+                     // Debug float formatting is round-trippable; this compares
+                     // U, V and singular values, including negative zero.
+                     assert_eq!(
+-                        format!("{actual:?}"),
++                        format!("{actual:?}").replace(", compressed: false", ""),
+                         format!("{expected:?}"),
+                         "{rows}/{cols}/{seed}/{scale}"
+                     );
+--- /dev/null
++++ b/src/core/math/dense_svd/qr.rs
+@@ -0,0 +1,183 @@
++//! Householder QR reduction before Jacobi SVD. No normal equations.
++use super::{DenseSvd, Scalar};
++
++impl<F: Scalar> DenseSvd<F> {
++    /// Compress tall, nontrivial models. Preserve original row-dependent
++    /// convergence/rank thresholds and retain the direct SVD near rank loss.
++    pub(crate) fn factor_compressed(rows: usize, cols: usize, mut a: Vec<F>) -> Option<Self> {
++        assert!(rows >= cols && cols > 0);
++        assert_eq!(a.len(), rows * cols);
++        if cols < 3 || rows < 4 * cols {
++            return Self::factor(rows, cols, a);
++        }
++        if a.iter().any(|v| !v.is_finite()) {
++            return None;
++        }
++        let scale = a.iter().fold(F::zero(), |s, v| s.max(v.abs()));
++        if scale == F::zero() {
++            return Self::factor(rows, cols, a);
++        }
++        // Keep the original input only for a numerical fallback. QR works on
++        // normalized entries, protecting both large and tiny physical scales.
++        let original = a.clone();
++        for v in &mut a {
++            *v = *v / scale;
++        }
++        let mut tau = vec![F::zero(); cols];
++        for k in 0..cols {
++            let length = (k..rows).fold(F::zero(), |s, i| s.hypot(a[i * cols + k]));
++            if length == F::zero() {
++                continue;
++            }
++            let x0 = a[k * cols + k];
++            let alpha = -length.copysign(x0);
++            let v0 = x0 - alpha;
++            tau[k] = (alpha - x0) / alpha;
++            a[k * cols + k] = alpha;
++            for i in k + 1..rows {
++                a[i * cols + k] = a[i * cols + k] / v0;
++            }
++            for j in k + 1..cols {
++                let mut dot = a[k * cols + j];
++                for i in k + 1..rows {
++                    dot = dot + a[i * cols + k] * a[i * cols + j];
++                }
++                dot = tau[k] * dot;
++                a[k * cols + j] = a[k * cols + j] - dot;
++                for i in k + 1..rows {
++                    a[i * cols + j] = a[i * cols + j] - a[i * cols + k] * dot;
++                }
++            }
++        }
++        if a.iter().chain(&tau).any(|v| !v.is_finite()) {
++            return Self::factor(rows, cols, original);
++        }
++        let r = (0..cols)
++            .flat_map(|i| {
++                let a = &a;
++                (0..cols).map(move |j| if j >= i { a[i * cols + j] } else { F::zero() })
++            })
++            .collect();
++        let Some(mut small) = Self::factor_with_row_tolerance(cols, cols, r, rows) else {
++            return Self::factor(rows, cols, original);
++        };
++        let largest = small.singular.iter().copied().fold(F::zero(), F::max);
++        if small
++            .singular
++            .iter()
++            .any(|&s| s <= F::epsilon().sqrt() * largest)
++        {
++            return Self::factor(rows, cols, original);
++        }
++        let mut u = vec![F::zero(); rows * cols];
++        u[..cols * cols].copy_from_slice(&small.u);
++        // U = Q U_R. Apply stored reflectors in reverse order to the padded U_R.
++        for k in (0..cols).rev() {
++            for j in 0..cols {
++                let mut dot = u[k * cols + j];
++                for i in k + 1..rows {
++                    dot = dot + a[i * cols + k] * u[i * cols + j];
++                }
++                dot = tau[k] * dot;
++                u[k * cols + j] = u[k * cols + j] - dot;
++                for i in k + 1..rows {
++                    u[i * cols + j] = u[i * cols + j] - a[i * cols + k] * dot;
++                }
++            }
++        }
++        for s in &mut small.singular {
++            *s = *s * scale;
++        }
++        if small.singular.iter().chain(&u).any(|v| !v.is_finite()) {
++            return Self::factor(rows, cols, original);
++        }
++        Some(Self {
++            singular: small.singular,
++            u,
++            v: small.v,
++            rows,
++            #[cfg(test)]
++            compressed: true,
++        })
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn qr_compression_preserves_factors_and_trust_steps_across_scales() {
++        for n in [3, 8, 16] {
++            for m in [64_usize.max(4 * n), 257] {
++                for scale in [1e-150, 1., 1e150] {
++                    let a: Vec<f64> = (0..m * n)
++                        .map(|k| {
++                            let i = k / n;
++                            let j = k % n;
++                            scale
++                                * (((i * 37 + j * 19 + 7) as f64 * 0.731).sin()
++                                    + if i == j { 3. } else { 0. })
++                        })
++                        .collect();
++                    let old = DenseSvd::factor(m, n, a.clone()).unwrap();
++                    let new = DenseSvd::factor_compressed(m, n, a.clone()).unwrap();
++                    assert!(new.compressed);
++                    let mut s = old.singular.clone();
++                    let mut t = new.singular.clone();
++                    s.sort_by(f64::total_cmp);
++                    t.sort_by(f64::total_cmp);
++                    for (s, t) in s.iter().zip(t) {
++                        assert!((s - t).abs() <= 2e-11 * s.abs(), "singular values");
++                    }
++                    let error = (0..m * n).fold(0_f64, |e, k| {
++                        let i = k / n;
++                        let j = k % n;
++                        let v = (0..n)
++                            .map(|l| new.u[i * n + l] * new.singular[l] * new.v[j * n + l])
++                            .sum::<f64>();
++                        e.hypot(v - a[k])
++                    });
++                    let norm = a.iter().fold(0_f64, |s, &v| s.hypot(v));
++                    assert!(error <= 2e-11 * norm);
++                    let rhs: Vec<_> = (0..m).map(|i| scale * (i as f64 * 0.17).cos()).collect();
++                    for radius in [0.001, 1., 100.] {
++                        let p = old.trust_step(&rhs, radius, None, 50).unwrap();
++                        let q = new.trust_step(&rhs, radius, None, 50).unwrap();
++                        let error = p.iter().zip(&q).fold(0_f64, |s, (a, b)| s.hypot(a - b));
++                        let norm = p.iter().fold(0_f64, |s, &v| s.hypot(v));
++                        assert!(
++                            error <= 2e-9 * norm.max(1e-12),
++                            "step {m}x{n}, scale {scale}, radius {radius}: {error}/{norm}"
++                        );
++                    }
++                }
++            }
++        }
++    }
++    #[test]
++    fn qr_compression_retains_direct_svd_for_small_and_near_rank_deficient_models() {
++        for (m, n) in [(20, 2), (6, 3), (64, 3)] {
++            let a: Vec<f64> = (0..m * n)
++                .map(|k| {
++                    let i = k / n;
++                    let j = k % n;
++                    if j == 2 {
++                        2. * (i as f64).sin()
++                    } else if j == 0 {
++                        (i as f64).sin()
++                    } else {
++                        (i as f64 * 0.3).cos()
++                    }
++                })
++                .collect();
++            let old = DenseSvd::factor(m, n, a.clone()).unwrap();
++            let new = DenseSvd::factor_compressed(m, n, a).unwrap();
++            assert!(!new.compressed);
++            assert_eq!(old.singular, new.singular);
++            assert_eq!(old.u, new.u);
++            assert_eq!(old.v, new.v);
++            assert_eq!(new.rows, m);
++        }
++        assert!(DenseSvd::factor_compressed(20, 3, vec![f64::NAN; 60]).is_none());
++    }
++}
+--- a/src/solver/trust_region_reflective.rs
++++ b/src/solver/trust_region_reflective.rs
+@@ -184,6 +184,7 @@
+     gradient_tolerance: Option<F>,
+     initial_radius: Option<F>,
+     rank_tolerance: Option<F>,
++    qr_compression: bool,
+     max_inner_attempts: usize,
+     max_subproblem_iterations: usize,
+     work: Option<Work<F>>,
+@@ -220,6 +221,7 @@
+             gradient_tolerance: Some(number(1e-8)),
+             initial_radius: None,
+             rank_tolerance: None,
++            qr_compression: false,
+             max_inner_attempts: 50,
+             max_subproblem_iterations: 50,
+             work: None,
+@@ -241,6 +243,7 @@
+             gradient_tolerance: self.gradient_tolerance,
+             initial_radius: self.initial_radius,
+             rank_tolerance: self.rank_tolerance,
++            qr_compression: self.qr_compression,
+             max_inner_attempts: self.max_inner_attempts,
+             max_subproblem_iterations: self.max_subproblem_iterations,
+             work: self.work,
+@@ -252,6 +255,12 @@
+ }
+ 
+ impl<F: Scalar, W> TrustRegionReflective<F, W> {
++    /// Use Householder QR before the portable SVD on well-conditioned tall
++    /// models. Direct SVD remains the default and the near-rank-loss fallback.
++    pub fn with_qr_compression(mut self, enabled: bool) -> Self {
++        self.qr_compression = enabled;
++        self
++    }
+     /// Enable native model and trial observations (disabled by default).
+     ///
+     /// Recording adds allocations but no problem evaluations. Fresh runs reset
+@@ -422,15 +431,16 @@
+ 
+     fn update_gradient(&mut self) -> bool {
+         let n = self.free.len();
+-        self.gradient = (0..n)
++        let (residual, jacobian) = (&self.residual, &self.jacobian);
++        self.gradient.clear();
++        self.gradient.extend((0..n)
+             .map(|i| {
+-                self.residual
++                residual
+                     .iter()
+                     .enumerate()
+-                    .map(|(row, &r)| self.jacobian[row * n + i] * r)
+-                    .sum()
+-            })
+-            .collect();
++                    .map(|(row, &r)| jacobian[row * n + i] * r)
++                    .sum::<F>()
++            }));
+         self.gradient.iter().all(|x| x.is_finite())
+     }
+ }
+@@ -753,7 +763,12 @@
+         for i in 0..n {
+             augmented[(m + i) * n + i] = model.c[i].sqrt();
+         }
+-        let Some(svd) = DenseSvd::factor(m + n, n, augmented) else {
++        let factor = if self.qr_compression {
++            DenseSvd::factor_compressed(m + n, n, augmented)
++        } else {
++            DenseSvd::factor(m + n, n, augmented)
++        };
++        let Some(svd) = factor else {
+             if let Some(trace) = &mut self.trace {
+                 let index = trace.event(
+                     state.cost(),

@@ -9,14 +9,15 @@ import rebaseLinks from './plugins/rebase-links.mjs';
 
 const appBase = (process.env.MOSSA_PUBLIC_BASE || '/MossA').replace(/\/$/, '');
 const manualBase = `${appBase}/manual`;
-const sourceRef = process.env.MOSSA_PREVIEW === '1' ? 'develop' : 'main';
+const sourceRef = process.env.MOSSA_SOURCE_REF || (process.env.MOSSA_PREVIEW === '1' ? 'develop' : 'main');
 
 export default defineConfig({
   site: 'https://cprescher.github.io',
+  cacheDir: process.env.MOSSA_DESKTOP === '1' ? './node_modules/.astro-desktop' : './node_modules/.astro-browser',
   outDir: process.env.MOSSA_DESKTOP === '1' ? './dist-desktop' : './dist',
   base: manualBase,
   trailingSlash: 'always',
-  markdown: { processor: unified({ remarkPlugins: [remarkMath], rehypePlugins: [rehypeKatex, mathSearch, themeScreenshots, [rebaseLinks, { appBase, sourceRef }]] }) },
+  markdown: { processor: unified({ remarkPlugins: [remarkMath], rehypePlugins: [rehypeKatex, mathSearch, themeScreenshots, [rebaseLinks, { appBase, sourceRef, offline: process.env.MOSSA_DESKTOP === '1' }]] }) },
   integrations: [
     starlight({
       title: process.env.MOSSA_PREVIEW === '1' ? 'MossA 2 manual · Develop preview' : 'MossA 2 manual',

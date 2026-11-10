@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-08T17:25:36.483101+00:00",
+  "checks": {
+    "rust": {
+      "passed": true,
+      "tests": 58,
+      "log_sha256": "ad700d5ef185a6c09a857447f5adfdca31d79868bc440fad6a319cf7769e0154"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 113,
+      "log_sha256": "05a18d34a7a3c6eaa8c74efa8dcbf6fa804c06e03ea2c1bdbecd98b6e8a05fe0"
+    },
+    "typescript_react": {
+      "passed": true,
+      "tests": 273,
+      "log_sha256": "675ac1e4313b175e9e4945082d61941598514e4ca7a2ddccaa98443a43ff49de"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 13,
+      "log_sha256": "3106c40782183e2502f26637f702ea4c3d3aaa49554e2915085aa5add0e02976"
+    },
+    "benchmark_native": {
+      "passed": true,
+      "comparisons": 14,
+      "schema_and_std_rechecked": true
+    },
+    "benchmark_search": {
+      "passed": true,
+      "comparisons": 6,
+      "schema_and_std_rechecked": true
+    },
+    "benchmark_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "schema_and_std_rechecked": true
+    },
+    "benchmark_browser": {
+      "passed": true,
+      "comparisons": 32,
+      "schema_and_std_rechecked": true
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "links": 1374,
+      "files": 284
+    },
+    "desktop_cargo_check": {
+      "passed": true
+    },
+    "typescript_compile": {
+      "passed": true
+    },
+    "legacy_numerical_benchmark": {
+      "passed": true
+    }
+  },
+  "sha256": {
+    "rust-core/src/lib.rs": "dcc5959b54cc2cde1996e6bd6258e914b73f8da2ceb57d5d0d334c8f1ca571de",
+    "rust-core/src/analytical.rs": "81a9300c1714b256eda61f64244cc80f4370e7b2f5b648852824206cdb61562b",
+    "rust-core/src/analytical/transmission.rs": "62ba15fd9214b870d821f4f71de35db0ac6b701dea8e12df06f56672757c270f",
+    "rust-core/src/native/derivatives.rs": "64f2954b814b58f431c5ed55337f2742ded88d8d2f6ea6eba3c6613ece5611cf",
+    "rust-core/src/tests.rs": "41008407b53eda74596f22c2412649fea63a5c81c2c9f6b0ef785e7ea72f58d5",
+    "rust-core/Cargo.lock": "926fe0b8dced896718b1532f3ed161610cb3f406e520923001d5e704c9afbe75",
+    "rust-core/target/release/examples/native_fixture": "0cb35161dba72437dc42b0aea0651558b88c8b60077a5a839a4ef7fe6385ae45",
+    "src/wasm/mossa_core_bg.wasm": "ca6c7f916c9e38f26e8cf57bc12cc6675db506cbf23e5029237722239bd7eaf1",
+    "src/analytical-derivatives.ts": "a0407f9f896052194c68ffabf63f9a0dadef6605cdfa6a3b45a1ba0cd4815673",
+    "src/worker.ts": "5450564cb3ac467c4ffe141df0c9a7dc340ba881a22be4f56483d9f5af00cb9d",
+    "src/parallel-fit.ts": "cdfbe79a973f2469c0b33d720766bc20ed96e9068593760a45d0de034ac1c96c",
+    "src/App.tsx": "ed0f9977de0bc47972954b9b59eb8bcd9ad1b72241cadee1606b649d931ebc7d",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/comparison.ts": "558280a07c6ac5826ea733f14ecca9738f92fda92d7dfc8c1d88948d7d644ad9",
+    "scripts/benchmark-transmission-analytical.mjs": "8540d1d575a634fcc20de254d3d41e8a8bd89d03a97bc6407a4c8c9f0e4c06e4",
+    "scripts/benchmark-transmission-analytical-browser.mjs": "abc8a57cb9cbf6c71f821c660b1ed1a0943518c67a52c6fd99ecc247a2dd2731",
+    "scripts/transmission-analytical-cases.mjs": "dd828901b47c525250d04b575eea8bb1891c2a278ce56694d6db5571ee4ad974",
+    "scripts/benchmark-transmission.mjs": "2c874e5e4e161300ca99eafaf52afc8991696f3bd4decf0418484649f99101e4",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "tests/transmission-analytical.test.mjs": "7603e6dd806a97f2df35a0c64f08925e63b32ca36a5c657fa35e26db1300c104",
+    "tests/native-backend.integration.tsx": "79c42710e730b0381f52b127b74900f92b0e6b6c84bee1c9ec2255387b8d42db",
+    "manual/src/content/docs/guides/building-models.md": "b283da7372d1e7aff02e70d4732ae1cb96ec05c65f6b5fb2026b0474813b6076",
+    "validation-data/performance/TRANSMISSION-ANALYTICAL.md": "9e8f0f639101cf270e4e95016153a8291921704ce6360315262acc34d4ecbb24",
+    "validation-data/performance/transmission-analytical-native.json": "1ee9127cfe875fa8825c259ef89d0e3e3827004e784905eb8581d55690ec786d",
+    "validation-data/performance/transmission-analytical-search.json": "7f5cd5a8b1e6e0c5810c5b305607518f09023c19d3877e08902f861f8cc85f77",
+    "validation-data/performance/transmission-analytical-search12.json": "cbfa8bab430913e8628c350361304e611eaeee12d2c4c45358891c0fe3ca21ce",
+    "validation-data/performance/transmission-analytical-browser.json": "0dd3a64a592135905f845729a61095be29edc08ad0bca5d653399b67dde89b12"
+  }
+}

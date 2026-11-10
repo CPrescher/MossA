@@ -81,7 +81,7 @@ export function renderFitReport(input: FitReportInput): string[] {
   // Preserve the chosen graph aspect ratio, within the standard portrait page.
   const scale=Math.min(186/options.width,132/options.height),width=options.width*scale,height=options.height*scale;
   ensure(height);
-  const graph=renderFigure(project,evaluation,options,true).replace(/^<\?xml[^>]*>\s*/, '').replace('<svg ',`<svg x="${12+(186-width)/2}" y="${y}" `).replace(/width="[^"]+" height="[^"]+"/,`width="${width}" height="${height}"`);
+  const graph=renderFigure(project,evaluation,options,true,result).replace(/^<\?xml[^>]*>\s*/, '').replace('<svg ',`<svg x="${12+(186-width)/2}" y="${y}" `).replace(/width="[^"]+" height="[^"]+"/,`width="${width}" height="${height}"`);
   add(graph);y+=height+6;
   const fractions=intensityFractions(project,evaluation,result);
   const columns=[{key:'fraction',label:'Fraction\n(%)',width:19}, {key:'cs',label:'CS\n(mm/s)',width:19},{key:'fwhm',label:'FWHM\n(mm/s)',width:19},{key:'intensity',label:'Intensity\n(raw)',width:21},{key:'qs',label:'QS\n(mm/s)',width:19},{key:'bhf',label:'BHF\n(T)',width:19},{key:'a12',label:'A12',width:13},{key:'a13',label:'A13',width:13},{key:'mix',label:'Lorentz\nmix',width:19}]

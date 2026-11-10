@@ -1,9 +1,10 @@
 // Build a self-contained desktop payload without changing the Pages artifact.
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execFileSync } from 'node:child_process';
 import { cp, mkdir, rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const env = { ...process.env, MOSSA_DESKTOP: '1' };
+const sourceCommit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim();
+const env = { ...process.env, MOSSA_DESKTOP: '1', MOSSA_SOURCE_REF: process.env.MOSSA_SOURCE_REF || sourceCommit };
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: root, env, stdio: 'inherit', shell: process.platform === 'win32' });
   if (result.error) throw result.error;

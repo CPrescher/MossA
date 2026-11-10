@@ -13,7 +13,7 @@ Follow the complete workflow from importing raw counts through folding, velocity
 
 <iframe class="tutorial-video" width="960" height="540" src="https://www.youtube-nocookie.com/embed/O1YcE0maGtE" title="MossA beginner tutorial: import, fold, calibrate, fit, and save" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
 
-[Watch on YouTube](https://www.youtube.com/watch?v=O1YcE0maGtE) · 11 min 19 s · English narration and optional English subtitles. An internet connection is required; in the desktop manual, use the YouTube link if the player is unavailable.
+[Watch on YouTube](https://www.youtube.com/watch?v=O1YcE0maGtE) · 11 min 19 s · English narration and optional English subtitles. An internet connection is required; the desktop manual provides the YouTube link instead of an embedded player.
 
 | Jump to | Topic |
 | --- | --- |

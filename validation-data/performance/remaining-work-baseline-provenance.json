@@ -1,0 +1,12 @@
+{
+  "source_sha256": {
+    "rust-core/src/lib.rs": "9d978fae8a95d98cd688fc193eab648d8fa083211eb27c894ea7413b68812259",
+    "rust-core/src/native.rs": "7b86a8e72c2189fcc84895c60e1de83f1746ae5b710011bece0bc4623387bba2",
+    "rust-core/src/parallel.rs": "9b5eba16088569de592209055c6ff916fbb449654d24211bbf2c11e2777d8553",
+    "rust-core/Cargo.toml": "5a22e26b6b45b4933d0a649c86be1e16ecec8faba116c93c25b08844e61d8d62",
+    "rust-core/Cargo.lock": "f60934bf42f080e88564c2c7e2a80edef0126061944d27efd666f331a581feed",
+    "src/multistart.mjs": "29a2fdc77f56b1a68681b6903787b57e6ac91325ced49bf93b15cfb0837d11b5"
+  },
+  "binary_sha256": "6d5d733046f1e382cc2c40d8aad75fa7de4df1e33e5fb059d8141f53a93f2902",
+  "wasm_sha256": "c3552af8ab16f21d154b624e9c2b7b319030a88663263f764195fa3d6bd6609b"
+}

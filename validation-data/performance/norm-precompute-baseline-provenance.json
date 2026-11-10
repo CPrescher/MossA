@@ -1,0 +1,18 @@
+{
+  "rust-core/src/lib.rs": "64043b50931b92fd47de2bdb829d3a88bac901049a1cf1b4ab8b72fbb7f25c18",
+  "rust-core/src/analytical.rs": "9885407e3233fed712a8374942e76cfc13390a8109fcbe041094d15dffe21c63",
+  "rust-core/src/analytical/projection.rs": "2a0ab8bee2e6ead981871f1f1973c6b3689a52f4de2a60326f49bd645175ea39",
+  "rust-core/src/analytical/distribution.rs": "63e7a11d455ab0ff650fc329b3033613f28886c2653c372a64b58a518c66d28a",
+  "rust-core/src/analytical/source.rs": "d8ea7e7c85d449a6e449dd22138b2a5e92d72e1dd88717cff1154c9fe0e7467a",
+  "rust-core/src/analytical/transmission.rs": "ffba50b7799f0027c7d07b2c99970d970880bffc9d35a83f14778e5525ab90e8",
+  "rust-core/src/variable_projection.rs": "ede9415d11d748498d8bb27ce681ee206f80c2a022abbb71122ca95f7d5b3b7d",
+  "rust-core/src/parallel.rs": "3beb0dc8206f610466afd22ed1faddf0cafc16b99f5f36a960bfd74d6192e64a",
+  "rust-core/vendor/basin/src/core/math/dense_svd.rs": "ba84556d63335cd9762b2f50d28f3c41dab66959a966beaf234cea14f4133d34",
+  "rust-core/vendor/basin/src/core/math/dense_svd/qr.rs": "442ed384426fc8fd0ce8ee6b35a80f39f9c8506a64417f7e4ab0c74edc8ac466",
+  "rust-core/vendor/basin/src/solver/trust_region_reflective.rs": "a3f0aa3eaedcb753c9732dd602dff88ee4c164693982ec7ec20f3299092b12d9",
+  "rust-core/Cargo.lock": "8066a1215b752602bef099f8b9efd71e40313b6019286f5f90f4f1051e4df42c",
+  "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+  "rust-core/target/release/examples/native_fixture": "38cd21cee5224bacd72e0bb0863d3d1a44e86fde653f65bc2262f383d91a3087",
+  "src/wasm/mossa_core.js": "6c4288b6939df88626a72c1c5957c2041fbc204776ea6794a4d65d2e63fcc1b8",
+  "src/wasm/mossa_core_bg.wasm": "423a895552243b8db94bd90bf0ef5468fce9c74ce33ff5907ecd58e0bdcbccb2"
+}

@@ -145,14 +145,16 @@ react 19.3.1 — MIT
   LICENSE: Text 46
 react-dom 19.3.1 — MIT
   LICENSE: Text 46
+realfft 3.5.1 — MIT
+  LICENSE: Text 47
 rgbcolor 1.0.1 — MIT OR SEE LICENSE IN FEEL-FREE.md
-  LICENSE.md: Text 47
+  LICENSE.md: Text 48
 rustfft 6.4.1 — MIT OR Apache-2.0
-  LICENSE-APACHE: Text 48; LICENSE-MIT: Text 49
+  LICENSE-APACHE: Text 49; LICENSE-MIT: Text 50
 rustversion 1.0.23 — MIT OR Apache-2.0
   LICENSE-APACHE: Text 6; LICENSE-MIT: Text 23
 safe_arch 0.7.4 — Zlib OR Apache-2.0 OR MIT
-  LICENSE-APACHE.md: Text 9; LICENSE-MIT.md: Text 50; LICENSE-ZLIB.md: Text 51
+  LICENSE-APACHE.md: Text 9; LICENSE-MIT.md: Text 51; LICENSE-ZLIB.md: Text 52
 scheduler 0.28.0 — MIT
   LICENSE: Text 46
 serde 1.0.229 — MIT OR Apache-2.0
@@ -166,31 +168,31 @@ serde_json 1.0.154 — MIT OR Apache-2.0
 simba 0.9.1 — Apache-2.0
   LICENSE: Text 30
 slab 0.4.12 — MIT
-  LICENSE: Text 52
-specificity 0.4.1 — MIT
   LICENSE: Text 53
+specificity 0.4.1 — MIT
+  LICENSE: Text 54
 stackblur-canvas 2.7.0 — MIT
-  LICENSE-MIT.txt: Text 54
+  LICENSE-MIT.txt: Text 55
 strength_reduce 0.2.4 — MIT OR Apache-2.0
-  LICENSE-APACHE: Text 48; LICENSE-MIT: Text 49
+  LICENSE-APACHE: Text 49; LICENSE-MIT: Text 50
 svg2pdf.js 2.9.0 — MIT
-  LICENSE: Text 55
-svgpath 2.6.0 — MIT
   LICENSE: Text 56
+svgpath 2.6.0 — MIT
+  LICENSE: Text 57
 syn 2.0.119 — MIT OR Apache-2.0
   LICENSE-APACHE: Text 6; LICENSE-MIT: Text 23
 syn 3.0.9 — MIT OR Apache-2.0
   LICENSE-APACHE: Text 6; LICENSE-MIT: Text 23
 text-segmentation 1.0.3 — MIT
-  LICENSE: Text 57
+  LICENSE: Text 58
 transpose 0.2.3 — MIT OR Apache-2.0
-  LICENSE-APACHE: Text 58; LICENSE-MIT: Text 59
+  LICENSE-APACHE: Text 59; LICENSE-MIT: Text 60
 typenum 1.20.1 — MIT OR Apache-2.0
-  LICENSE: Text 60; LICENSE-APACHE: Text 61; LICENSE-MIT: Text 62
+  LICENSE: Text 61; LICENSE-APACHE: Text 62; LICENSE-MIT: Text 63
 unicode-ident 1.0.27 — (MIT OR Apache-2.0) AND Unicode-3.0
-  LICENSE-APACHE: Text 6; LICENSE-MIT: Text 23; LICENSE-UNICODE: Text 63
+  LICENSE-APACHE: Text 6; LICENSE-MIT: Text 23; LICENSE-UNICODE: Text 64
 utrie 1.0.2 — MIT
-  LICENSE: Text 57
+  LICENSE: Text 58
 wasm-bindgen 0.2.130 — MIT OR Apache-2.0
   LICENSE-APACHE: Text 3; LICENSE-MIT: Text 13
 wasm-bindgen-macro 0.2.130 — MIT OR Apache-2.0
@@ -200,11 +202,11 @@ wasm-bindgen-macro-support 0.2.130 — MIT OR Apache-2.0
 wasm-bindgen-shared 0.2.130 — MIT OR Apache-2.0
   LICENSE-APACHE: Text 3; LICENSE-MIT: Text 13
 web-time 1.1.0 — MIT OR Apache-2.0
-  LICENSE-APACHE: Text 64; LICENSE-MIT: Text 65
+  LICENSE-APACHE: Text 65; LICENSE-MIT: Text 66
 wide 0.7.33 — Zlib OR Apache-2.0 OR MIT
-  LICENSE-ZLIB.md: Text 51
+  LICENSE-ZLIB.md: Text 52
 zerocopy 0.8.63 — BSD-2-Clause OR Apache-2.0 OR MIT
-  LICENSE-APACHE: Text 66; LICENSE-BSD: Text 67; LICENSE-MIT: Text 68
+  LICENSE-APACHE: Text 67; LICENSE-BSD: Text 68; LICENSE-MIT: Text 69
 zmij 1.0.23 — MIT
   LICENSE-MIT: Text 23
 
@@ -3688,6 +3690,31 @@ SOFTWARE.
 ========================================================================
 Text 47
 ========================================================================
+MIT License
+
+Copyright (c) 2020 Henrik Enquist and RealFFT contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+========================================================================
+Text 48
+========================================================================
 Copyright (c) 2016 Stoyan Stefanov, http://phpied.com/
 
 Permission is hereby granted, free of charge, to any person obtaining
@@ -3716,7 +3743,7 @@ Exemptions
 Please either apply this, the MIT license, or the license in './FEEL-FREE.md'
 
 ========================================================================
-Text 48
+Text 49
 ========================================================================
 Apache License
                            Version 2.0, January 2004
@@ -3921,7 +3948,7 @@ Apache License
    limitations under the License.
 
 ========================================================================
-Text 49
+Text 50
 ========================================================================
 Copyright (c) 2015 The RustFFT Developers
 
@@ -3944,7 +3971,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-Text 50
+Text 51
 ========================================================================
 MIT License
 
@@ -3957,7 +3984,7 @@ The above copyright notice and this permission notice (including the next paragr
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 51
+Text 52
 ========================================================================
 Copyright (c) 2020 Daniel "Lokathor" Gee.
 
@@ -3972,7 +3999,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 3. This notice may not be removed or altered from any source distribution.
 
 ========================================================================
-Text 52
+Text 53
 ========================================================================
 Copyright (c) 2019 Carl Lerche
 
@@ -4001,7 +4028,7 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 53
+Text 54
 ========================================================================
 The MIT License (MIT)
 Copyright (c) 2016 Keegan Street and others
@@ -4013,7 +4040,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 54
+Text 55
 ========================================================================
 Copyright (c) 2010 Mario Klingemann
 
@@ -4039,7 +4066,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 55
+Text 56
 ========================================================================
 The MIT License (MIT)
 
@@ -4066,7 +4093,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-Text 56
+Text 57
 ========================================================================
 (The MIT License)
 
@@ -4091,7 +4118,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 
 ========================================================================
-Text 57
+Text 58
 ========================================================================
 Copyright (c) 2021 Niklas von Hertzen
 
@@ -4117,7 +4144,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 58
+Text 59
 ========================================================================
 Apache License
                         Version 2.0, January 2004
@@ -4322,7 +4349,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ========================================================================
-Text 59
+Text 60
 ========================================================================
 Copyright (c) 2022 The transpose Developers
 
@@ -4351,12 +4378,12 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 
 ========================================================================
-Text 60
+Text 61
 ========================================================================
 MIT OR Apache-2.0
 
 ========================================================================
-Text 61
+Text 62
 ========================================================================
 Apache License
                         Version 2.0, January 2004
@@ -4561,7 +4588,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 ========================================================================
-Text 62
+Text 63
 ========================================================================
 The MIT License (MIT)
 
@@ -4586,7 +4613,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-Text 63
+Text 64
 ========================================================================
 UNICODE LICENSE V3
 
@@ -4629,7 +4656,7 @@ dealings in these Data Files or Software without prior written
 authorization of the copyright holder.
 
 ========================================================================
-Text 64
+Text 65
 ========================================================================
 Apache License
                            Version 2.0, January 2004
@@ -4834,7 +4861,7 @@ Apache License
    limitations under the License.
 
 ========================================================================
-Text 65
+Text 66
 ========================================================================
 MIT License
 
@@ -4859,7 +4886,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
 ========================================================================
-Text 66
+Text 67
 ========================================================================
 Apache License
                            Version 2.0, January 2004
@@ -5064,7 +5091,7 @@ Apache License
    limitations under the License.
 
 ========================================================================
-Text 67
+Text 68
 ========================================================================
 Copyright 2019 The Fuchsia Authors.
 
@@ -5092,7 +5119,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ========================================================================
-Text 68
+Text 69
 ========================================================================
 Copyright 2023 The Fuchsia Authors
 

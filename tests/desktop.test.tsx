@@ -6,9 +6,10 @@ import { saveBlob, saveText } from '../src/file-save';
 
 test('MSI numeric package version tracks the displayed application version', () => {
   const version = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version as string;
-  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(?:-preview\.(\d+))?$/);
+  const match = version.match(/^(\d+)\.(\d+)\.(\d+)(?:-(preview|rc)\.(\d+))?$/);
   assert.ok(match, 'Update the MSI mapping when introducing a different prerelease convention');
-  const fields = match.slice(1).filter(value => value !== undefined);
+  const fields = match.slice(1, 4);
+  if (match[4]) fields.push(String(Number(match[5]) + (match[4] === 'rc' ? 10000 : 0)));
   fields.forEach((value, index) => assert.ok(Number(value) <= (index < 2 ? 255 : 65535)));
   const config = JSON.parse(readFileSync(new URL('../src-tauri/tauri.windows.conf.json', import.meta.url), 'utf8'));
   assert.equal(config.bundle.windows.wix.version, fields.join('.'));

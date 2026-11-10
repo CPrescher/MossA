@@ -378,3 +378,15 @@ input.number.invalid:focus-visible:enabled,input.number.invalid:hover:enabled{bo
 .import-details { margin:6px 0; }
 .import-details summary { cursor:pointer; }
 .import-details pre { white-space:pre-wrap; overflow-wrap:anywhere; max-height:180px; overflow:auto; font-size:0.8125rem; }
+
+/* Keep display and help actions inline on laptop and desktop windows.
+   Only compact headers need the three-dot menu; Export keeps its own popup. */
+@media(min-width:1101px) and (max-width:1600px) {
+ .app-header .header-options:not(.header-export-menu)>.header-more-toggle { display:none; }
+ .app-header .header-options:not(.header-export-menu)>.header-options-content {
+  display:flex; position:static; width:auto; padding:0; gap:8px; flex-wrap:nowrap;
+  background:transparent; border:0; border-radius:0; box-shadow:none;
+ }
+ .app-header .header-options:not(.header-export-menu) .text-size-control { flex:0 1 auto; }
+ .app-header .header-options:not(.header-export-menu) .text-size-control select { width:8.5rem; flex:0 1 auto; }
+}

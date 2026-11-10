@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-08T18:19:46.913650+00:00",
+  "checks": {
+    "benchmark_native": {
+      "passed": true,
+      "comparisons": 14,
+      "schema_and_std_rechecked": true,
+      "source_hashes_match": true
+    },
+    "benchmark_search": {
+      "passed": true,
+      "comparisons": 4,
+      "schema_and_std_rechecked": true,
+      "source_hashes_match": true
+    },
+    "benchmark_search12": {
+      "passed": true,
+      "comparisons": 2,
+      "schema_and_std_rechecked": true,
+      "source_hashes_match": true
+    },
+    "benchmark_browser": {
+      "passed": true,
+      "comparisons": 32,
+      "schema_and_std_rechecked": true,
+      "source_hashes_match": true
+    },
+    "rust": {
+      "passed": true,
+      "tests": 62,
+      "log_sha256": "2fb81532be2cf23af58d1f844359897fee29537f8c4038ab326cd8a74fb45fde"
+    },
+    "rust_joint_link": {
+      "passed": true,
+      "tests": 1,
+      "log_sha256": "c48ab9a5bc0c87f5e40ec0eb31c9b286457c1405e4a1e57d0f2f0e22e643217c"
+    },
+    "js_wasm": {
+      "passed": true,
+      "tests": 129,
+      "log_sha256": "bca62c9dfc853a345484d4277fea464f4e3d8da07d818db05872afc96b366fcb"
+    },
+    "typescript_react": {
+      "passed": true,
+      "tests": 273,
+      "log_sha256": "48193aae808107d7e257f80cabf6e52a70d061404cc9f900ffba7a9628c79fd4"
+    },
+    "native_integration": {
+      "passed": true,
+      "tests": 14,
+      "log_sha256": "876094806a5c3d2edcbe9cf571c6432ee3991326b44e943341071a0c9abbd638"
+    },
+    "desktop_manual_build": {
+      "passed": true,
+      "links": 1374,
+      "files": 284,
+      "log_sha256": "be08bc846f581ef2040b8c3fdb02169fd369db498416b4af23bda1449a0a5b3c"
+    },
+    "desktop_cargo_check": {
+      "passed": true,
+      "log_sha256": "6b1e16902ac1c93978db4d1cd135ed0fedc1b881daa3ecb5b7fdb944c948d570"
+    }
+  },
+  "sha256": {
+    "README.md": "69e60b0de2eb0b4e2308f637e278e95f1810fc54a41000a1ea30a31f23f8836f",
+    "manual/src/content/docs/guides/building-models.md": "5dea52f6ed96a27cfeca6ab9af97320c386d96a03811cb9a85f0697d38819ee0",
+    "rust-core/Cargo.lock": "926fe0b8dced896718b1532f3ed161610cb3f406e520923001d5e704c9afbe75",
+    "rust-core/src/analytical.rs": "9e7926d4a7ae9ccf8f44500d9eef0eeaa14e74217998449b7b9c2abaf3136909",
+    "rust-core/src/analytical/distribution.rs": "c8618ef3721bdb9582be8d5a4b865f0515e50e18fdd65521c7d328e542fbf61e",
+    "rust-core/src/analytical/source.rs": "d8ea7e7c85d449a6e449dd22138b2a5e92d72e1dd88717cff1154c9fe0e7467a",
+    "rust-core/src/analytical/transmission.rs": "95fe20da4a3d6546337964d226668263ac90a5b2d0101779739401cf0562ee4f",
+    "rust-core/src/lib.rs": "79c579a7f5cd20993befec5e5ffd9d3bb0fa1592da4752d7368e7ae9a28c606e",
+    "rust-core/src/native/derivatives.rs": "64f2954b814b58f431c5ed55337f2742ded88d8d2f6ea6eba3c6613ece5611cf",
+    "rust-core/src/parallel.rs": "84082efafe64520ff0b88e1b61021308ee33be3662ece5ad9feffd0478dc1081",
+    "rust-core/src/tests.rs": "875292d98ac0d36c75a13480a591c53f0b351b3541144328bc83aa65811f4045",
+    "rust-core/target/release/examples/native_fixture": "409179b7d15bab370991978a448f682a1ab886eedd83fc076138cfc3a2591cbc",
+    "scripts/analytical-validation.mjs": "35e6330ba814e810bb9b7c884c85c3916284540e12a5e577e9c9cef32b0e0951",
+    "scripts/benchmark-source-xvbf-analytical-browser.mjs": "400f4bf1a5277847f58fcf87c4abef9ed774ac02c0ee7daf8d807a71d76aa908",
+    "scripts/benchmark-source-xvbf-analytical.mjs": "d11824e420984e608c94a318a5a6b8401a68b4ea54841775c593e5a814923268",
+    "scripts/source-xvbf-analytical-cases.mjs": "52252ec9c1e47c099e4bb316cc6eaee79a62b9918d27633ecac7ba133caaeaf7",
+    "src/App.tsx": "d3088ebb24e50a6743147d0be26e5aeb426a4b1ae3677f6c01444b38ceba606c",
+    "src/analytical-derivatives.ts": "47e4e0a04513846c0a445ab81026d3826b4b3868624152584bb5bdbbbfd3ed99",
+    "src/comparison.ts": "558280a07c6ac5826ea733f14ecca9738f92fda92d7dfc8c1d88948d7d644ad9",
+    "src/multistart.mjs": "b496d38db44bafc712d03b4b6d7b49d5b9d6d71c6ba73b3e9ce7f0353fd403a6",
+    "src/parallel-fit.ts": "cdfbe79a973f2469c0b33d720766bc20ed96e9068593760a45d0de034ac1c96c",
+    "src/wasm/mossa_core_bg.wasm": "51c1e4b6a8fc1828236a5afe72ca75c1415547743d4ceb2e6e28309cb85017de",
+    "src/worker.ts": "5450564cb3ac467c4ffe141df0c9a7dc340ba881a22be4f56483d9f5af00cb9d",
+    "tests/native-backend.integration.tsx": "9a6d3f0feaaacd593e8e44b03ca685af50ba0cf56e98fbf1ded0ec03346b3813",
+    "tests/source-xvbf-analytical.test.mjs": "ca527ca4d3590f3d529e94ba7efa9a127831a544189b337e3a2150c1d290d367",
+    "validation-data/performance/SOURCE-XVBF-ANALYTICAL.md": "cbc584e9e9f0d05b5c951295c76479dd7ab7770f91d2129c3f82fd3de2352fa3",
+    "validation-data/performance/runtime/source-xvbf-analytical/baseline/native_fixture": "0cb35161dba72437dc42b0aea0651558b88c8b60077a5a839a4ef7fe6385ae45",
+    "validation-data/performance/source-xvbf-analytical-baseline-provenance.json": "2fbc1ce3a135575d51d18e8d3ace92a96b3a187e04a7f6a32570ca05b10a81ee",
+    "validation-data/performance/source-xvbf-analytical-browser.json": "4408cceeafc0007f0a9be9111b2b258642a7c291d13d704459a24e22383dd1d1",
+    "validation-data/performance/source-xvbf-analytical-native.json": "8d34a10c1e284a1f5d17659522c2ffc34d75320201cdbe540e5dcf2f3fa57b45",
+    "validation-data/performance/source-xvbf-analytical-search.json": "ae132d5a84b544c2a38fc0f6f7712bd84e1796893ccb3ea770426b701c1e2747",
+    "validation-data/performance/source-xvbf-analytical-search12.json": "19df3c53737835bc0daeae66d97614ad2f744dfaa11ef5135155b9dc826ae932"
+  }
+}
