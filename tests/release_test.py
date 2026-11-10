@@ -33,6 +33,11 @@ class ReleaseGateTest(unittest.TestCase):
                            "sourceCommit": sha, "workflowCommit": "b" * 40,
                            "hostArch": "arm64", "machine": 0xAA64 if platform.startswith("windows") else 183,
                            "executableSha256": "c" * 64}
+                if platform.startswith("windows"):
+                    receipt["webview2"] = {"architecture": "arm64", "signatureStatus": "Valid",
+                        "signer": "CN=Microsoft Corporation, O=Microsoft Corporation",
+                        "runtimeSource": "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/fixture/MicrosoftEdgeWebView2RuntimeInstallerARM64.exe",
+                        "installerSha256": "e" * 64}
                 (folder / "target-info.json").write_text(json.dumps(receipt))
         (root / "receipts").mkdir()
         for name in ("app", "dmg"):
@@ -62,6 +67,19 @@ class ReleaseGateTest(unittest.TestCase):
             for change in ({"machine": 0x8664}, {"hostArch": "x64"}, {"sourceCommit": "d" * 40}):
                 receipt_path.write_text(json.dumps({**receipt, **change}))
                 with self.assertRaisesRegex(RuntimeError, "ARM64"):
+                    release.collect_artifacts(root, version, sha)
+
+    def test_windows_arm64_requires_matching_offline_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            version, sha = self.make_release(root)
+            receipt_path = root / "windows-arm64" / "target-info.json"
+            receipt = json.loads(receipt_path.read_text())
+            for change in ({"architecture": "x86"}, {"signatureStatus": "Invalid"},
+                           {"runtimeSource": "https://example.com/MicrosoftEdgeWebView2RuntimeInstallerARM64.exe"},
+                           {"installerSha256": ""}):
+                receipt_path.write_text(json.dumps({**receipt, "webview2": {**receipt["webview2"], **change}}))
+                with self.assertRaisesRegex(RuntimeError, "WebView2"):
                     release.collect_artifacts(root, version, sha)
 
     def test_release_artifacts_must_match_clean_tagged_source(self):

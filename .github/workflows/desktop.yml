@@ -160,12 +160,66 @@ jobs:
         run: |
           npm ci
           npm ci --prefix manual
+      - name: Correct the pinned ARM64 bundler's WebView2 offline URL
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        run: |
+          # Tauri CLI 2.12.4 falls back to the x86 offline URL for ARM64.
+          # Correct exactly one URL byte in the locked build tool, not app source.
+          # Fail closed on any different tool; verify both embedded runtimes below.
+          node --input-type=module <<'JS'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import {createRequire} from 'node:module';
+          import {createHash} from 'node:crypto';
+          import {join} from 'node:path';
+          import assert from 'node:assert/strict';
+          const require=createRequire(import.meta.url), hash=b=>createHash('sha256').update(b).digest('hex');
+          assert.equal(JSON.parse(readFileSync('node_modules/@tauri-apps/cli/package.json')).version,'2.12.4');
+          const path=require.resolve('@tauri-apps/cli-win32-arm64-msvc'), bytes=readFileSync(path);
+          const original=hash(bytes);assert.equal(original,'aac60680c5b2fbf17d94e67573adce97e1180edabb1f9bc2350055e21c195be3');
+          const from=Buffer.from('https://go.microsoft.com/fwlink/?linkid=2099617'), to=Buffer.from('https://go.microsoft.com/fwlink/?linkid=2099616');
+          const offset=bytes.indexOf(from);assert.ok(offset>=0);assert.equal(bytes.indexOf(from,offset+1),-1);assert.equal(from.length,to.length);
+          to.copy(bytes,offset);const patched=hash(bytes);assert.equal(patched,'fc0ac180a8b6f60bfc2ec634ae00964b1232dc7df2fbbc06ea6cbf2f34c966d3');
+          writeFileSync(path,bytes);
+          writeFileSync(join(process.env.RUNNER_TEMP,'mossa-arm64-bundler.json'),JSON.stringify({cliVersion:'2.12.4',originalToolSha256:original,patchedToolSha256:patched,offlineUrl:to.toString(),correction:'ARM64 offline URL 2099617 -> 2099616; one byte in the pinned build tool'}));
+          JS
       - name: Build app, offline documentation, and installers
         env:
           SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
         run: |
           SOURCE_SHA="$(git rev-parse HEAD)"
           GITHUB_SHA="$SOURCE_SHA" GITHUB_REF_NAME="$SOURCE_REF" npm run desktop:build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
+      - name: Verify both embedded ARM64 WebView2 offline installers
+        if: matrix.target == 'aarch64-pc-windows-msvc'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $bundle = 'src-tauri/target/aarch64-pc-windows-msvc/release/bundle'
+          $out = Join-Path $env:RUNNER_TEMP 'mossa-webview-verification'
+          New-Item -ItemType Directory -Force $out | Out-Null
+          $reference = Join-Path $out 'MicrosoftEdgeWebView2RuntimeInstallerARM64.exe'
+          $download = Invoke-WebRequest 'https://go.microsoft.com/fwlink/?linkid=2099616' -OutFile $reference -PassThru
+          $url = $download.BaseResponse.RequestMessage.RequestUri.AbsoluteUri
+          if (-not $url.StartsWith('https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/') -or -not $url.EndsWith('/MicrosoftEdgeWebView2RuntimeInstallerARM64.exe')) { throw "Unexpected ARM64 runtime source: $url" }
+          $signature = Get-AuthenticodeSignature $reference
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') { throw 'Invalid Microsoft runtime signature' }
+          $expected = (Get-FileHash $reference -Algorithm SHA256).Hash.ToLowerInvariant()
+          $nsis = (Get-ChildItem "$bundle/nsis/*-setup.exe").FullName
+          $msi = (Get-ChildItem "$bundle/msi/*.msi").FullName
+          & 7z x -y "-o$out/nsis" $nsis '*MicrosoftEdgeWebView2RuntimeInstaller.exe' -r
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect NSIS runtime' }
+          & 7z x -y "-o$out/msi" $msi 'Binary.MicrosoftEdgeWebView2RuntimeInstaller.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect MSI runtime' }
+          foreach ($kind in @('nsis','msi')) {
+            $files = @(Get-ChildItem "$out/$kind" -Recurse -File -Filter '*MicrosoftEdgeWebView2RuntimeInstaller.exe')
+            if ($files.Count -ne 1 -or (Get-FileHash $files[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) { throw "$kind does not embed the verified ARM64 runtime" }
+          }
+          $info = Get-Content (Join-Path $env:RUNNER_TEMP 'mossa-arm64-bundler.json') -Raw | ConvertFrom-Json
+          $info | Add-Member -NotePropertyName architecture -NotePropertyValue 'arm64'
+          $info | Add-Member -NotePropertyName runtimeSource -NotePropertyValue $url
+          $info | Add-Member -NotePropertyName installerSha256 -NotePropertyValue $expected
+          $info | Add-Member -NotePropertyName signatureStatus -NotePropertyValue 'Valid'
+          $info | Add-Member -NotePropertyName signer -NotePropertyValue $signature.SignerCertificate.Subject
+          $info | ConvertTo-Json | Set-Content -Encoding utf8 dist-desktop/webview2-info.json
       - name: Verify native executable architecture and build identity
         env:
           BUILD_TARGET: ${{ matrix.target }}
@@ -186,6 +240,7 @@ jobs:
           const info=JSON.parse(readFileSync('dist-desktop/build-info.json','utf8')), source=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
           assert.equal(info.commit,source);assert.equal(info.dirty,false);assert.equal(info.fittingBackend,'native-rust');
           const receipt={target,version:info.version,sourceCommit:source,workflowCommit:process.env.WORKFLOW_SHA,hostArch:process.arch,machine,executableSha256:createHash('sha256').update(bytes).digest('hex')};
+          if(arm&&win) {receipt.webview2=JSON.parse(readFileSync('dist-desktop/webview2-info.json','utf8'));assert.equal(receipt.webview2.architecture,'arm64');assert.equal(receipt.webview2.signatureStatus,'Valid');}
           writeFileSync('dist-desktop/target-info.json',JSON.stringify(receipt,null,2)+'\n');console.log(receipt);
           JS
       - name: Test native desktop command boundaries
@@ -231,6 +286,7 @@ jobs:
             dist-desktop/*.app.tar.gz
             dist-desktop/build-info.json
             dist-desktop/target-info.json
+            dist-desktop/webview2-info.json
 
 # These are preview artifacts. This workflow does not tag or publish releases.
 # macOS artifacts are ad-hoc signed; public distribution additionally needs

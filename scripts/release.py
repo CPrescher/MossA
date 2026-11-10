@@ -37,6 +37,14 @@ def validate_arm64_receipt(receipt, version, sha, target):
             or not re.fullmatch(r"[0-9a-f]{40}", receipt.get("workflowCommit", ""))
             or not re.fullmatch(r"[0-9a-f]{64}", receipt.get("executableSha256", ""))):
         raise RuntimeError("An ARM64 artifact lacks a matching native executable verification receipt")
+    if target.endswith("windows-msvc"):
+        runtime = receipt.get("webview2", {})
+        if (runtime.get("architecture") != "arm64" or runtime.get("signatureStatus") != "Valid"
+                or "O=Microsoft Corporation" not in runtime.get("signer", "")
+                or not runtime.get("runtimeSource", "").startswith("https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/")
+                or not runtime.get("runtimeSource", "").endswith("/MicrosoftEdgeWebView2RuntimeInstallerARM64.exe")
+                or not re.fullmatch(r"[0-9a-f]{64}", runtime.get("installerSha256", ""))):
+            raise RuntimeError("Windows ARM64 requires verified matching WebView2 offline installers")
 
 
 def arm64_receipts(work, version, sha):
