@@ -98,6 +98,8 @@ natively. The MSI targets ARM64. Both include the ARM64 WebView2 offline install
 See [Tauri's Windows installer guide](https://v2.tauri.app/distribute/windows-installer/).
 These automated checks do not replace installation and GUI qualification on
 each architecture, including offline help, file dialogs, exports and upgrades.
+See [the ARM64 validation record](ARM64-VALIDATION.md) for the rc.1 build source,
+automated results and runtime limits.
 
 The rc.1 MSI package uses numeric version `2.0.0.10001` because WiX rejects the textual
 `rc.1` prerelease. The app and NSIS installer retain `2.0.0-rc.1`.

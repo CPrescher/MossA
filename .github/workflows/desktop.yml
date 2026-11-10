@@ -187,6 +187,8 @@ jobs:
           SOURCE_REF: ${{ inputs.source_ref || github.ref_name }}
         run: |
           SOURCE_SHA="$(git rev-parse HEAD)"
+          # Retain compiled dependencies, but do not upload old-version installers from the cache.
+          rm -rf "src-tauri/target/${{ matrix.target }}/release/bundle"
           GITHUB_SHA="$SOURCE_SHA" GITHUB_REF_NAME="$SOURCE_REF" npm run desktop:build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} -- --locked
       - name: Verify both embedded ARM64 WebView2 offline installers
         if: matrix.target == 'aarch64-pc-windows-msvc'
