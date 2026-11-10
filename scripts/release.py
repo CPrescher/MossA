@@ -21,6 +21,32 @@ REPO = "CPrescher/MossA"
 SIGNING_REPO = "Dioptas/Dioptas"
 SIGNING_BASE = "485cbcaf26932534a5394a5c3dd878b3da122461"
 WORKFLOW_NAME = "Notarize MossA release"
+DESKTOP_ARTIFACTS = {
+    "windows": "x86_64-pc-windows-msvc",
+    "linux": "x86_64-unknown-linux-gnu",
+    "windows-arm64": "aarch64-pc-windows-msvc",
+    "linux-arm64": "aarch64-unknown-linux-gnu",
+}
+
+
+def validate_arm64_receipt(receipt, version, sha, target):
+    machine = 0xAA64 if target.endswith("windows-msvc") else 183
+    if (receipt.get("target") != target or receipt.get("version") != version
+            or receipt.get("sourceCommit") != sha or receipt.get("hostArch") != "arm64"
+            or receipt.get("machine") != machine
+            or not re.fullmatch(r"[0-9a-f]{40}", receipt.get("workflowCommit", ""))
+            or not re.fullmatch(r"[0-9a-f]{64}", receipt.get("executableSha256", ""))):
+        raise RuntimeError("An ARM64 artifact lacks a matching native executable verification receipt")
+
+
+def arm64_receipts(work, version, sha):
+    receipts = {}
+    for platform, target in DESKTOP_ARTIFACTS.items():
+        if target.startswith("aarch64-"):
+            receipt = json.loads(next((work / platform).rglob("target-info.json")).read_text())
+            validate_arm64_receipt(receipt, version, sha, target)
+            receipts[platform] = receipt
+    return receipts
 
 
 def command(*args, cwd=ROOT, input=None):
@@ -119,7 +145,7 @@ def collect_artifacts(work, version, sha):
     output = work / "assets"
     output.mkdir(exist_ok=True)
     identities = {}
-    for platform in ("windows", "linux", "macos", "browser"):
+    for platform in (*DESKTOP_ARTIFACTS, "macos", "browser"):
         folder = work / platform
         info = json.loads(next(folder.rglob("build-info.json")).read_text())
         validate_identity(info, version, sha, "github-pages" if platform == "browser" else "desktop")
@@ -129,9 +155,12 @@ def collect_artifacts(work, version, sha):
                 shutil.copy2(file, output / file.name)
     expected = {f"MossA_{version}_x64-setup.exe", f"MossA_{version}_x64_en-US.msi",
                 f"MossA_{version}_amd64.deb", f"MossA_{version}_amd64.AppImage",
+                f"MossA_{version}_arm64-setup.exe", f"MossA_{version}_arm64_en-US.msi",
+                f"MossA_{version}_arm64.deb", f"MossA_{version}_aarch64.AppImage",
                 f"MossA_{version}_universal.dmg", f"MossA_{version}_universal.app.tar.gz", f"MossA_{version}_web.zip"}
     if {p.name for p in output.iterdir()} - {"SHA256SUMS.txt", "build-provenance.json"} != expected:
         raise RuntimeError("The release installer set is incomplete or contains unexpected files")
+    arm64_receipts(work, version, sha)
     receipts = {}
     for name in ("app", "dmg"):
         state = json.loads(next((work / "receipts").rglob(f"{name}-state.json")).read_text())
@@ -191,20 +220,21 @@ def main():
     print(json.dumps(state), flush=True)
     wait_run(REPO, desktop_run)
     wait_run(SIGNING_REPO, signing_run)
-    for platform, artifact in (("windows", "MossA-x86_64-pc-windows-msvc"), ("linux", "MossA-x86_64-unknown-linux-gnu")):
-        download(REPO, desktop_run, artifact, work / platform)
+    for platform, target in DESKTOP_ARTIFACTS.items():
+        download(REPO, desktop_run, "MossA-" + target, work / platform)
     download(REPO, desktop_run, "MossA-browser", work / "browser")
     download(SIGNING_REPO, signing_run, "MossA-macOS-universal-notarized", work / "macos")
     download(SIGNING_REPO, signing_run, "MossA-notarization-recovery", work / "receipts")
     assets, identities, receipts = collect_artifacts(work, args.version, sha)
-    (assets / "build-provenance.json").write_text(json.dumps({**state, "builds": identities, "notarization": receipts}, indent=2) + "\n")
+    (assets / "build-provenance.json").write_text(json.dumps({**state, "builds": identities,
+        "native_targets": arm64_receipts(work, args.version, sha), "notarization": receipts}, indent=2) + "\n")
     notes = f"""MossA {args.version}
 
-Offline desktop apps and the browser app share the Rust/WebAssembly fitting engine and portable .mossa projects. The manual, search, fonts, examples, and tutorial data are bundled.
+Offline desktop apps use the native Rust fitting core; the browser runs its WebAssembly build. Both use portable .mossa projects. The manual, search, fonts, examples, and tutorial data are bundled.
 
 - macOS: universal DMG for Apple Silicon and Intel, Developer ID signed, notarized, and stapled. Drag MossA to Applications.
-- Windows x64: EXE installer or MSI. Both include the WebView2 offline installer. Windows installers are currently unsigned.
-- Linux x64: AppImage or DEB. Make the AppImage executable before launching; DEB requires its declared GTK/WebKit dependencies.
+- Windows x64 and ARM64: EXE installer or MSI with the matching WebView2 offline installer. Windows installers are currently unsigned. The ARM64 app runs natively; its NSIS installer uses an x86 stub.
+- Linux x64 and ARM64: AppImage or DEB, built on Ubuntu 22.04. Make the AppImage executable before launching; DEB requires its declared GTK/WebKit dependencies.
 
 This is a scientific preview. Review model assumptions, calibration, residuals, and uncertainty limits before using results in research. Existing MATLAB .map projects require conversion.
 

@@ -83,11 +83,21 @@ search indexes work without rewriting scientific source documents.
 ## Platform builds
 
 The desktop workflow runs the scientific test suite, then builds Apple Silicon
-and Intel macOS `.app`/`.dmg`, Windows x64 NSIS `.exe`/MSI, and Linux x64
-AppImage/DEB artifacts. It also tests native command boundaries. Build artifacts
-include `build-info.json`. The `.app` is archived as a tarball to preserve its
+and Intel macOS `.app`/`.dmg`, Windows x64 and ARM64 NSIS `.exe`/MSI, and Linux
+x64 and ARM64 AppImage/DEB artifacts. Each target uses a native runner and tests
+native command boundaries. Linux packages use Ubuntu 22.04 as their build baseline.
+ARM64 Windows and Linux also execute the core and native/WASM integration tests.
+Build artifacts include `build-info.json` and `target-info.json`, recording source,
+workflow revision, executable architecture and hash. The `.app` is archived as a tarball to preserve its
 executable permissions and symlinks. The workflow can be dispatched manually and
 does not create tags or GitHub Releases.
+
+ARM64 apps contain native ARM64 Rust executables. The Windows ARM64 NSIS
+installer uses an x86 stub under Windows emulation; the installed app runs
+natively. The MSI targets ARM64. Both include the ARM64 WebView2 offline installer.
+See [Tauri's Windows installer guide](https://v2.tauri.app/distribute/windows-installer/).
+These automated checks do not replace installation and GUI qualification on
+each architecture, including offline help, file dialogs, exports and upgrades.
 
 The rc.1 MSI package uses numeric version `2.0.0.10001` because WiX rejects the textual
 `rc.1` prerelease. The app and NSIS installer retain `2.0.0-rc.1`.

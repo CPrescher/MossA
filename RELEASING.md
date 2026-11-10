@@ -53,8 +53,8 @@ Only after all jobs pass does the command collect the complete installer set:
 | Platform | User downloads |
 | --- | --- |
 | macOS, Apple Silicon and Intel | Signed and notarized universal DMG; app tarball |
-| Windows x64 | EXE installer and MSI, including the WebView2 offline installer |
-| Linux x64 | AppImage and DEB |
+| Windows x64 and ARM64 | EXE installer and MSI, including the matching WebView2 offline installer |
+| Linux x64 and ARM64 | AppImage and DEB, built on Ubuntu 22.04 |
 | Browser | Static app/manual ZIP with local-server instructions |
 | All | `SHA256SUMS.txt` and `build-provenance.json` |
 
@@ -83,6 +83,27 @@ Windows binaries are currently unsigned. Native GUI workflows on Windows and
 Linux still require platform runtime testing; successful builds and native
 command tests do not qualify every GUI workflow. Record relevant validation
 limits in the release notes.
+
+## Add architectures to an existing release
+
+The desktop workflow accepts `source_ref` and `arm64_only` inputs. To build the
+published RC's exact application source using the current workflow:
+
+```sh
+gh workflow run desktop.yml --ref main -f source_ref=v2.0.0-rc.1 -f arm64_only=true
+```
+
+The workflow executes scientific checks, builds on native Windows/Linux ARM64
+runners and verifies the PE/ELF architecture. ARM jobs run the native core,
+desktop command and native/WASM integration tests before uploading installers.
+`target-info.json` records both the application source and the workflow revision;
+they can differ when adding architectures to an older release.
+
+Do not move a published tag or replace its existing installer files. Before
+adding assets, match every build identity to the tag, verify the ARM64 receipts,
+retain the original asset hashes and Apple receipts, and extend the checksums,
+provenance and release notes with the additional run and runtime limits. The
+ordinary release helper deliberately refuses to overwrite a published release.
 
 ## MossA 2.0 release candidates
 
